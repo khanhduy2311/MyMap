@@ -1,3 +1,15 @@
+// Hiển thị trang upload file
+exports.getUploadPage = (req, res) => {
+    res.render('upload', { error: null, success: null });
+};
+
+// Xử lý upload file
+exports.postUploadFile = (req, res) => {
+    if (!req.file) {
+        return res.render('upload', { error: 'Vui lòng chọn file để upload.', success: null });
+    }
+    res.render('upload', { error: null, success: 'Upload thành công! File: ' + req.file.filename });
+};
 const userModel = require('../models/userModel');
 
 // Hiển thị trang đăng nhập
