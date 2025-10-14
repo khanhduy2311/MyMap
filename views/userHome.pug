@@ -11,5 +11,20 @@ block main
       p Đây là khu vực cá nhân của bạn. Bạn có thể thêm các tính năng như đổi mật khẩu, xem các file đã upload...
       
       a(href="/", class="btn btn-primary mt-3") Quay về trang chủ
-    else
-      .alert.alert-danger Bạn cần đăng nhập để xem trang này.
+    
+    
+    h1.mt-4 Upload File
+    form(
+      action="/upload"
+      method="POST"
+      enctype="multipart/form-data" 
+    )
+      div(class="form-group")
+        label(for="avatar") Chọn 1 file ảnh
+        input(
+          type="file"
+          class="form-control-file"
+          id="avatar"
+          name="avatar"
+        )
+      button(type="submit", class="btn btn-primary") Upload
