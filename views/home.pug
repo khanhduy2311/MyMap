@@ -2,15 +2,6 @@ extends ../views/layouts/default.pug
 
 block main
   .container.mt-4
-
-    if user
-      h1 Chào mừng trở lại, #{user.name}!
-      p Tên tài khoản của bạn là: #{user.username}
-      br
-      a(href="/update", class="btn btn-info") Cập nhật thông tin
-      a(href="/logout", class="btn btn-danger") Đăng xuất
-      
-    else
-      h1 Chào mừng đến với trang chủ!
-      a(href="/register", class="btn btn-primary") Đăng ký
-      a(href="/login", class="btn btn-success") Đăng nhập
+    h1 Chào mừng đến với trang chủ!
+    a(href="/register", class="btn btn-primary") Đăng ký
+    a(href="/login", class="btn btn-success") Đăng nhập
