@@ -1,0 +1,15 @@
+extends ../views/layouts/default.pug
+block main
+  .container.mt-4
+    if user
+      h1.mb-3 Chào mừng tới trang cá nhân, #{user.name}!
+      
+      p Tên tài khoản của bạn là: <strong>#{user.username}</strong>
+      
+      hr
+      
+      p Đây là khu vực cá nhân của bạn. Bạn có thể thêm các tính năng như đổi mật khẩu, xem các file đã upload...
+      
+      a(href="/", class="btn btn-primary mt-3") Quay về trang chủ
+    else
+      .alert.alert-danger Bạn cần đăng nhập để xem trang này.

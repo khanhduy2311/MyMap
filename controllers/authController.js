@@ -103,3 +103,7 @@ exports.postUploadFile = (req, res) => {
     req.flash('success_msg', `Upload thành công! File đã được lưu với tên: ${req.file.filename}`);
     res.redirect('/'); // Quay về trang chủ
 };
+
+exports.getUserHomePage = (req, res) => {
+    res.render('userHome', { pageTitle: 'Trang cá nhân' });
+};
