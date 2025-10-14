@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 // Hiển thị trang upload file
 exports.getUploadPage = (req, res) => {
     res.render('upload', { error: null, success: null });
@@ -11,26 +12,52 @@ exports.postUploadFile = (req, res) => {
     res.render('upload', { error: null, success: 'Upload thành công! File: ' + req.file.filename });
 };
 const userModel = require('../models/userModel');
+// Register
+exports.postRegister = async (req, res) => {
+    const { email, username, password } = req.body;
+    try {
+        const existingUser = await userModel.findUserByEmailOrUsername(req.db, email, username);
+        if (existingUser) {
+            return res.render('register', { error: 'Email or username already exists.' });
+        }
+        
+        // 2. Mã hóa mật khẩu
+        const saltRounds = 10; // Độ phức tạp của mã hóa
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+        // 3. Lưu mật khẩu đã mã hóa vào database
+        const newUser = { email, username, password: hashedPassword, name: username };
+        const result = await userModel.createUser(req.db, newUser);
+
+        req.session.user = { id: result.insertedId, username: username, name: username };
+        res.redirect('/');
+    } catch (error) {
+        console.error(error);
+        res.render('register', { error: 'An error occurred.' });
+    }
+};
 // Hiển thị trang đăng nhập
 exports.getLoginPage = (req, res) => {
     res.render('login', { error: null });
 };
 
 // Xử lý đăng nhập
+// ...
+
 exports.postLogin = async (req, res) => {
     try {
         const user = await userModel.findUserByEmail(req.db, req.body.email);
-
-        if (user && user.password === req.body.password) {
+        if (user && (await bcrypt.compare(req.body.password, user.password))) {
+            // Mật khẩu khớp
             req.session.user = { id: user._id, username: user.username, name: user.name };
             res.redirect('/');
         } else {
+            // Mật khẩu sai hoặc không tìm thấy user
             res.render('login', { error: 'Wrong email or password' });
         }
     } catch (error) {
         console.error(error);
-        res.render('login', { error: 'An error occurred.' });
+        res.render('register', { error: 'An error occurred.' });
     }
 };
 
@@ -63,5 +90,16 @@ exports.postRegister = async (req, res) => {
 exports.logout = (req, res) => {
     req.session.destroy();
     res.clearCookie('connect.sid');
-    res.redirect('/home');
+    res.redirect('/');
+};
+// Upload file
+exports.postUploadFile = (req, res) => {
+    if (!req.file) {
+        // Nếu không có file, tạo một thông báo lỗi
+        req.flash('error_msg', 'Vui lòng chọn một file để upload.');
+        return res.redirect('/'); // Quay về trang chủ
+    }
+    // Nếu có file, tạo một thông báo thành công
+    req.flash('success_msg', `Upload thành công! File đã được lưu với tên: ${req.file.filename}`);
+    res.redirect('/'); // Quay về trang chủ
 };

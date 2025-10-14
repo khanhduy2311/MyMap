@@ -1,0 +1,42 @@
+extends ../views/layouts/default.pug
+block main
+  .container.mt-5
+    .row.justify-content-center
+      .col-md-6
+        h1.text-center.mb-4 Đăng Ký Tài Khoản
+
+        //- Hiển thị thông báo lỗi nếu có
+        if error
+          .alert.alert-danger= error
+
+        //- Form này sẽ gửi dữ liệu đến route POST /register
+        form(action="/register", method="POST")
+          .form-group.mb-3
+            label(for="email") Email
+            input(
+              type="email",
+              class="form-control",
+              id="email",
+              name="email",
+              required
+            )
+          .form-group.mb-3
+            label(for="username") Tên tài khoản
+            input(
+              type="text",
+              class="form-control",
+              id="username",
+              name="username",
+              required
+            )
+          .form-group.mb-3
+            label(for="password") Mật khẩu
+            input(
+              type="password",
+              class="form-control",
+              id="password",
+              name="password",
+              required
+            )
+          
+          button(type="submit", class="btn btn-primary w-100") Đăng Ký

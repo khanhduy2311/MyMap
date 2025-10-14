@@ -1,0 +1,60 @@
+doctype html
+html(lang="vi")
+  head
+    //- Các thẻ meta bắt buộc
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+
+    //- Bootstrap CSS từ CDN
+    link(
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css",
+      rel="stylesheet"
+    )
+
+    //- Link tới file CSS tùy chỉnh của bạn (nếu có)
+    link(rel="stylesheet", href="/admin/css/style.css")
+
+    //- Tiêu đề trang, có thể thay đổi ở mỗi trang con
+    title #{pageTitle} | Admin
+
+  body.d-flex.flex-column.min-vh-100
+    //- Header chung
+    header.bg-dark.text-white.p-3
+      .container
+        .d-flex.justify-content-between.align-items-center
+          a(href="/admin/dashboard", class="h4 text-white text-decoration-none") ADMIN
+          //- Hiển thị thông tin người dùng nếu đã đăng nhập
+          if user
+            div
+              span Chào, #{user.name}! |&nbsp;
+              a(href="/logout", class="text-white") Đăng xuất
+
+    //- Phần thân chính của trang
+    main.main-content.flex-grow-1
+      .container.mt-4
+        //- =============================================
+        //-    ĐẶT KHỐI THÔNG BÁO Ở ĐÂY
+        //- =============================================
+        if success_msg && success_msg.length > 0
+          .alert.alert-success.alert-dismissible.fade.show(role="alert")
+            = success_msg
+            button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
+              
+        if error_msg && error_msg.length > 0
+          .alert.alert-danger.alert-dismissible.fade.show(role="alert")
+            = error_msg
+            button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
+        
+        //- Nội dung từ các trang con sẽ được chèn vào đây
+        block main
+
+    //- Footer chung
+    footer.bg-light.text-center.p-3.mt-auto
+      .container
+        span &copy; 2025 Bản quyền thuộc về Nhóm 3 anh em siu nhân.
+
+    //- Bootstrap JS Bundle (đã bao gồm Popper.js)
+    script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
+    
+    //- Link tới file JS tùy chỉnh của bạn (nếu có)
+    script(src="/admin/js/script.js")
