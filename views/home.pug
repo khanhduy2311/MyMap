@@ -9,28 +9,8 @@ block main
       br
       a(href="/update", class="btn btn-info") Cập nhật thông tin
       a(href="/logout", class="btn btn-danger") Đăng xuất
-
+      
     else
       h1 Chào mừng đến với trang chủ!
       a(href="/register", class="btn btn-primary") Đăng ký
       a(href="/login", class="btn btn-success") Đăng nhập
-
-    // Đảm bảo hr và các thẻ bên dưới ngang hàng nhau
-    hr
-
-    h1.mt-4 Upload File
-    form(
-      action="/upload"
-      method="POST"
-      enctype="multipart/form-data" 
-    )
-      div(class="form-group")
-        label(for="avatar") Chọn 1 file ảnh
-        input(
-          type="file"
-          class="form-control-file"
-          id="avatar"
-          name="avatar"
-        )
-      
-      button(type="submit", class="btn btn-primary") Upload
