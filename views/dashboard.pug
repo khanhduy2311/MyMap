@@ -1,0 +1,40 @@
+extends ../views/layouts/default.pug
+block main
+  //- Dòng tiêu đề và nút hành động chính
+  .d-flex.justify-content-between.align-items-center.mb-4
+    h1 Bảng điều khiển
+    a(href="/mindmaps/create", class="btn btn-primary btn-lg") + Tạo Mindmap mới
+
+  p Chào mừng, <strong>#{user.name}</strong>! Quản lý các ý tưởng của bạn tại đây.
+
+  hr
+
+  //- Các thẻ thông tin tổng quan
+  .row
+    .col-lg-4.mb-4
+      .card.text-white.bg-primary
+        .card-header Tổng số Mindmap
+        .card-body
+          h5.card-title 12 // Ví dụ, bạn sẽ lấy số liệu thật từ database
+          p.card-text Số lượng mindmap bạn đã tạo.
+
+    .col-lg-4.mb-4
+      .card.text-white.bg-success
+        .card-header Mindmap công khai
+        .card-body
+          h5.card-title 3 // Ví dụ
+          p.card-text Các mindmap bạn đã chia sẻ với mọi người.
+
+    .col-lg-4.mb-4
+      .card.text-white.bg-info
+        .card-header Hoạt động gần đây
+        .card-body
+          h5.card-title "Dự án cuối kỳ" // Ví dụ
+          p.card-text Mindmap được chỉnh sửa gần nhất.
+
+  //- Danh sách các mindmap truy cập gần đây
+  h3.mt-4 Chỉnh sửa gần đây
+  .list-group
+    a(href="#", class="list-group-item list-group-item-action") Sơ đồ tư duy cho Dự án X
+    a(href="#", class="list-group-item list-group-item-action") Lên kế hoạch du lịch
+    a(href="#", class="list-group-item list-group-item-action") Brainstorm ý tưởng sản phẩm mới

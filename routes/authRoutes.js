@@ -36,5 +36,5 @@ router.post(
     uploadMiddleware.single('avatar'), // 2. Xử lý file upload
     authController.postUploadFile // 3. Trả kết quả về
 );
-
+router.get('/admin/dashboard', authMiddleware.checkLoggedIn, authController.getDashboardPage);
 module.exports = router;

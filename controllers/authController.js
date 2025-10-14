@@ -50,7 +50,7 @@ exports.postLogin = async (req, res) => {
         if (user && (await bcrypt.compare(req.body.password, user.password))) {
             // Mật khẩu khớp
             req.session.user = { id: user._id, username: user.username, name: user.name };
-            res.redirect('/');
+            res.redirect('/userHome');
         } else {
             // Mật khẩu sai hoặc không tìm thấy user
             res.render('login', { error: 'Wrong email or password' });
@@ -106,4 +106,9 @@ exports.postUploadFile = (req, res) => {
 
 exports.getUserHomePage = (req, res) => {
     res.render('userHome', { pageTitle: 'Trang cá nhân' });
+};
+
+exports.getDashboardPage = (req, res) => {
+    // Biến 'user' đã có sẵn trong view nhờ middleware
+    res.render('dashboard', { pageTitle: 'Bảng điều khiển' });
 };
