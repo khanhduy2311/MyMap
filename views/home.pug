@@ -3,10 +3,9 @@ extends ../views/layouts/default.pug
 block main
   .container.mt-4
     if user
-      // ---- NỘI DUNG KHI ĐÃ ĐĂNG NHẬP ----
-      // Phần này sẽ được hiển thị, vì bạn đã đăng nhập
-      h1 Chào mừng trở lại, #{user.name}!
-      p Đây là trang chủ dành cho người dùng đã đăng nhập.
+      // Phần này sẽ được hiển thị, vì bạn đã đăng kí thành công
+      h1 Chúc mừng bạn đã đăng nhập thành công, #{user.name}!
+      p Bây giờ bạn sẽ được chuyển hướng đến trang userHome trong giây lát
 
     else
       // ---- NỘI DUNG KHI CHƯA ĐĂNG NHẬP (KHÁCH) ----

@@ -3,7 +3,7 @@ const router = express.Router();
 const upload = require('../middlewares/documentUpload'); // Middleware multer
 const { OpenAI } = require('openai');
 const mammoth = require('mammoth');
-const pdfParse = require('pdf-parse');
+const { default: pdfParse } = require('pdf-parse');
 require('dotenv').config();
 
 // Khởi tạo OpenAI
@@ -20,7 +20,7 @@ router.get('/', (req, res) => {
 
 // === Route để XỬ LÝ file upload ===
 // Khi form gửi dữ liệu tới POST /upload/document
-router.post('/document', upload.single('document'), async (req, res) => {
+router.post('/document', upload.single('documentFile'), async (req, res) => {
   try {
     // 1. Kiểm tra file có tồn tại không
     if (!req.file) {

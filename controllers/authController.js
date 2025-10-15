@@ -15,54 +15,60 @@ exports.getLoginPage = (req, res) => {
     res.render('login', { error: null });
 };
 
-// Xử lý đăng ký
 exports.postRegister = async (req, res) => {
-    const { email, username, password } = req.body;
-    try {
-        const existingUser = await userModel.findUserByEmailOrUsername(req.db, email, username);
-        if (existingUser) {
-            return res.render('register', { error: 'Email hoặc tên đăng nhập đã tồn tại.' });
-        }
+  try {
+    const { name, email, password } = req.body;
+    const db = req.db; // bạn cần đảm bảo middleware gắn db vào req
 
-        const newUser = { email, username, password, name: username };
-        const result = await userModel.createUser(req.db, newUser);
-
-        req.session.user = { id: result.insertedId, username, name: username };
-        res.redirect('/');
-    } catch (error) {
-        console.error(error);
-        res.render('register', { error: 'Đã xảy ra lỗi khi đăng ký.' });
+    // ✅ Kiểm tra nếu email đã tồn tại
+    const existingUser = await userModel.findUserByEmail(db, email);
+    if (existingUser) {
+      return res.render('register', { error: 'Email đã tồn tại!' });
     }
+
+    // ✅ Tạo user mới
+    await userModel.createUser(db, { name, email, password });
+
+    // ✅ Tạo session
+    req.session.user = { name, email };
+    res.redirect('/userHome');
+  } catch (err) {
+    console.error(err);
+    res.render('register', { error: 'Lỗi khi đăng ký!' });
+  }
 };
+
+
 
 // ✅ Xử lý đăng nhập
 exports.postLogin = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await userModel.findUserByEmail(req.db, email);
-        if (!user) {
-            return res.render('login', { error: 'Email không tồn tại.' });
-        }
+  const { email, password } = req.body;
+  const db = req.db;
 
-        // Nếu bạn có mã hóa mật khẩu, so sánh bằng bcrypt
-        if (user.password !== password) {
-            return res.render('login', { error: 'Sai mật khẩu.' });
-        }
-
-        // Lưu thông tin người dùng vào session
-        req.session.user = {
-            id: user._id,
-            username: user.username,
-            name: user.name,
-            avatar: user.avatar || null
-        };
-
-        res.redirect('/userHome');
-    } catch (error) {
-        console.error(error);
-        res.render('login', { error: 'Đã xảy ra lỗi khi đăng nhập.' });
+  try {
+    const user = await userModel.findUserByEmail(db, email);
+    if (!user) {
+      return res.render('login', { error: 'Email không tồn tại' });
     }
+
+    if (user.password !== password) {
+      return res.render('login', { error: 'Sai mật khẩu' });
+    }
+
+    req.session.user = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+    username: user.username
+    };
+
+    res.redirect('/userHome');
+  } catch (err) {
+    console.error(err);
+    res.render('login', { error: 'Lỗi khi đăng nhập' });
+  }
 };
+
 
 // Đăng xuất
 exports.logout = (req, res) => {
@@ -99,4 +105,12 @@ exports.postAvatarUpload = async (req, res) => {
         req.flash('error_msg', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
         res.redirect('/userHome');
     }
+};
+
+exports.getUserHomePage = (req, res) => {
+  const user = req.session.user; // ✅ lấy user từ session
+  res.render('userHome', {
+    pageTitle: 'Trang cá nhân',
+    user, // ✅ truyền biến user xuống pug
+  });
 };
