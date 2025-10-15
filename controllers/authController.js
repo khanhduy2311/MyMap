@@ -15,6 +15,8 @@ exports.getLoginPage = (req, res) => {
     res.render('login', { error: null });
 };
 
+
+//xử lý đăng ký
 exports.postRegister = async (req, res) => {
   try {
     const { name, email, password } = req.body;

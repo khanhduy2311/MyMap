@@ -4,9 +4,11 @@ block main
   .container.mt-4
     if user
       // Phần này sẽ được hiển thị, vì bạn đã đăng kí thành công
-      h1 Chúc mừng bạn đã đăng nhập thành công, #{user.name}!
-      p Bây giờ bạn sẽ được chuyển hướng đến trang userHome trong giây lát
 
+      script.
+        setTimeout(function() {
+          window.location.href = '/userHome';
+        }, 10);
     else
       // ---- NỘI DUNG KHI CHƯA ĐĂNG NHẬP (KHÁCH) ----
       // Phần này sẽ bị ẩn đi
