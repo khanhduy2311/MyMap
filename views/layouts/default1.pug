@@ -23,13 +23,25 @@ html(lang="vi")
     main.main-content.flex-grow-1
       .container-fluid.p-0
         //- Hiển thị thông báo (flash messages)
-        //- ... (phần này không đổi)
+        if success_msg && success_msg.length > 0
+          .container.mt-4
+            .alert.alert-success.alert-dismissible.fade.show(role="alert")
+              = success_msg
+              button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
+        if error_msg && error_msg.length > 0
+          .container.mt-4
+            .alert.alert-danger.alert-dismissible.fade.show(role="alert")
+              //- SỬA LẠI INDENT Ở ĐÂY
+              = error_msg
+              button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
         
+        //- Nội dung từ các trang con sẽ được chèn vào đây
         block main
 
     //- Footer chung
     footer.text-center.p-3.mt-auto
       .container
+        //- SỬA LẠI INDENT Ở ĐÂY
         span.text-white-50 &copy; 2025 Bản quyền thuộc về Nhóm 3 anh em siu nhân.
 
     //- Script

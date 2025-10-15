@@ -28,9 +28,9 @@
     object-fit: cover;
 }
 
-/* THÊM LẠI: Hiệu ứng làm mờ (blur) cho ảnh nền */
+/* Hiệu ứng làm mờ (blur) cho ảnh nền */
 .fullscreen-bg-carousel .carousel-inner img {
-    filter: blur(8px); /* Bạn có thể điều chỉnh giá trị 8px */
+    filter: blur(5px); 
     transform: scale(1.2);
 }
 
@@ -38,7 +38,7 @@
 /* --- PHẦN HEADER & FOOTER (Không đổi) --- */
 body.has-fullscreen-bg header {
     background-color: #343a40 !important;
-    padding: 1rem 0;
+    padding: 0.7rem 0;
 }
 
 body.has-fullscreen-bg .logo-header {
@@ -95,8 +95,6 @@ header span {
 header .btn {
     font-size: 1rem; /* Cỡ chữ mặc định của nút */
 }
-
-/* === CSS CHO HEADER MỚI === */
 
 .main-header {
     background-color: #242526; /* Màu xám đen giống ảnh */

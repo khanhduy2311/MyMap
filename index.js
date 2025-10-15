@@ -7,7 +7,7 @@ const { MongoClient } = require('mongodb');
 
 // Routes
 const mainRoutes = require('./routes/authRoutes.js');
-const documentRoutes = require('./routes/document'); // <-- Thêm dòng này
+const documentRoutes = require('./routes/document'); 
 
 const uri = process.env.MONGO_URI;
 if (!uri) {

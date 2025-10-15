@@ -1,0 +1,14 @@
+extends ../views/layouts/default.pug
+
+
+block main
+  .container.mt-4
+    if user
+      script.
+        setTimeout(function() {
+          window.location.href = '/userHome';
+        }, 10);
+    else
+      h1 Chào mừng đến với trang chủ!
+      a(href="/register", class="btn btn-primary") Đăng ký
+      a(href="/login", class="btn btn-success") Đăng nhập
