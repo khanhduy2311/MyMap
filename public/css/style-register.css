@@ -2,10 +2,9 @@ body.register-page {
     flex-direction: column;
     background-color: #f0f2f5;
     display: flex;
-    justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 20px 0;
+    padding: 30px 0;
     font-family: Helvetica, Arial, sans-serif;
 }
 
