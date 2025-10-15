@@ -1,5 +1,5 @@
 const userModel = require('../models/userModel.js');
-
+const { ObjectId } = require('mongodb'); 
 // Hiển thị trang upload file
 exports.getUploadPage = (req, res) => {
     res.render('upload', { error: null, success: null });
@@ -91,28 +91,27 @@ exports.getDashboardPage = (req, res) => {
 
 // Xử lý upload AVATAR
 exports.postAvatarUpload = async (req, res) => {
-    if (!req.file) {
-        req.flash('error_msg', 'Vui lòng chọn một file ảnh.');
-        return res.redirect('/userHome');
-    }
-    try {
-        const avatarUrl = req.file.path;
-        const userId = req.session.user.id;
-        await userModel.updateUserAvatar(req.db, userId, avatarUrl);
-        req.session.user.avatar = avatarUrl;
-        req.flash('success_msg', 'Cập nhật ảnh đại diện thành công!');
-        res.redirect('/userHome');
-    } catch (error) {
-        console.error(error);
-        req.flash('error_msg', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
-        res.redirect('/userHome');
-    }
-};
+  try {
+    const db = req.app.locals.db;
+    const userId = new ObjectId(req.session.user._id); // ✅ Phải có "new"
 
-exports.getUserHomePage = (req, res) => {
-  const user = req.session.user; // ✅ lấy user từ session
-  res.render('userHome', {
-    pageTitle: 'Trang cá nhân',
-    user, // ✅ truyền biến user xuống pug
-  });
+    if (!req.file || !req.file.path) {
+      req.flash('error_msg', 'Vui lòng chọn ảnh hợp lệ!');
+      return res.redirect('/userHome');
+    }
+
+    const avatarUrl = req.file.path;
+
+    await userModel.updateUserAvatar(db, userId, avatarUrl);
+
+    // Cập nhật lại session
+    req.session.user.avatar = avatarUrl;
+    req.flash('success_msg', 'Cập nhật ảnh đại diện thành công!');
+    res.redirect('/userHome');
+
+  } catch (err) {
+    console.error('❌ Lỗi upload avatar:', err);
+    req.flash('error_msg', 'Đã xảy ra lỗi khi tải ảnh lên.');
+    res.redirect('/userHome');
+  }
 };

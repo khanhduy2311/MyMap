@@ -3,40 +3,41 @@ const express = require('express');
 const router = express.Router();
 
 // === IMPORT MIDDLEWARES & CONTROLLERS ===
-// Đổi tên biến để rõ ràng hơn
-const middlewares = require('../middlewares/middlewares.js');
+const uploadAvatarMiddleware = require('../middlewares/avatarUpload.js');
 const authController = require('../controllers/authController.js');
-// Import middleware xử lý upload
-const uploadMiddleware = require('../middlewares/avatarUpload.js');
+const authMiddleware = require('../middlewares/middlewares.js');
 
-// === ROUTE TRANG CHỦ DUY NHẤT ===
-// Route này sẽ render file 'home.pug' và tự xử lý logic if/else bên trong view
+// === ROUTE TRANG CHỦ ===
 router.get('/', (req, res) => {
   res.render('home', { pageTitle: 'Trang Chủ' });
 });
 
-// === CÁC ROUTE XÁC THỰC ===
-// Hiển thị trang đăng ký
-router.get('/register', middlewares.bypassLogin, authController.getRegisterPage);
-// Xử lý form đăng ký
-router.post('/register', authController.postRegister);
+// === ROUTE ĐĂNG KÝ ===
+router.get('/register', authMiddleware.bypassLogin, authController.getRegisterPage);
+router.post('/register', authMiddleware.bypassLogin, authController.postRegister);
 
-// Hiển thị trang đăng nhập
-router.get('/login', middlewares.bypassLogin, authController.getLoginPage);
-// Xử lý form đăng nhập
+// === ROUTE ĐĂNG NHẬP ===
+router.get('/login', authMiddleware.bypassLogin, authController.getLoginPage);
 router.post('/login', authController.postLogin);
 
-// Đăng xuất
-router.get('/logout', middlewares.checkLoggedIn, authController.logout);
+// === ROUTE ĐĂNG XUẤT ===
+router.get('/logout', authMiddleware.checkLoggedIn, authController.logout);
+
+// === ROUTE TRANG NGƯỜI DÙNG ===
+router.get('/admin/dashboard', authMiddleware.checkLoggedIn, authController.getDashboardPage);
+router.get('/userHome', authMiddleware.checkLoggedIn, authController.getUserHomePage);
 
 // === ROUTE UPLOAD ẢNH ĐẠI DIỆN ===
-// Đổi lại tên route cho nhất quán, ví dụ: /upload
 router.post(
-  '/upload',
-  middlewares.checkLoggedIn,
-  uploadMiddleware.single('avatar'), // 'avatar' phải khớp với name của input
+  '/upload/avatar',
+  authMiddleware.checkLoggedIn,
+  uploadAvatarMiddleware.single('avatar'),
   authController.postAvatarUpload
 );
 
+<<<<<<< HEAD
 // Bỏ các route không cần thiết /userHome và /admin/dashboard
 module.exports = router;
+=======
+module.exports = router;
+>>>>>>> d6c7e5e (Update avatar)

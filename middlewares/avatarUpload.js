@@ -1,4 +1,3 @@
-// File: middleware/avatarUpload.js
 require('dotenv').config();
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -11,15 +10,15 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Cấu hình lưu trữ cho multer-storage-cloudinary
+// Cấu hình lưu trữ multer
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'mindmap_avatars', // Tên thư mục trên Cloudinary
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif'] // Các định dạng cho phép
-  }
+    folder: 'mindmap_avatars',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif']
+  },
 });
 
-const uploadAvatar = multer({ storage: storage });
+const uploadAvatar = multer({ storage });
 
 module.exports = uploadAvatar;

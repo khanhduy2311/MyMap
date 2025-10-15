@@ -26,6 +26,7 @@ async function startServer() {
 
     const app = express();
     const PORT = process.env.PORT || 3000;
+    app.locals.db = db;
 
     // ====== Cấu hình view engine ======
     app.set('view engine', 'pug');
@@ -55,7 +56,7 @@ async function startServer() {
 
     // ====== Routes ======
     app.use('/', mainRoutes);               // Routes chính (login, register, home, v.v.)
-    app.use('/upload', documentRoutes); // Routes upload tài liệu (PDF/DOCX)
+    app.use('/upload', documentRoutes);     // Routes upload tài liệu (PDF/DOCX)
 
     // ====== 404 fallback ======
     app.use((req, res) => {

@@ -6,7 +6,7 @@ block main
       h1 Chào mừng, #{user.name}!
       a(href="/mindmaps/create", class="btn btn-primary btn-lg") + Tạo Mindmap mới
 
-    //- HỆ THỐNG TABS ĐIỀU HƯỚNG VỚI CÁC TAB RIÊNG BIỆT
+    //- HỆ THỐNG TABS ĐIỀU HƯỚNG
     ul.nav.nav-tabs(id="myTab", role="tablist")
       li.nav-item(role="presentation")
         button.nav-link.active(id="profile-tab", data-bs-toggle="tab", data-bs-target="#profile", type="button", role="tab") Thông tin cá nhân
@@ -17,8 +17,9 @@ block main
       li.nav-item(role="presentation")
         button.nav-link(id="document-tab", data-bs-toggle="tab", data-bs-target="#document-upload", type="button", role="tab") Upload Tài Liệu
 
-    //- NỘI DUNG CỦA CÁC TABS
+    //- ====================== NỘI DUNG CÁC TAB ======================
     .tab-content#myTabContent
+
       //- === TAB 1: THÔNG TIN CÁ NHÂN ===
       #profile.tab-pane.fade.show.active(role="tabpanel")
         .card.border-top-0
@@ -33,7 +34,6 @@ block main
 
       //- === TAB 2: DANH SÁCH MINDMAP ===
       #mindmaps.tab-pane.fade(role="tabpanel")
-        //- (Nội dung tab mindmap giữ nguyên)
         .card.border-top-0
           .card-body
             if mindmaps && mindmaps.length > 0
@@ -47,32 +47,78 @@ block main
       #avatar-upload.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body.p-4
-            h4 Tải lên ảnh đại diện mới
-            p Chỉ chấp nhận các file ảnh (.jpg, .png, .gif).
+            h4.mb-3 Tải lên ảnh đại diện mới
+            p.text-muted Chỉ chấp nhận file ảnh (.jpg, .png, .gif)
             hr
-            form(action="/upload/avatar", method="POST", enctype="multipart/form-data")
+
+            form(action="/upload/avatar" method="POST" enctype="multipart/form-data")
               .mb-3.text-center
-                img(src=user.avatar || "/img/default-avatar.png", alt="Ảnh xem trước", class="img-thumbnail d-block mx-auto mb-3", id="avatarPreview", style="max-width: 200px; max-height: 200px; object-fit: cover;")
-                input(type="file", class="d-none", id="avatarInput", name="avatar", accept="image/*")
-                button(type="button", class="btn btn-outline-secondary", onclick="document.getElementById('avatarInput').click()") 
+                img(
+                  src=user.avatar || "/img/default-avatar.png",
+                  alt="Ảnh xem trước",
+                  class="img-thumbnail d-block mx-auto mb-3",
+                  id="avatarPreview",
+                  style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 10px;"
+                )
+                input#avatarInput(type="file" name="avatar" accept="image/*" class="d-none")
+                button.btn.btn-outline-secondary(type="button", onclick="document.getElementById('avatarInput').click()")
                   i.fas.fa-upload.me-2
                   | Chọn ảnh mới...
-                .form-text.mt-2#fileNameAvatar Chưa có file nào được chọn.
-              button(type="submit", class="btn btn-primary w-100") Cập nhật Ảnh đại diện
+                .form-text.mt-2#fileNameAvatar.text-muted Chưa có file nào được chọn.
+              
+              button.btn.btn-primary.w-100.mt-3(type="submit") Cập nhật Ảnh đại diện
 
-      //- === TAB 4: UPLOAD TÀI LIỆU (DOCX, PDF) ===
+      //- === TAB 4: UPLOAD TÀI LIỆU ===
       #document-upload.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body.p-4
-            h4 Tải lên tài liệu của bạn
-            p Chỉ chấp nhận các file có định dạng .pdf hoặc .docx.
+            h4.mb-3 Tải lên tài liệu của bạn
+            p.text-muted Chỉ chấp nhận file .pdf hoặc .docx
             hr
-            form(action="/upload/document", method="POST", enctype="multipart/form-data")
+            form(action="/upload/document" method="POST" enctype="multipart/form-data")
               .mb-3
-                input(type="file", class="d-none", id="documentInput", name="documentFile", accept=".pdf, .docx")
+                input#documentInput(type="file" name="documentFile" accept=".pdf, .docx" class="d-none")
                 .input-group
-                  button(type="button", class="btn btn-outline-secondary", onclick="document.getElementById('documentInput').click()") 
+                  button.btn.btn-outline-secondary(type="button", onclick="document.getElementById('documentInput').click()")
                     i.fas.fa-file-upload.me-2
                     | Chọn tài liệu...
-                  span(class="form-control text-muted", id="fileNameDocument") Chưa có file nào được chọn
-              button(type="submit", class="btn btn-primary w-100") Tải lên
+                  span#fileNameDocument.form-control.text-muted Chưa có file nào được chọn
+              button.btn.btn-primary.w-100.mt-3(type="submit") Tải lên
+
+  //- SCRIPT XEM TRƯỚC FILE
+  script.
+    // Avatar preview
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const fileNameAvatar = document.getElementById('fileNameAvatar');
+
+    avatarInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        avatarPreview.src = URL.createObjectURL(file);
+        fileNameAvatar.textContent = `Đã chọn: ${file.name}`;
+        fileNameAvatar.classList.remove('text-muted');
+        fileNameAvatar.classList.add('text-success');
+      } else {
+        fileNameAvatar.textContent = 'Chưa có file nào được chọn.';
+        fileNameAvatar.classList.add('text-muted');
+        fileNameAvatar.classList.remove('text-success');
+      }
+    });
+
+    // Document preview
+    const documentInput = document.getElementById('documentInput');
+    const fileNameDocument = document.getElementById('fileNameDocument');
+
+    documentInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        fileNameDocument.textContent = `Đã chọn: ${file.name}`;
+        fileNameDocument.classList.remove('text-muted');
+        fileNameDocument.classList.add('text-success');
+      } else {
+        fileNameDocument.textContent = 'Chưa có file nào được chọn.';
+        fileNameDocument.classList.add('text-muted');
+        fileNameDocument.classList.remove('text-success');
+      }
+    });
