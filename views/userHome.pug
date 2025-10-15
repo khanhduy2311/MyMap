@@ -6,21 +6,18 @@ block main
       h1 Chào mừng, #{user.name}!
       a(href="/mindmaps/create", class="btn btn-primary btn-lg") + Tạo Mindmap mới
 
-    //- =============================================
-    //-   HỆ THỐNG TABS ĐIỀU HƯỚNG
-    //- =============================================
+    //- HỆ THỐNG TABS ĐIỀU HƯỚNG VỚI CÁC TAB RIÊNG BIỆT
     ul.nav.nav-tabs(id="myTab", role="tablist")
       li.nav-item(role="presentation")
         button.nav-link.active(id="profile-tab", data-bs-toggle="tab", data-bs-target="#profile", type="button", role="tab") Thông tin cá nhân
       li.nav-item(role="presentation")
         button.nav-link(id="mindmaps-tab", data-bs-toggle="tab", data-bs-target="#mindmaps", type="button", role="tab") Mindmap của tôi
       li.nav-item(role="presentation")
-        //- Tab mới cho Upload
-        button.nav-link(id="upload-tab", data-bs-toggle="tab", data-bs-target="#upload", type="button", role="tab") Upload Tài Liệu
+        button.nav-link(id="avatar-tab", data-bs-toggle="tab", data-bs-target="#avatar-upload", type="button", role="tab") Thay đổi Avatar
+      li.nav-item(role="presentation")
+        button.nav-link(id="document-tab", data-bs-toggle="tab", data-bs-target="#document-upload", type="button", role="tab") Upload Tài Liệu
 
-    //- =============================================
-    //-   NỘI DUNG CỦA CÁC TABS
-    //- =============================================
+    //- NỘI DUNG CỦA CÁC TABS
     .tab-content#myTabContent
       //- === TAB 1: THÔNG TIN CÁ NHÂN ===
       #profile.tab-pane.fade.show.active(role="tabpanel")
@@ -28,7 +25,7 @@ block main
           .card-body.p-4
             .row.align-items-center
               .col-md-3.text-center
-                img(src="/img/default-avatar.png", alt="Avatar", class="img-fluid rounded-circle", style="width: 120px; height: 120px; object-fit: cover;")
+                img(src=user.avatar || "/img/default-avatar.png", alt="Avatar", class="img-fluid rounded-circle", style="width: 120px; height: 120px; object-fit: cover;")
               .col-md-9
                 h3 #{user.name}
                 p.text-muted @#{user.username}
@@ -36,6 +33,7 @@ block main
 
       //- === TAB 2: DANH SÁCH MINDMAP ===
       #mindmaps.tab-pane.fade(role="tabpanel")
+        //- (Nội dung tab mindmap giữ nguyên)
         .card.border-top-0
           .card-body
             if mindmaps && mindmaps.length > 0
@@ -45,29 +43,36 @@ block main
             else
               .alert.alert-info Chưa có mindmap nào.
 
-      //- =============================================
-      //-   TAB 3: UPLOAD TÀI LIỆU (DOCX, PDF)
-      //- =============================================
-      #upload.tab-pane.fade(role="tabpanel")
+      //- === TAB 3: THAY ĐỔI AVATAR ===
+      #avatar-upload.tab-pane.fade(role="tabpanel")
+        .card.border-top-0
+          .card-body.p-4
+            h4 Tải lên ảnh đại diện mới
+            p Chỉ chấp nhận các file ảnh (.jpg, .png, .gif).
+            hr
+            form(action="/upload/avatar", method="POST", enctype="multipart/form-data")
+              .mb-3.text-center
+                img(src=user.avatar || "/img/default-avatar.png", alt="Ảnh xem trước", class="img-thumbnail d-block mx-auto mb-3", id="avatarPreview", style="max-width: 200px; max-height: 200px; object-fit: cover;")
+                input(type="file", class="d-none", id="avatarInput", name="avatar", accept="image/*")
+                button(type="button", class="btn btn-outline-secondary", onclick="document.getElementById('avatarInput').click()") 
+                  i.fas.fa-upload.me-2
+                  | Chọn ảnh mới...
+                .form-text.mt-2#fileNameAvatar Chưa có file nào được chọn.
+              button(type="submit", class="btn btn-primary w-100") Cập nhật Ảnh đại diện
+
+      //- === TAB 4: UPLOAD TÀI LIỆU (DOCX, PDF) ===
+      #document-upload.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body.p-4
             h4 Tải lên tài liệu của bạn
             p Chỉ chấp nhận các file có định dạng .pdf hoặc .docx.
             hr
-            //- Form upload đã được trang trí
-            form(action="/upload", method="POST", enctype="multipart/form-data")
+            form(action="/upload/document", method="POST", enctype="multipart/form-data")
               .mb-3
-                input(
-                  type="file",
-                  class="d-none",
-                  id="documentInput",
-                  name="documentFile",
-                  accept=".pdf, .docx"
-                )
+                input(type="file", class="d-none", id="documentInput", name="documentFile", accept=".pdf, .docx")
                 .input-group
                   button(type="button", class="btn btn-outline-secondary", onclick="document.getElementById('documentInput').click()") 
                     i.fas.fa-file-upload.me-2
                     | Chọn tài liệu...
-                  span(class="form-control text-muted", id="fileName") Chưa có file nào được chọn
-              
+                  span(class="form-control text-muted", id="fileNameDocument") Chưa có file nào được chọn
               button(type="submit", class="btn btn-primary w-100") Tải lên

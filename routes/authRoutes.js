@@ -2,40 +2,65 @@
 const express = require('express');
 const router = express.Router();
 
-// Nạp tất cả các công cụ cần thiết
+// === IMPORT MIDDLEWARES & CONTROLLERS ===
+const uploadAvatarMiddleware = require('../middlewares/avatarUpload.js');
 const authController = require('../controllers/authController.js');
 const authMiddleware = require('../middlewares/middlewares.js');
-const uploadMiddleware = require('../middlewares/uploadMiddleware.js');
-
+const upload = require('../middlewares/documentUpload');
 // === ROUTE TRANG CHỦ ===
 router.get('/', (req, res) => {
-    res.render('home', { pageTitle: 'Trang Chủ' });
+  res.render('home', { pageTitle: 'Trang Chủ' });
 });
 
 // === ROUTE ĐĂNG KÝ ===
-// Hiển thị trang đăng ký (chỉ cho người chưa đăng nhập)
-router.get('/register', authMiddleware.bypassLogin, authController.getRegisterPage);
-// Xử lý form đăng ký
-router.post('/register', authMiddleware.bypassLogin, authController.postRegister);
+router.get(
+  '/register',
+  authMiddleware.bypassLogin,
+  authController.getRegisterPage
+);
+router.post(
+  '/register',
+  authMiddleware.bypassLogin,
+  authController.postRegister
+);
 
 // === ROUTE ĐĂNG NHẬP ===
-// Hiển thị trang đăng nhập (chỉ cho người chưa đăng nhập)
-router.get('/login', authMiddleware.bypassLogin, authController.getLoginPage);
-// Xử lý form đăng nhập
-router.post('/login', authController.postLogin);
+router.get(
+  '/login',
+  authMiddleware.bypassLogin,
+  authController.getLoginPage
+);
+router.post(
+  '/login',
+  authMiddleware.bypassLogin, // ✅ thêm middleware nếu cần, đồng nhất
+  authController.postLogin
+);
 
 // === ROUTE ĐĂNG XUẤT ===
-// Bắt buộc phải đăng nhập mới đăng xuất được
-router.get('/logout', authMiddleware.checkLoggedIn, authController.logout);
-
-// === ROUTE UPLOAD FILE ===
-// Bắt buộc phải đăng nhập mới được upload
-router.post(
-    '/upload', 
-    authMiddleware.checkLoggedIn, // 1. Kiểm tra đăng nhập
-    uploadMiddleware.single('documentFile'), // 2. Xử lý file upload
-    authController.postUploadFile // 3. Trả kết quả về
+router.get(
+  '/logout',
+  authMiddleware.checkLoggedIn,
+  authController.logout
 );
-router.get('/admin/dashboard', authMiddleware.checkLoggedIn, authController.getDashboardPage);
-router.get('/userHome', authMiddleware.checkLoggedIn, authController.getUserHomePage);
+
+// === ROUTE TRANG NGƯỜI DÙNG ===
+router.get(
+  '/admin/dashboard',
+  authMiddleware.checkLoggedIn,
+  authController.getDashboardPage
+);
+router.get(
+  '/userHome',
+  authMiddleware.checkLoggedIn,
+  authController.getUserHomePage
+);
+
+// === ROUTE UPLOAD ẢNH ĐẠI DIỆN ===
+router.post(
+  '/upload/avatar',
+  authMiddleware.checkLoggedIn,
+  uploadAvatarMiddleware.single('avatar'),
+  authController.postAvatarUpload
+);
+
 module.exports = router;

@@ -1,0 +1,51 @@
+doctype html
+html(lang="vi")
+  head
+    meta(charset="UTF-8")
+    title= pageTitle
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        padding: 30px;
+        max-width: 800px;
+        margin: auto;
+        background: #fafafa;
+      }
+      h1 {
+        color: #333;
+      }
+      form {
+        margin-top: 20px;
+      }
+      input[type="file"] {
+        display: block;
+        margin-bottom: 10px;
+      }
+      button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      pre {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+      }
+  body
+    h1 Upload Document để tóm tắt nội dung
+    //- có thể lỗi
+    form(action="/upload/document" method="post" enctype="multipart/form-data")
+      input(type="file" name="document" accept=".pdf,.docx" required)
+      button(type="submit") Tải lên & Tóm tắt
+
+    if summary
+      hr
+      h2 Kết quả tóm tắt:
+      pre= summary

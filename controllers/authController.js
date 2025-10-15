@@ -1,62 +1,18 @@
-const bcrypt = require('bcrypt');
+const userModel = require('../models/userModel.js');
+
 // Hiển thị trang upload file
 exports.getUploadPage = (req, res) => {
     res.render('upload', { error: null, success: null });
 };
 
-// Xử lý upload file
-exports.postUploadFile = (req, res) => {
-    if (!req.file) {
-        return res.render('upload', { error: 'Vui lòng chọn file để upload.', success: null });
-    }
-    res.render('upload', { error: null, success: 'Upload thành công! File: ' + req.file.filename });
-};
-const userModel = require('../models/userModel');
-// Register
-exports.postRegister = async (req, res) => {
-    const { email, username, password } = req.body;
-    try {
-        const existingUser = await userModel.findUserByEmailOrUsername(req.db, email, username);
-        if (existingUser) {
-            return res.render('register', { error: 'Email or username already exists.' });
-        }
-        const newUser = { email, username, password: password, name: username };
-        const result = await userModel.createUser(req.db, newUser);
-
-        req.session.user = { id: result.insertedId, username: username, name: username };
-        res.redirect('/');
-    } catch (error) {
-        console.error(error);
-        res.render('register', { error: 'An error occurred.' });
-    }
-};
-// Hiển thị trang đăng nhập
-exports.getLoginPage = (req, res) => {
-    res.render('login', { error: null });
-};
-
-// Xử lý đăng nhập
-// ...
-
-exports.postLogin = async (req, res) => {
-    try {
-        const user = await userModel.findUserByEmail(req.db, req.body.email);
-        if (user && user.password === req.body.password) {
-            // Mật khẩu khớp
-            req.session.user = { id: user._id, username: user.username, name: user.name };
-            res.redirect('/userHome'); // Hoặc '/'
-        } else {
-            // Mật khẩu sai hoặc không tìm thấy user
-            res.render('login', { error: 'Wrong email or password' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.render('login', { error: 'An error occurred.' });
-    }
-}
 // Hiển thị trang đăng ký
 exports.getRegisterPage = (req, res) => {
     res.render('register', { error: null });
+};
+
+// Hiển thị trang đăng nhập
+exports.getLoginPage = (req, res) => {
+    res.render('login', { error: null });
 };
 
 // Xử lý đăng ký
@@ -65,17 +21,46 @@ exports.postRegister = async (req, res) => {
     try {
         const existingUser = await userModel.findUserByEmailOrUsername(req.db, email, username);
         if (existingUser) {
-            return res.render('register', { error: 'Email or username already exists.' });
+            return res.render('register', { error: 'Email hoặc tên đăng nhập đã tồn tại.' });
         }
-        
+
         const newUser = { email, username, password, name: username };
         const result = await userModel.createUser(req.db, newUser);
 
-        req.session.user = { id: result.insertedId, username: username, name: username };
+        req.session.user = { id: result.insertedId, username, name: username };
         res.redirect('/');
     } catch (error) {
         console.error(error);
-        res.render('register', { error: 'An error occurred.' });
+        res.render('register', { error: 'Đã xảy ra lỗi khi đăng ký.' });
+    }
+};
+
+// ✅ Xử lý đăng nhập
+exports.postLogin = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await userModel.findUserByEmail(req.db, email);
+        if (!user) {
+            return res.render('login', { error: 'Email không tồn tại.' });
+        }
+
+        // Nếu bạn có mã hóa mật khẩu, so sánh bằng bcrypt
+        if (user.password !== password) {
+            return res.render('login', { error: 'Sai mật khẩu.' });
+        }
+
+        // Lưu thông tin người dùng vào session
+        req.session.user = {
+            id: user._id,
+            username: user.username,
+            name: user.name,
+            avatar: user.avatar || null
+        };
+
+        res.redirect('/userHome');
+    } catch (error) {
+        console.error(error);
+        res.render('login', { error: 'Đã xảy ra lỗi khi đăng nhập.' });
     }
 };
 
@@ -85,23 +70,33 @@ exports.logout = (req, res) => {
     res.clearCookie('connect.sid');
     res.redirect('/');
 };
-// Upload file
-exports.postUploadFile = (req, res) => {
-    if (!req.file) {
-        // Nếu không có file, tạo một thông báo lỗi
-        req.flash('error_msg', 'Vui lòng chọn một file để upload.');
-        return res.redirect('/'); // Quay về trang chủ
-    }
-    // Nếu có file, tạo một thông báo thành công
-    req.flash('success_msg', `Upload thành công! File đã được lưu với tên: ${req.file.filename}`);
-    res.redirect('/'); // Quay về trang chủ
-};
 
+// Trang cá nhân người dùng
 exports.getUserHomePage = (req, res) => {
     res.render('userHome', { pageTitle: 'Trang cá nhân' });
 };
 
+// Trang dashboard (admin)
 exports.getDashboardPage = (req, res) => {
-    // Biến 'user' đã có sẵn trong view nhờ middleware
     res.render('dashboard', { pageTitle: 'Bảng điều khiển' });
+};
+
+// Xử lý upload AVATAR
+exports.postAvatarUpload = async (req, res) => {
+    if (!req.file) {
+        req.flash('error_msg', 'Vui lòng chọn một file ảnh.');
+        return res.redirect('/userHome');
+    }
+    try {
+        const avatarUrl = req.file.path;
+        const userId = req.session.user.id;
+        await userModel.updateUserAvatar(req.db, userId, avatarUrl);
+        req.session.user.avatar = avatarUrl;
+        req.flash('success_msg', 'Cập nhật ảnh đại diện thành công!');
+        res.redirect('/userHome');
+    } catch (error) {
+        console.error(error);
+        req.flash('error_msg', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
+        res.redirect('/userHome');
+    }
 };

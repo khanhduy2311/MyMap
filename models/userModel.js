@@ -14,3 +14,12 @@ exports.findUserByEmailOrUsername = async (db, email, username) => {
 exports.createUser = async (db, user) => {
     return await db.collection('users').insertOne(user);
 };
+
+// Cập nhật avatar cho user
+exports.updateUserAvatar = async (db, userId, avatarUrl) => {
+  const userObjectId = new ObjectId(userId);
+  return await db.collection('users').updateOne(
+    { _id: userObjectId },
+    { $set: { avatar: avatarUrl } }
+  );
+};
