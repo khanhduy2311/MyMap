@@ -2,6 +2,15 @@ extends ../views/layouts/default.pug
 
 block main
   .container.mt-4
-    h1 Chào mừng đến với trang chủ!
-    a(href="/register", class="btn btn-primary") Đăng ký
-    a(href="/login", class="btn btn-success") Đăng nhập
+    if user
+      // ---- NỘI DUNG KHI ĐÃ ĐĂNG NHẬP ----
+      // Phần này sẽ được hiển thị, vì bạn đã đăng nhập
+      h1 Chào mừng trở lại, #{user.name}!
+      p Đây là trang chủ dành cho người dùng đã đăng nhập.
+
+    else
+      // ---- NỘI DUNG KHI CHƯA ĐĂNG NHẬP (KHÁCH) ----
+      // Phần này sẽ bị ẩn đi
+      h1 Chào mừng đến với trang chủ!
+      a(href="/register", class="btn btn-primary") Đăng ký
+      a(href="/login", class="btn btn-success") Đăng nhập

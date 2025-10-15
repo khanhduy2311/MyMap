@@ -1,23 +1,73 @@
 extends ../views/layouts/default.pug
+
 block main
   .container.mt-4
-    h1.mb-3 Chào mừng tới trang cá nhân, #{user.name}!  
-    p Tên tài khoản của bạn là: <strong>#{user.username}</strong>
-    hr
-    p Đây là khu vực cá nhân của bạn. Bạn có thể thêm các tính năng như đổi mật khẩu, xem các file đã upload...  
-    a(href="/", class="btn btn-primary mt-3") Quay về trang chủ
-    h1.mt-4 Upload File
-    form(
-      action="/upload"
-      method="POST"
-      enctype="multipart/form-data" 
-    )
-      div(class="form-group")
-        label(for="avatar") Chọn 1 file ảnh
-        input(
-          type="file"
-          class="form-control-file"
-          id="avatar"
-          name="avatar"
-        )
-      button(type="submit", class="btn btn-primary") Upload
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1 Chào mừng, #{user.name}!
+      a(href="/mindmaps/create", class="btn btn-primary btn-lg") + Tạo Mindmap mới
+
+    //- =============================================
+    //-   HỆ THỐNG TABS ĐIỀU HƯỚNG
+    //- =============================================
+    ul.nav.nav-tabs(id="myTab", role="tablist")
+      li.nav-item(role="presentation")
+        button.nav-link.active(id="profile-tab", data-bs-toggle="tab", data-bs-target="#profile", type="button", role="tab") Thông tin cá nhân
+      li.nav-item(role="presentation")
+        button.nav-link(id="mindmaps-tab", data-bs-toggle="tab", data-bs-target="#mindmaps", type="button", role="tab") Mindmap của tôi
+      li.nav-item(role="presentation")
+        //- Tab mới cho Upload
+        button.nav-link(id="upload-tab", data-bs-toggle="tab", data-bs-target="#upload", type="button", role="tab") Upload Tài Liệu
+
+    //- =============================================
+    //-   NỘI DUNG CỦA CÁC TABS
+    //- =============================================
+    .tab-content#myTabContent
+      //- === TAB 1: THÔNG TIN CÁ NHÂN ===
+      #profile.tab-pane.fade.show.active(role="tabpanel")
+        .card.border-top-0
+          .card-body.p-4
+            .row.align-items-center
+              .col-md-3.text-center
+                img(src="/img/default-avatar.png", alt="Avatar", class="img-fluid rounded-circle", style="width: 120px; height: 120px; object-fit: cover;")
+              .col-md-9
+                h3 #{user.name}
+                p.text-muted @#{user.username}
+                a(href="/profile/edit", class="btn btn-outline-primary btn-sm") Chỉnh sửa thông tin
+
+      //- === TAB 2: DANH SÁCH MINDMAP ===
+      #mindmaps.tab-pane.fade(role="tabpanel")
+        .card.border-top-0
+          .card-body
+            if mindmaps && mindmaps.length > 0
+              .list-group
+                each mindmap in mindmaps
+                  a(href=`/mindmaps/${mindmap._id}`, class="list-group-item list-group-item-action")= mindmap.title
+            else
+              .alert.alert-info Chưa có mindmap nào.
+
+      //- =============================================
+      //-   TAB 3: UPLOAD TÀI LIỆU (DOCX, PDF)
+      //- =============================================
+      #upload.tab-pane.fade(role="tabpanel")
+        .card.border-top-0
+          .card-body.p-4
+            h4 Tải lên tài liệu của bạn
+            p Chỉ chấp nhận các file có định dạng .pdf hoặc .docx.
+            hr
+            //- Form upload đã được trang trí
+            form(action="/upload", method="POST", enctype="multipart/form-data")
+              .mb-3
+                input(
+                  type="file",
+                  class="d-none",
+                  id="documentInput",
+                  name="documentFile",
+                  accept=".pdf, .docx"
+                )
+                .input-group
+                  button(type="button", class="btn btn-outline-secondary", onclick="document.getElementById('documentInput').click()") 
+                    i.fas.fa-file-upload.me-2
+                    | Chọn tài liệu...
+                  span(class="form-control text-muted", id="fileName") Chưa có file nào được chọn
+              
+              button(type="submit", class="btn btn-primary w-100") Tải lên

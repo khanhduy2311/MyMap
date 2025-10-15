@@ -10,7 +10,24 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
+const fileFilter = (req, file, cb) => {
+  // Các loại file được chấp nhận
+  const allowedMimeTypes = [
+    'application/pdf', // Cho file .pdf
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // Cho file .docx
+  ];
 
-const upload = multer({ storage: storage });
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    // Chấp nhận file
+    cb(null, true);
+  } else {
+    // Từ chối file và trả về lỗi
+    cb(new Error('File không đúng định dạng! Chỉ chấp nhận file PDF hoặc DOCX.'), false);
+  }
+};
+const upload = multer({ 
+    storage: storage, 
+    fileFilter: fileFilter
+});
 
 module.exports = upload;

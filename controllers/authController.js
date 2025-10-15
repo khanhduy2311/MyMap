@@ -20,13 +20,7 @@ exports.postRegister = async (req, res) => {
         if (existingUser) {
             return res.render('register', { error: 'Email or username already exists.' });
         }
-        
-        // 2. Mã hóa mật khẩu
-        const saltRounds = 10; // Độ phức tạp của mã hóa
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-        // 3. Lưu mật khẩu đã mã hóa vào database
-        const newUser = { email, username, password: hashedPassword, name: username };
+        const newUser = { email, username, password: password, name: username };
         const result = await userModel.createUser(req.db, newUser);
 
         req.session.user = { id: result.insertedId, username: username, name: username };
@@ -47,20 +41,19 @@ exports.getLoginPage = (req, res) => {
 exports.postLogin = async (req, res) => {
     try {
         const user = await userModel.findUserByEmail(req.db, req.body.email);
-        if (user && (await bcrypt.compare(req.body.password, user.password))) {
+        if (user && user.password === req.body.password) {
             // Mật khẩu khớp
             req.session.user = { id: user._id, username: user.username, name: user.name };
-            res.redirect('/userHome');
+            res.redirect('/userHome'); // Hoặc '/'
         } else {
             // Mật khẩu sai hoặc không tìm thấy user
             res.render('login', { error: 'Wrong email or password' });
         }
     } catch (error) {
         console.error(error);
-        res.render('register', { error: 'An error occurred.' });
+        res.render('login', { error: 'An error occurred.' });
     }
-};
-
+}
 // Hiển thị trang đăng ký
 exports.getRegisterPage = (req, res) => {
     res.render('register', { error: null });

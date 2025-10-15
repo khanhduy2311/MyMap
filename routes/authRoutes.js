@@ -33,8 +33,9 @@ router.get('/logout', authMiddleware.checkLoggedIn, authController.logout);
 router.post(
     '/upload', 
     authMiddleware.checkLoggedIn, // 1. Kiểm tra đăng nhập
-    uploadMiddleware.single('avatar'), // 2. Xử lý file upload
+    uploadMiddleware.single('documentFile'), // 2. Xử lý file upload
     authController.postUploadFile // 3. Trả kết quả về
 );
 router.get('/admin/dashboard', authMiddleware.checkLoggedIn, authController.getDashboardPage);
+router.get('/userHome', authMiddleware.checkLoggedIn, authController.getUserHomePage);
 module.exports = router;
