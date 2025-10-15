@@ -10,15 +10,33 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Cấu hình lưu trữ multer
+// Cấu hình lưu trữ multer với Cloudinary
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'mindmap_avatars',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif']
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp'],
+    transformation: [
+      { width: 300, height: 300, crop: 'limit', quality: 'auto' }
+    ]
   },
 });
 
-const uploadAvatar = multer({ storage });
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file ảnh (JPEG, JPG, PNG, GIF, WEBP)!'));
+    }
+  }
+});
 
-module.exports = uploadAvatar;
+module.exports = upload;

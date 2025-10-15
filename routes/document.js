@@ -1,93 +1,65 @@
-require('dotenv').config();
+// File: routes/document.js
 const express = require('express');
 const router = express.Router();
-const upload = require('../middlewares/documentUpload'); // Middleware multer
-const {
-    OpenAI
-} = require('openai');
-const mammoth = require('mammoth');
-const pdfParse = require('pdf-parse');
-const {
-    GoogleGenerativeAI
-} = require("@google/generative-ai");
-// ⚙️ Khởi tạo Gemini API (v1 syntax)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash"
-});
-// 🧠 Test thử API khi khởi động server
-(async () => {
-    try {
-        const testResult = await model.generateContent({
-            contents: [{
-                role: "user",
-                parts: [{
-                    text: "Xin chào! Kiểm tra API Gemini."
-                }]
-            }]
-        });
-        console.log("✅ Gemini API hoạt động:", testResult.response.text());
-    } catch (err) {
-        console.error("❌ Lỗi kiểm tra Gemini API:", err.message);
+const multer = require('multer');
+const path = require('path');
+
+// Cấu hình multer đơn giản
+const upload = multer({
+  dest: 'public/uploads/documents/',
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['.pdf', '.docx'];
+    const fileExt = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedTypes.includes(fileExt)) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file PDF và DOCX!'));
     }
-})();
-
-// Route GET: Trang tải tài liệu
-router.get('/', (req, res) => {
-    res.render('upload', {
-        pageTitle: 'Tải tài liệu',
-        summary: null
-    });
+  }
 });
 
-// Route POST: Xử lý file upload
+// Upload document route
 router.post('/document', upload.single('documentFile'), async (req, res) => {
     try {
-        // 1. Kiểm tra file có tồn tại không
         if (!req.file) {
-            return res.status(400).send('Không có file nào được tải lên');
-        }
-
-        let text = '';
-        // 🧾 Đọc nội dung file PDF hoặc DOCX
-        if (req.file.mimetype === 'application/pdf') {
-            const data = await pdfParse(req.file.buffer);
-            text = data.text;
-        } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') { // Check for .docx
-            const result = await mammoth.extractRawText({
-                buffer: req.file.buffer
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chọn file tài liệu!'
             });
-            text = result.value;
-        } else {
-            return res.status(400).send('Loại file không được hỗ trợ. Vui lòng tải lên file PDF hoặc DOCX.');
         }
 
-        // 🧠 Gọi API Gemini để tóm tắt
-        const prompt = `
-    Bạn là một trợ lý AI chuyên nghiệp. 
-    Hãy tóm tắt ngắn gọn, rõ ràng, nêu ý chính của đoạn văn sau:
-    ${text}
-    `;
+        // Mock AI response
+        const mockSummary = `
+        📄 **TÓM TẮT TÀI LIỆU**
+        
+        Tài liệu "${req.file.originalname}" đã được upload thành công! 
+        
+        📊 **Thông tin file:**
+        - Tên: ${req.file.originalname}
+        - Kích thước: ${(req.file.size / 1024 / 1024).toFixed(2)} MB
+        - Thời gian: ${new Date().toLocaleTimeString('vi-VN')}
+        
+        🎯 **Tính năng AI tóm tắt** hiện đang được nâng cấp.
+        `;
 
-        const result = await model.generateContent({
-            contents: [{
-                role: "user",
-                parts: [{
-                    text: prompt
-                }]
-            }]
+        res.json({
+            success: true,
+            summary: mockSummary,
+            message: "Document uploaded successfully"
         });
-        const summary = result.response.text();
-        // ✅ Trả kết quả ra view
-        res.render('upload', {
-            pageTitle: 'Tóm tắt tài liệu',
-            summary
+
+    } catch (error) {
+        console.error('❌ Lỗi khi xử lý tài liệu:', error.message);
+        
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xử lý tài liệu: ' + error.message
         });
-    } catch (err) {
-        console.error(err); // Ghi lại lỗi chi tiết ở server
-        res.status(500).send('Đã có lỗi xảy ra trong quá trình xử lý tài liệu.');
     }
 });
-
 
 module.exports = router;

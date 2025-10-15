@@ -35,9 +35,4 @@ router.post(
   authController.postAvatarUpload
 );
 
-<<<<<<< HEAD
-// Bỏ các route không cần thiết /userHome và /admin/dashboard
 module.exports = router;
-=======
-module.exports = router;
->>>>>>> d6c7e5e (Update avatar)

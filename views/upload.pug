@@ -41,8 +41,8 @@ html(lang="vi")
   body
     h1 Upload Document để tóm tắt nội dung
     //- có thể lỗi
-    form(action="/upload/document" method="post" enctype="multipart/form-data")
-      input(type="file" name="document" accept=".pdf,.docx" required)
+    form(action="/upload/document" method="POST" enctype="multipart/form-data")
+      input(type="file" name="documentFile" accept=".pdf,.docx" required)
       button(type="submit") Tải lên & Tóm tắt
 
     if summary

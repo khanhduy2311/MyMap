@@ -2,6 +2,18 @@ extends ../views/layouts/default.pug
 
 block main
   .container.mt-4
+    //- FLASH MESSAGES - THÊM ĐIỀU KIỆN KIỂM TRA
+    if error_msg && error_msg.length > 0
+      .alert.alert-danger.alert-dismissible.fade.show(role="alert")
+        strong Lỗi! 
+        | #{error_msg}
+        button(type="button", class="btn-close", data-bs-dismiss="alert")
+
+    if success_msg && success_msg.length > 0
+      .alert.alert-success.alert-dismissible.fade.show(role="alert")
+        strong Thành công! 
+        | #{success_msg}
+        button(type="button", class="btn-close", data-bs-dismiss="alert")
     .d-flex.justify-content-between.align-items-center.mb-4
       h1 Chào mừng, #{user.name}!
       a(href="/mindmaps/create", class="btn btn-primary btn-lg") + Tạo Mindmap mới
@@ -26,11 +38,24 @@ block main
           .card-body.p-4
             .row.align-items-center
               .col-md-3.text-center
-                img(src=user.avatar || "/img/default-avatar.png", alt="Avatar", class="img-fluid rounded-circle", style="width: 120px; height: 120px; object-fit: cover;")
+                if user.avatar
+                  img(src=user.avatar, alt="Avatar", class="img-fluid rounded-circle", style="width: 120px; height: 120px; object-fit: cover;")
+                else
+                  img(src="/images/default-avatar.png", alt="Avatar", class="img-fluid rounded-circle", style="width: 120px; height: 120px; object-fit: cover; background: #f8f9fa;")
               .col-md-9
-                h3 #{user.name}
-                p.text-muted @#{user.username}
-                a(href="/profile/edit", class="btn btn-outline-primary btn-sm") Chỉnh sửa thông tin
+                h3 #{user.name || 'Chưa có tên'}
+                p.text-muted 
+                  i.fas.fa-user.me-2
+                  | @#{user.username || 'Chưa có username'}
+                p.text-muted
+                  i.fas.fa-envelope.me-2
+                  | #{user.email || 'Chưa có email'}
+                p.text-muted
+                  i.fas.fa-calendar.me-2
+                  | Tham gia: #{user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'Không rõ'}
+                a(href="/profile/edit", class="btn btn-outline-primary btn-sm") 
+                  i.fas.fa-edit.me-1
+                  | Chỉnh sửa thông tin
 
       //- === TAB 2: DANH SÁCH MINDMAP ===
       #mindmaps.tab-pane.fade(role="tabpanel")
@@ -39,51 +64,83 @@ block main
             if mindmaps && mindmaps.length > 0
               .list-group
                 each mindmap in mindmaps
-                  a(href=`/mindmaps/${mindmap._id}`, class="list-group-item list-group-item-action")= mindmap.title
+                  a(href=`/mindmaps/${mindmap._id}`, class="list-group-item list-group-item-action d-flex justify-content-between align-items-center")
+                    span
+                      i.fas.fa-map.me-2
+                      | #{mindmap.title}
+                    small.text-muted #{mindmap.createdAt ? new Date(mindmap.createdAt).toLocaleDateString('vi-VN') : ''}
             else
-              .alert.alert-info Chưa có mindmap nào.
+              .alert.alert-info.text-center
+                i.fas.fa-info-circle.me-2
+                | Chưa có mindmap nào. 
+                a(href="/mindmaps/create", class="alert-link") Tạo mindmap đầu tiên?
 
       //- === TAB 3: THAY ĐỔI AVATAR ===
       #avatar-upload.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body.p-4
-            h4.mb-3 Tải lên ảnh đại diện mới
-            p.text-muted Chỉ chấp nhận file ảnh (.jpg, .png, .gif)
+            h4.mb-3 
+              i.fas.fa-user-circle.me-2
+              | Tải lên ảnh đại diện mới
+            p.text-muted 
+              i.fas.fa-info-circle.me-1
+              | Chỉ chấp nhận file ảnh (.jpg, .png, .gif, .webp) - Tối đa 5MB
             hr
 
             form(action="/upload/avatar" method="POST" enctype="multipart/form-data")
               .mb-3.text-center
-                img(
-                  src=user.avatar || "/img/default-avatar.png",
-                  alt="Ảnh xem trước",
-                  class="img-thumbnail d-block mx-auto mb-3",
-                  id="avatarPreview",
-                  style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 10px;"
-                )
-                input#avatarInput(type="file" name="avatar" accept="image/*" class="d-none")
+                if user.avatar
+                  img(
+                    src=user.avatar,
+                    alt="Ảnh xem trước",
+                    class="img-thumbnail d-block mx-auto mb-3",
+                    id="avatarPreview",
+                    style="width: 200px; height: 200px; object-fit: cover; border-radius: 10px;"
+                  )
+                else
+                  img(
+                    src="/images/default-avatar.png",
+                    alt="Ảnh xem trước",
+                    class="img-thumbnail d-block mx-auto mb-3",
+                    id="avatarPreview",
+                    style="width: 200px; height: 200px; object-fit: cover; border-radius: 10px; background: #f8f9fa;"
+                  )
+                input#avatarInput(type="file" name="avatar" accept="image/*" class="d-none" required)
                 button.btn.btn-outline-secondary(type="button", onclick="document.getElementById('avatarInput').click()")
                   i.fas.fa-upload.me-2
                   | Chọn ảnh mới...
-                .form-text.mt-2#fileNameAvatar.text-muted Chưa có file nào được chọn.
+                .form-text.mt-2
+                  span#fileNameAvatar.text-muted Chưa có file nào được chọn.
               
-              button.btn.btn-primary.w-100.mt-3(type="submit") Cập nhật Ảnh đại diện
+              .d-grid
+                button.btn.btn-primary(type="submit")
+                  i.fas.fa-save.me-2
+                  | Cập nhật Ảnh đại diện
 
       //- === TAB 4: UPLOAD TÀI LIỆU ===
       #document-upload.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body.p-4
-            h4.mb-3 Tải lên tài liệu của bạn
-            p.text-muted Chỉ chấp nhận file .pdf hoặc .docx
+            h4.mb-3
+              i.fas.fa-file-upload.me-2
+              | Tải lên tài liệu của bạn
+            p.text-muted
+              i.fas.fa-info-circle.me-1
+              | Chỉ chấp nhận file .pdf hoặc .docx - Tối đa 10MB
             hr
             form(action="/upload/document" method="POST" enctype="multipart/form-data")
               .mb-3
-                input#documentInput(type="file" name="documentFile" accept=".pdf, .docx" class="d-none")
+                input#documentInput(type="file" name="documentFile" accept=".pdf,.docx" class="d-none" required)
                 .input-group
                   button.btn.btn-outline-secondary(type="button", onclick="document.getElementById('documentInput').click()")
                     i.fas.fa-file-upload.me-2
                     | Chọn tài liệu...
-                  span#fileNameDocument.form-control.text-muted Chưa có file nào được chọn
-              button.btn.btn-primary.w-100.mt-3(type="submit") Tải lên
+                  span.form-control
+                    span#fileNameDocument.text-muted Chưa có file nào được chọn
+              .d-grid
+                button.btn.btn-primary(type="submit")
+                  i.fas.fa-upload.me-2
+                  | Tải lên
 
   //- SCRIPT XEM TRƯỚC FILE
   script.
@@ -95,14 +152,19 @@ block main
     avatarInput.addEventListener('change', e => {
       const file = e.target.files[0];
       if (file) {
+        // Kiểm tra kích thước file (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File quá lớn! Vui lòng chọn file nhỏ hơn 5MB.');
+          avatarInput.value = '';
+          return;
+        }
+
         avatarPreview.src = URL.createObjectURL(file);
-        fileNameAvatar.textContent = `Đã chọn: ${file.name}`;
-        fileNameAvatar.classList.remove('text-muted');
-        fileNameAvatar.classList.add('text-success');
+        fileNameAvatar.textContent = `Đã chọn: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        fileNameAvatar.className = 'text-success';
       } else {
         fileNameAvatar.textContent = 'Chưa có file nào được chọn.';
-        fileNameAvatar.classList.add('text-muted');
-        fileNameAvatar.classList.remove('text-success');
+        fileNameAvatar.className = 'text-muted';
       }
     });
 
@@ -113,12 +175,36 @@ block main
     documentInput.addEventListener('change', e => {
       const file = e.target.files[0];
       if (file) {
-        fileNameDocument.textContent = `Đã chọn: ${file.name}`;
-        fileNameDocument.classList.remove('text-muted');
-        fileNameDocument.classList.add('text-success');
+        // Kiểm tra kích thước file (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert('File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.');
+          documentInput.value = '';
+          return;
+        }
+
+        // Kiểm tra loại file
+        const allowedTypes = ['.pdf', '.docx'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedTypes.includes(fileExtension)) {
+          alert('Chỉ chấp nhận file PDF và DOCX!');
+          documentInput.value = '';
+          return;
+        }
+
+        fileNameDocument.textContent = `Đã chọn: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        fileNameDocument.className = 'text-success';
       } else {
         fileNameDocument.textContent = 'Chưa có file nào được chọn.';
-        fileNameDocument.classList.add('text-muted');
-        fileNameDocument.classList.remove('text-success');
+        fileNameDocument.className = 'text-muted';
+      }
+    });
+
+    // Xử lý khi chuyển tab, giải phóng URL object
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        if (avatarInput.files[0]) {
+          URL.revokeObjectURL(avatarPreview.src);
+        }
       }
     });
