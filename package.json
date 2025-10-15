@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^1.25.0",
+    "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
     "connect-flash": "^0.1.1",
@@ -23,7 +25,7 @@
     "multer-gridfs-storage": "^5.0.2",
     "multer-storage-cloudinary": "^4.0.0",
     "openai": "^6.3.0",
-    "pdf-parse": "^2.3.11",
+    "pdf-parse": "^1.1.1",
     "pug": "^3.0.3"
   },
   "devDependencies": {
