@@ -1,33 +1,30 @@
-extends ../views/layouts/default.pug
-block main
-  .container.mt-5
-    .row.justify-content-center
-      .col-md-6
-        h1.text-center.mb-4 Đăng Nhập
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Đăng Nhập | MindTree
+    link(rel="stylesheet", href="/css/style-login.css") 
 
-        //- Hiển thị thông báo lỗi nếu có
-        if error
-          .alert.alert-danger= error
+  body.login-page
+    .container
+      .left-panel
+        h1.logo MindTree
+        h2.slogan Một hình ảnh đáng giá ngàn lời nói, và một sơ đồ tư duy có thể chứa đựng cả một thư viện ý tưởng!
 
-        //- Form này sẽ gửi dữ liệu đến route POST /login
-        form(action="/login", method="POST")
-          .form-group.mb-3
-            label(for="email") Email
-            input(
-              type="email",
-              class="form-control",
-              id="email",
-              name="email",
-              required
-            )
-          .form-group.mb-3
-            label(for="password") Mật khẩu
-            input(
-              type="password",
-              class="form-control",
-              id="password",
-              name="password",
-              required
-            )
-          
-          button(type="submit", class="btn btn-success w-100") Đăng Nhập
+      .right-panel
+        .login-form
+          if error && error.length > 0
+            .alert.alert-danger= error
+            
+          form(action="/login", method="POST")
+            div
+              input(type="email", name="email", placeholder="Email hoặc số điện thoại", required)
+            div
+              input(type="password", name="password", placeholder="Mật khẩu", required)
+            div
+              button(type="submit", class="btn-login") Đăng Nhập
+        
+          a(href="#", class="forgot-password") Quên mật khẩu?
+          .divider
+          a(href="/register", class="btn-register") Tạo tài khoản mới
