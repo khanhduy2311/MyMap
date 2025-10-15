@@ -39,5 +39,4 @@ router.post(
 );
 
 // Bỏ các route không cần thiết /userHome và /admin/dashboard
-
 module.exports = router;
