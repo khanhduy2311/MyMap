@@ -1,17 +1,26 @@
-extends ../views/layouts/default.pug
+extends ../views/layouts/default1.pug
+
 
 block main
-  .container.mt-4
-    if user
-      // Phần này sẽ được hiển thị, vì bạn đã đăng kí thành công
+  if user
+    .container.mt-4
+      script 
+        window.location.href = "/userHome";
 
-      script.
-        setTimeout(function() {
-          window.location.href = '/userHome';
-        }, 10);
-    else
-      // ---- NỘI DUNG KHI CHƯA ĐĂNG NHẬP (KHÁCH) ----
-      // Phần này sẽ bị ẩn đi
-      h1 Chào mừng đến với trang chủ!
-      a(href="/register", class="btn btn-primary") Đăng ký
-      a(href="/login", class="btn btn-success") Đăng nhập
+  else
+    //- Giao diện khi chưa đăng nhập
+    .fullscreen-bg-carousel
+      #imageCarousel.carousel.slide.carousel-fade(data-bs-ride="carousel")
+        .carousel-inner
+          .carousel-item.active(data-bs-interval="4000")
+            img.d-block.w-100(src="https://i.pinimg.com/736x/63/95/7e/63957e3cd082ae8d4accd1e01c7e9270.jpg", alt="Background 1")
+          .carousel-item(data-bs-interval="4000")
+            img.d-block.w-100(src="https://i.pinimg.com/736x/0b/bb/47/0bbb47319e8b82843619b443de48a725.jpg", alt="Background 2")
+          //- SỬA LẠI INDENT Ở ĐÂY
+          .carousel-item(data-bs-interval="4000")
+            img.d-block.w-100(src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop", alt="Background 3")
+    
+    .content-overlay
+      .hero-text
+        h1 MindTree
+        p.lead Nơi trực quan hóa mọi tài liệu phức tạp chỉ với một cú nhấp chuột!

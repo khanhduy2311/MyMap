@@ -1,0 +1,151 @@
+/* --- PHẦN NỀN SLIDESHOW --- */
+.fullscreen-bg-carousel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+}
+
+/* Lớp phủ màu đen nhẹ (tùy chọn, có thể xóa nếu chỉ muốn blur) */
+.fullscreen-bg-carousel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3); /* Lớp phủ tối nhẹ */
+    z-index: 0;
+}
+
+.fullscreen-bg-carousel .carousel-item,
+.fullscreen-bg-carousel .carousel-inner,
+.fullscreen-bg-carousel .carousel-inner img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+/* THÊM LẠI: Hiệu ứng làm mờ (blur) cho ảnh nền */
+.fullscreen-bg-carousel .carousel-inner img {
+    filter: blur(8px); /* Bạn có thể điều chỉnh giá trị 8px */
+    transform: scale(1.2);
+}
+
+
+/* --- PHẦN HEADER & FOOTER (Không đổi) --- */
+body.has-fullscreen-bg header {
+    background-color: #343a40 !important;
+    padding: 1rem 0;
+}
+
+body.has-fullscreen-bg .logo-header {
+    text-shadow: none;
+}
+
+body.has-fullscreen-bg footer {
+    background-color: transparent !important;
+}
+
+
+/* --- PHẦN NỘI DUNG CHỮ --- */
+.content-overlay {
+    position: relative;
+    width: 100%;
+    flex-grow: 1;
+}
+
+/* SỬA LẠI HOÀN TOÀN ĐOẠN NÀY */
+.hero-text {
+    position: absolute;
+    top: 120px;      /* Cách header 60px */
+    left: 100px;     /* Cách lề trái 50px */
+    color: white;   /* Đổi chữ lại thành màu trắng để nổi bật trên nền mờ */
+    max-width: 600px;
+    text-align: left; /* Căn lề trái cho văn bản */
+    text-shadow: 1px 1px 5px rgba(0,0,0,0.5); /* Thêm bóng để chữ dễ đọc hơn */
+}
+
+.hero-text h1 {
+    font-size: 5rem;
+    font-weight: 700;
+}
+
+.hero-text p.lead {
+    font-size: 1.75rem;
+}
+
+/* === TÙY CHỈNH FONT CHỮ HEADER === */
+
+/* Tăng cỡ chữ cho logo MINDTREE */
+header .logo-header {
+    font-size: 1.75rem; /* Cỡ h4 mặc định là 1.5rem */
+}
+
+/* Tăng cỡ chữ cho dòng chữ "Chào, ..." */
+header span {
+    font-size: 1.1rem;
+    vertical-align: middle; /* Giúp căn chữ thẳng hàng hơn với các nút */
+}
+
+/* Tăng cỡ chữ cho các nút Đăng nhập, Đăng ký, Đăng xuất */
+/* Bỏ class .btn-sm để nút to hơn một chút */
+header .btn {
+    font-size: 1rem; /* Cỡ chữ mặc định của nút */
+}
+
+/* === CSS CHO HEADER MỚI === */
+
+.main-header {
+    background-color: #242526; /* Màu xám đen giống ảnh */
+    border-bottom: 1px solid #393a3b;
+    padding: 0.75rem 0; /* Giảm chiều cao một chút */
+    width: 100%;
+    position: fixed; /* Giữ header cố định trên cùng */
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+/* Thêm khoảng trống ở body để không bị header che mất */
+body {
+    padding-top: 70px; /* Chiều cao tương ứng với header */
+}
+
+.logo-header {
+    font-size: 1.5rem; /* Cỡ chữ cho logo */
+    font-weight: 700;
+    color: #e4e6eb;
+    text-decoration: none;
+    letter-spacing: 1px;
+}
+
+.user-info {
+    font-size: 1rem; /* Cỡ chữ cho phần thông tin người dùng */
+    color: #e4e6eb;
+    display: flex;
+    align-items: center;
+}
+
+.user-info span {
+    margin: 0 0.5rem;
+}
+
+/* Style cho các link Đăng nhập, Đăng ký, Đăng xuất */
+.header-link {
+    color: #e4e6eb;
+    text-decoration: underline; /* Bỏ gạch chân mặc định */
+    font-weight: 600;
+    padding: 0.5rem;
+    transition: background-color 0.2s ease-in-out;
+    border-radius: 4px;
+}
+
+/* Thêm hiệu ứng gạch chân khi di chuột vào */
+.header-link:hover {
+    color: #fff;
+    text-decoration: underline; /* Hiện gạch chân khi hover */
+    background-color: #3a3b3c;
+}
