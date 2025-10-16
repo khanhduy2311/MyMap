@@ -1,32 +1,33 @@
 extends ../views/layouts/default1.pug
 
-
 block main
   //- Kiểm tra nếu người dùng đã đăng nhập
   if user
     .container.mt-4
-      script 
+      script.
         window.location.href = "/userHome";
 
+  //- Nếu người dùng chưa đăng nhập, hiển thị giao diện trang chủ
   else
-    //- Phần 1: Nền trượt ảnh
+    //- Phần 1: Nền trượt ảnh (Khối này nằm bên trong "else")
     .fullscreen-bg-carousel
       #imageCarousel.carousel.slide.carousel-fade(data-bs-ride="carousel")
         .carousel-inner
-          .carousel-item(data-bs-interval="4000")
+          //- Chỉ có item đầu tiên được "active"
+          .carousel-item.active(data-bs-interval="4000")
             img.d-block.w-100(src="https://media.istockphoto.com/id/869761964/vi/anh/n%E1%BB%81n-t%E1%BA%A3ng-kinh-doanh-v%C3%A0-gi%C3%A1o-d%E1%BB%A5c.jpg?s=612x612&w=0&k=20&c=HuEc7PVrRNueBoAp7ZcKgRZQ4H5ZNZzXp6fCvJGxSMg=", alt="Background 1")
           .carousel-item(data-bs-interval="4000")
             img.d-block.w-100(src="https://media.istockphoto.com/id/2217700434/vi/anh/library-of-19th-century.jpg?s=612x612&w=0&k=20&c=w4_6Tj8jJfGy_LYw2sVXi86t4xAfbNWW1q__KxvDmbA=", alt="Background 2")
           .carousel-item(data-bs-interval="4000")
             img.d-block.w-100(src="https://media.istockphoto.com/id/2151138214/vi/anh/magnifying-glass-with-text-search-on-wood-cubes-find-the-answers-search-concept-wooden-cube.jpg?s=612x612&w=0&k=20&c=Pb2TmLv4h-ebu2S96e3nlZ6Un2KZWTgzCNqJTtI3MgQ=", alt="Background 3")
-          .carousel-item.active(data-bs-interval="4000")
+          .carousel-item(data-bs-interval="4000")
             img.d-block.w-100(src="https://media.istockphoto.com/id/2167740181/vi/anh/v%C3%B2ng-tay-l%E1%BA%B7ng-l%E1%BA%BD-c%E1%BB%A7a-th%C6%B0-vi%E1%BB%87n-nh%E1%BB%AFng-d%C3%A3y-s%C3%A1ch-x%E1%BA%BFp-h%C3%A0ng-tr%C3%AAn-k%E1%BB%87-g%E1%BB%97.jpg?s=612x612&w=0&k=20&c=EbJ-6Hd4OJ_rqrv7zl8_i6hd7rEBr1OcM0HzkUXME4E=", alt="Background 4")
           .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://i.pinimg.com/736x/0b/bb/47/0bbb47319e8b82843619b443de48a725.jpg", alt="Background 2")
-          //- SỬA LẠI INDENT Ở ĐÂY
+            img.d-block.w-100(src="https://i.pinimg.com/736x/0b/bb/47/0bbb47319e8b82843619b443de48a725.jpg", alt="Background 5")
           .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop", alt="Background 3")
+            img.d-block.w-100(src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop", alt="Background 6")
     
+    //- Phần 2: Nội dung chữ (Khối này cũng nằm bên trong "else")
     .content-overlay
       .hero-text
         h1 MindTree

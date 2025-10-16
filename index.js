@@ -38,8 +38,14 @@ async function startServer() {
     app.use(session({
       secret: 'my_session_secret',
       resave: false,
-      saveUninitialized: true,
-      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 ngày
+      saveUninitialized: false, // Sửa thành false
+      store: MongoStore.create({ // <-- THÊM KHỐI NÀY
+        client: client,
+        dbName: 'users_identity',
+        collectionName: 'sessions',
+        ttl: 30 * 24 * 60 * 60 // 30 ngày (tính bằng giây)
+      }),
+      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 ngày (tính bằng mili giây)
     }));
 
     // ====== Flash message ======
