@@ -31,12 +31,14 @@ exports.getLoginPage = (req, res) => {
 
 // Xử lý đăng ký
 exports.postRegister = async (req, res) => {
-  try {
-    const { name, email, password, username } = req.body;
-    const db = req.app.locals.db; // Sửa thành req.app.locals.db
+  try {
+    console.log("1. Bắt đầu xử lý đăng ký..."); // LOG 1
+    const { name, email, password, username } = req.body;
+    console.log("2. Dữ liệu nhận được:", req.body); // LOG 2
+    const db = req.app.locals.db; 
 
     // Kiểm tra các trường bắt buộc
-    if (!email || !password || !username) {
+    if (!name || !email || !password || !username) {
       req.flash('error_msg', 'Vui lòng điền đầy đủ thông tin!');
       return res.redirect('/register');
     }
@@ -54,6 +56,7 @@ exports.postRegister = async (req, res) => {
 
     // Tạo user mới
     const newUser = {
+      name: name.trim(),
       email: email.toLowerCase().trim(),
       username: username.toLowerCase().trim(),
       password: password, // Trong thực tế nên hash password
@@ -62,27 +65,25 @@ exports.postRegister = async (req, res) => {
       updatedAt: new Date()
     };
 
-    const result = await userModel.createUser(db, newUser);
+    const result = await userModel.createUser(db, newUser);
+    console.log("5. Tạo người dùng thành công, kết quả:", result); // LOG 5
 
-    // Tạo session
-    req.session.user = {
-      _id: result.insertedId,
-      name: newUser.name,
-      email: newUser.email,
-      username: newUser.username,
-      avatar: null
-    };
+    req.session.user = {
+      _id: result.insertedId,
+      name: newUser.name,
+      // ...
+    };
 
-    req.flash('success_msg', 'Đăng ký thành công!');
-    res.redirect('/userHome');
+    console.log("6. Đăng ký thành công! Chuẩn bị chuyển hướng..."); // LOG 6
+    req.flash('success_msg', 'Đăng ký thành công!');
+    res.redirect('/userHome');
 
-  } catch (err) {
-    console.error('❌ Lỗi đăng ký:', err);
-    req.flash('error_msg', 'Đã xảy ra lỗi khi đăng ký!');
-    res.redirect('/register');
-  }
+  } catch (err) {
+    console.error('❌ Lỗi đăng ký:', err); // Dòng này sẽ bắt lỗi
+    req.flash('error_msg', 'Đã xảy ra lỗi khi đăng ký!');
+    res.redirect('/register');
+  }
 };
-
 // Xử lý đăng nhập
 exports.postLogin = async (req, res) => {
   const { email, password } = req.body;

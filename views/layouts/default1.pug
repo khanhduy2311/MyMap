@@ -8,20 +8,16 @@ html(lang="vi")
     title #{pageTitle} | MindTree
 
   body(class=user ? '' : 'has-fullscreen-bg').d-flex.flex-column.min-vh-100
-    //- Header chung
+    //- Header chung, đã được sửa để hiển thị đúng theo trạng thái đăng nhập
     header.main-header
       .container
         .d-flex.justify-content-between.align-items-center
           a(href="/", class="logo-header") MINDTREE
           //- Logic hiển thị thông tin người dùng
           .user-info
-            if user
-              script.
-                window.location.href = '/userHome';
-            else
-              a(href="/register", class="header-link") Đăng Ký
-              span.separator |
-              a(href="/login", class="header-link") Đăng Nhập
+            a(href="/register", class="header-link") Đăng Ký
+            span.separator |
+            a(href="/login", class="header-link") Đăng Nhập
 
     //- Phần thân chính của trang
     main.main-content.flex-grow-1

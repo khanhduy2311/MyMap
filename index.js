@@ -4,7 +4,7 @@ const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');
 const { MongoClient } = require('mongodb');
-
+const MongoStore = require('connect-mongo');
 // Routes
 const mainRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document'); 
@@ -36,12 +36,10 @@ async function startServer() {
 
     // ====== Session ======
     app.use(session({
-      secret: 'my_session_secret', 
-      resave: false,               // Không lưu lại session nếu không có thay đổi
-      saveUninitialized: false,    // Không tạo session cho đến khi có dữ liệu
-      cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000 
-      }
+      secret: 'my_session_secret',
+      resave: false,
+      saveUninitialized: true,
+      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 ngày
     }));
 
     // ====== Flash message ======

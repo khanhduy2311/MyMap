@@ -1,10 +1,15 @@
 extends ../views/layouts/default1.pug
+
+
 block main
+  //- Kiểm tra nếu người dùng đã đăng nhập
   if user
-    script.
-        window.location.href = '/userHome';
+    .container.mt-4
+      script 
+        window.location.href = "/userHome";
+
   else
-    //- Giao diện khi chưa đăng nhập
+    //- Phần 1: Nền trượt ảnh
     .fullscreen-bg-carousel
       #imageCarousel.carousel.slide.carousel-fade(data-bs-ride="carousel")
         .carousel-inner
@@ -17,7 +22,11 @@ block main
           .carousel-item.active(data-bs-interval="4000")
             img.d-block.w-100(src="https://media.istockphoto.com/id/2167740181/vi/anh/v%C3%B2ng-tay-l%E1%BA%B7ng-l%E1%BA%BD-c%E1%BB%A7a-th%C6%B0-vi%E1%BB%87n-nh%E1%BB%AFng-d%C3%A3y-s%C3%A1ch-x%E1%BA%BFp-h%C3%A0ng-tr%C3%AAn-k%E1%BB%87-g%E1%BB%97.jpg?s=612x612&w=0&k=20&c=EbJ-6Hd4OJ_rqrv7zl8_i6hd7rEBr1OcM0HzkUXME4E=", alt="Background 4")
           .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://media.istockphoto.com/id/1437365584/vi/anh/th%C6%B0-vi%E1%BB%87n-hi%E1%BB%87n-%C4%91%E1%BA%A1i.jpg?s=612x612&w=0&k=20&c=qDhfethd4FloRAX2i4TNADhLySBS8GCezXI8qp3Xy-s=", alt="Background 5")
+            img.d-block.w-100(src="https://i.pinimg.com/736x/0b/bb/47/0bbb47319e8b82843619b443de48a725.jpg", alt="Background 2")
+          //- SỬA LẠI INDENT Ở ĐÂY
+          .carousel-item(data-bs-interval="4000")
+            img.d-block.w-100(src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop", alt="Background 3")
+    
     .content-overlay
       .hero-text
         h1 MindTree
