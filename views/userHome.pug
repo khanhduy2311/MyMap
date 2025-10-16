@@ -104,9 +104,9 @@ block main
             h4.mb-3
               i.fas.fa-file-upload.me-2
               | Tải lên tài liệu của bạn
-            form(action="/upload/document" method="POST" enctype="multipart/form-data")
+            // ✅ Form KHÔNG còn action để tránh chuyển trang
+            form#uploadDocForm(enctype="multipart/form-data")
               .mb-3
-                // ✅ Input phải KHÔNG có nội dung con
                 input#documentInput(type="file" name="documentFile" accept=".pdf,.docx" class="d-none" required)
                 .input-group
                   button.btn.btn-outline-secondary(type="button", onclick="document.getElementById('documentInput').click()")
@@ -118,6 +118,8 @@ block main
                 button.btn.btn-primary(type="submit")
                   i.fas.fa-upload.me-2
                   | Tải lên
+            // ✅ Nơi hiển thị kết quả tóm tắt
+            #uploadResult.mt-4
 
   // ===================== MODAL: CHỈNH SỬA THÔNG TIN =====================
   .modal.fade#editProfileModal(tabindex="-1")
@@ -195,6 +197,38 @@ block main
         } else {
           fileNameDocument.textContent = 'Chưa có file nào được chọn.';
           fileNameDocument.className = 'text-muted';
+        }
+      });
+
+      // === Upload và tóm tắt tài liệu ===
+      const uploadForm = document.getElementById('uploadDocForm');
+      const resultBox = document.getElementById('uploadResult');
+      uploadForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(uploadForm);
+        resultBox.innerHTML = '<p class="text-info mt-3"><i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý, vui lòng chờ...</p>';
+
+        try {
+          const res = await fetch('/upload/document', {
+            method: 'POST',
+            body: formData
+          });
+
+          const data = await res.json();
+
+          if (data.success) {
+            resultBox.innerHTML = `
+              <div class="alert alert-success mt-3">
+                <h5><i class="fas fa-check-circle me-2"></i>Kết quả tóm tắt:</h5>
+                <p style="white-space:pre-line">${data.summary}</p>
+              </div>
+            `;
+          } else {
+            resultBox.innerHTML = `<div class="alert alert-danger mt-3">${data.error}</div>`;
+          }
+        } catch (err) {
+          resultBox.innerHTML = `<div class="alert alert-danger mt-3">Lỗi khi tải lên: ${err.message}</div>`;
         }
       });
 
