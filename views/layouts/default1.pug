@@ -16,9 +16,8 @@ html(lang="vi")
           //- Logic hiển thị thông tin người dùng
           .user-info
             if user
-              span Chào, #{user.name}!
-              span.separator |
-              a(href="/logout", class="header-link") Đăng xuất
+              script.
+                window.location.href = '/userHome';
             else
               a(href="/register", class="header-link") Đăng Ký
               span.separator |
