@@ -36,10 +36,16 @@ async function startServer() {
 
     // ====== Session ======
     app.use(session({
-      secret: 'my_session_secret',
-      resave: false,
-      saveUninitialized: true,
-      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 ngày
+      secret: 'my_session_secret', // Chuỗi bí mật để ký cookie
+      resave: false,               // Không lưu lại session nếu không có thay đổi
+      saveUninitialized: false,    // Không tạo session cho đến khi có dữ liệu
+    
+      // THÊM HOẶC SỬA LẠI KHỐI NÀY
+      cookie: {
+        // Thời gian sống của cookie, tính bằng mili giây
+        // Ví dụ: 30 ngày
+        maxAge: 30 * 24 * 60 * 60 * 1000 
+      }
     }));
 
     // ====== Flash message ======

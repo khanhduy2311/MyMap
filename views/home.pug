@@ -1,11 +1,8 @@
 extends ../views/layouts/default1.pug
-
-
 block main
   if user
-    .container.mt-4
-      script 
-        window.location.href = "/userHome";
+    script 
+      window.location.href = "/userHome";
 
   else
     //- Giao diện khi chưa đăng nhập

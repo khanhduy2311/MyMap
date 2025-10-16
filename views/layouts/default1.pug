@@ -10,14 +10,19 @@ html(lang="vi")
   body(class=user ? '' : 'has-fullscreen-bg').d-flex.flex-column.min-vh-100
     //- Header chung
     header.main-header
-      //- SỬA LẠI: Toàn bộ nội dung phải nằm BÊN TRONG thẻ header
       .container
         .d-flex.justify-content-between.align-items-center
           a(href="/", class="logo-header") MINDMAP
+          //- Logic hiển thị thông tin người dùng
           .user-info
-            a(href="/register", class="header-link") Đăng Ký
-            span.separator |
-            a(href="/login", class="header-link") Đăng Nhập
+            if user
+              span Chào, #{user.name}!
+              span.separator |
+              a(href="/logout", class="header-link") Đăng xuất
+            else
+              a(href="/register", class="header-link") Đăng Ký
+              span.separator |
+              a(href="/login", class="header-link") Đăng Nhập
 
     //- Phần thân chính của trang
     main.main-content.flex-grow-1
@@ -31,17 +36,14 @@ html(lang="vi")
         if error_msg && error_msg.length > 0
           .container.mt-4
             .alert.alert-danger.alert-dismissible.fade.show(role="alert")
-              //- SỬA LẠI INDENT Ở ĐÂY
               = error_msg
               button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
         
-        //- Nội dung từ các trang con sẽ được chèn vào đây
         block main
 
     //- Footer chung
     footer.text-center.p-3.mt-auto
       .container
-        //- SỬA LẠI INDENT Ở ĐÂY
         span.text-white-50 &copy; 2025 Bản quyền thuộc về Nhóm 3 anh em siu nhân.
 
     //- Script
