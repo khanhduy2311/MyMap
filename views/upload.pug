@@ -3,40 +3,36 @@ html(lang="vi")
   head
     meta(charset="UTF-8")
     title Tóm tắt File (PDF, DOCX, TXT)
-    script(src="https://mozilla.github.io/pdf.js/build/pdf.mjs" type="module")
-    script(src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js")
-    style.
-      body { font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; background: #fafafa; }
-      h1 { color: #333; }
-      button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-      pre { background: #f5f5f5; padding: 15px; border-raddoctype html
-html(lang="vi")
-  head
-    meta(charset="UTF-8")
-    title Tóm tắt File (PDF, DOCX, TXT)
     
+    //- Thư viện đọc file
     script(src="https://mozilla.github.io/pdf.js/build/pdf.mjs" type="module")
     script(src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js")
 
+    //- CSS để trang trí
     style.
       body { font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; background: #fafafa; }
       h1 { color: #333; }
       button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-      pre { background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap; }
+      pre { background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; }
       #status { margin-top: 15px; font-weight: bold; }
 
   body
     h1 Upload Document để tóm tắt nội dung
     p Chọn một file (.pdf, .docx, .txt) để AI tóm tắt.
 
+    //- Input này bị ẩn đi, chúng ta sẽ bấm nó bằng nút button ở dưới
     input(type="file" id="file-input" accept=".pdf,.docx,.txt" style="display: none;")
+    
+    //- Nút này khi bấm sẽ kích hoạt input ở trên
     button(onclick="document.getElementById('file-input').click()") Chọn File
 
+    //- Khu vực hiển thị trạng thái và kết quả
     #status
     #summary-output
 
-    //- ĐẢM BẢO DÒNG NÀY CÓ DẤU CHẤM Ở CUỐI
+    //- SCRIPT XỬ LÝ CHÍNH
     script(type="module").
+      //- Import các thư viện AI
       import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1";
       import * as pdfjsLib from "https://mozilla.github.io/pdf.js/build/pdf.mjs";
       
@@ -95,7 +91,7 @@ html(lang="vi")
           
           status.textContent = 'Mô hình đã sẵn sàng. Bắt đầu xử lý văn bản...';
 
-          const chunkSize = 400;
+          const chunkSize = 400; // Số từ trong mỗi đoạn nhỏ
           const words = text.split(/\s+/);
           const chunks = [];
           for (let i = 0; i < words.length; i += chunkSize) {
@@ -104,14 +100,18 @@ html(lang="vi")
 
           let finalSummary = '';
           
-          for (let i = 0; i < chunks.length; i++) {
-            if (i >= 20) { 
-              finalSummary += "\n[...Nội dung quá dài, đã dừng tóm tắt tại đây...]";
-              break;
-            }
-            status.textContent = `Đang tóm tắt đoạn ${i + 1}/${chunks.length}...`;
+          // Giới hạn chỉ tóm tắt tối đa 20 đoạn để tránh treo trình duyệt
+          const maxChunks = 20;
+          const totalChunksToProcess = Math.min(chunks.length, maxChunks);
+          
+          for (let i = 0; i < totalChunksToProcess; i++) {
+            status.textContent = `Đang tóm tắt đoạn ${i + 1}/${totalChunksToProcess}...`;
             let output = await summarizer(chunks[i], { max_length: 100, min_length: 20 });
             finalSummary += output[0].summary_text + ' ';
+          }
+
+          if (chunks.length > maxChunks) {
+              finalSummary += "\n\n[...Nội dung quá dài, đã dừng tóm tắt tại đây...]";
           }
           
           status.textContent = 'Hoàn thành!';
@@ -129,129 +129,10 @@ html(lang="vi")
         const file = event.target.files[0];
         const status = document.getElementById('status');
         const summaryOutput = document.getElementById('summary-output');
-        summaryOutput.innerHTML = '';
-        if (file) {
-          try {
-            const textContent = await extractTextFromFile(file);
-            if (textContent && textContent.trim().length > 0) {
-              await summarize(textContent);
-            } else {
-              status.textContent = 'Lỗi: Không tìm thấy nội dung văn bản trong file.';
-            }
-          } catch (e) {
-            status.textContent = `Lỗi: ${e.message}`;
-            console.error(e);
-          }
-        }
-      });ius: 8px; white-space: pre-wrap; word-wrap: break-word; }
-      #status { margin-top: 15px; font-weight: bold; }
-
-  body
-    h1 Upload Document để tóm tắt nội dung
-    p Chọn một file (.pdf, .docx, .txt) để AI tóm tắt.
-
-    input(type="file" id="file-input" accept=".pdf,.docx,.txt" style="display: none;")
-    button(onclick="document.getElementById('file-input').click()") Chọn File
-
-    #status
-    #summary-output
-
-    script(type="module").
-      import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1";
-      import * as pdfjsLib from "https://mozilla.github.io/pdf.js/build/pdf.mjs";
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://mozilla.github.io/pdf.js/build/pdf.worker.mjs";
-
-      // --- Hàm đọc file (giữ nguyên) ---
-      async function extractTextFromFile(file) { /* ... giữ nguyên code hàm này ... */ }
-
-      // --- SỬA LẠI HÀM TÓM TẮT ĐỂ XỬ LÝ VĂN BẢN DÀI ---
-      async function summarize(text) {
-        const status = document.getElementById('status');
-        const summaryOutput = document.getElementById('summary-output');
         
-        try {
-          status.textContent = 'Đang tải mô hình AI (chỉ lần đầu)...';
-          let summarizer = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6');
-          
-          status.textContent = 'Mô hình đã sẵn sàng. Bắt đầu xử lý văn bản...';
+        // Xóa kết quả tóm tắt cũ
+        summaryOutput.innerHTML = '';
 
-          // 1. CHIA NHỎ văn bản thành các đoạn (chunks)
-          const chunkSize = 500; // Số từ mỗi đoạn
-          const words = text.split(/\s+/);
-          const chunks = [];
-          for (let i = 0; i < words.length; i += chunkSize) {
-            chunks.push(words.slice(i, i + chunkSize).join(' '));
-          }
-
-          let finalSummary = '';
-          
-          // 2. TÓM TẮT TỪNG ĐOẠN
-          for (let i = 0; i < chunks.length; i++) {
-            status.textContent = `Đang tóm tắt đoạn ${i + 1}/${chunks.length}...`;
-            let output = await summarizer(chunks[i], {
-              max_length: 100, // Tóm tắt mỗi đoạn thành tối đa 100 token
-              min_length: 20
-            });
-            finalSummary += output[0].summary_text + ' ';
-          }
-          
-          // 3. HIỂN THỊ KẾT QUẢ TỔNG HỢP
-          status.textContent = 'Hoàn thành!';
-          summaryOutput.innerHTML = `<hr><h2>Kết quả tóm tắt:</h2><pre>${finalSummary.trim()}</pre>`;
-
-        } catch (error) {
-          status.textContent = `Lỗi tóm tắt: ${error.message}`;
-          console.error(error);
-        }
-      }
-
-      // --- Bắt sự kiện (giữ nguyên) ---
-      const fileInput = document.getElementById('file-input');
-      fileInput.addEventListener('change', async (event) => { /* ... giữ nguyên code hàm này ... */ });
-
-      // Dán lại code đầy đủ của 2 hàm giữ nguyên ở đây để chắc chắn
-      async function extractTextFromFile(file) {
-        const status = document.getElementById('status');
-        status.textContent = `Đang đọc file: ${file.name}...`;
-        const extension = file.name.split('.').pop().toLowerCase();
-        const reader = new FileReader();
-        return new Promise((resolve, reject) => {
-          reader.onload = async (event) => {
-            const arrayBuffer = event.target.result;
-            try {
-              if (extension === 'txt') {
-                const textReader = new FileReader();
-                textReader.onload = (e) => resolve(e.target.result);
-                textReader.readAsText(file);
-              } else if (extension === 'docx') {
-                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-                resolve(result.value);
-              } else if (extension === 'pdf') {
-                const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-                let allText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                  const page = await pdf.getPage(i);
-                  const textContent = await page.getTextContent();
-                  allText += textContent.items.map(item => item.str).join(' ') + '\n';
-                }
-                resolve(allText);
-              } else {
-                reject(new Error('Định dạng file không được hỗ trợ.'));
-              }
-            } catch (err) {
-              reject(err);
-            }
-          };
-          reader.onerror = (error) => reject(error);
-          reader.readAsArrayBuffer(file);
-        });
-      }
-      
-      fileInput.addEventListener('change', async (event) => {
-        const file = event.target.files[0];
-        const status = document.getElementById('status');
-        const summaryOutput = document.getElementById('summary-output');
-        summaryOutput.innerHTML = ''; // Xóa kết quả cũ
         if (file) {
           try {
             const textContent = await extractTextFromFile(file);
