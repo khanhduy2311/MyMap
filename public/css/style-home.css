@@ -72,8 +72,9 @@ body.has-fullscreen-bg footer {
     font-size: 5rem;
     font-weight: 700;
 }
-
 .hero-text p.lead {
+    font-weight: bold;
+    font-style: italic;
     font-size: 1.75rem;
 }
 

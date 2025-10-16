@@ -36,7 +36,7 @@ exports.postRegister = async (req, res) => {
     const db = req.app.locals.db; // Sửa thành req.app.locals.db
 
     // Kiểm tra các trường bắt buộc
-    if (!name || !email || !password || !username) {
+    if (!email || !password || !username) {
       req.flash('error_msg', 'Vui lòng điền đầy đủ thông tin!');
       return res.redirect('/register');
     }
@@ -54,7 +54,6 @@ exports.postRegister = async (req, res) => {
 
     // Tạo user mới
     const newUser = {
-      name: name.trim(),
       email: email.toLowerCase().trim(),
       username: username.toLowerCase().trim(),
       password: password, // Trong thực tế nên hash password
@@ -112,7 +111,6 @@ exports.postLogin = async (req, res) => {
     // Tạo session
     req.session.user = {
       _id: user._id,
-      name: user.name,
       email: user.email,
       username: user.username,
       avatar: user.avatar || null
