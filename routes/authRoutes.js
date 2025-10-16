@@ -6,6 +6,7 @@ const router = express.Router();
 const uploadAvatarMiddleware = require('../middlewares/avatarUpload.js');
 const authController = require('../controllers/authController.js');
 const authMiddleware = require('../middlewares/middlewares.js');
+const userController = require('../controllers/authController.js');
 
 // === ROUTE TRANG CHỦ ===
 router.get('/', (req, res) => {

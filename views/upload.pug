@@ -4,41 +4,71 @@ html(lang="vi")
     meta(charset="UTF-8")
     title Tóm tắt File (PDF, DOCX, TXT)
     
-    //- Thư viện đọc file
+    //- Thư viện đọc file PDF và DOCX
     script(src="https://mozilla.github.io/pdf.js/build/pdf.mjs" type="module")
     script(src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js")
 
-    //- CSS để trang trí
+    //- CSS trang trí
     style.
-      body { font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; background: #fafafa; }
-      h1 { color: #333; }
-      button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-      pre { background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; }
-      #status { margin-top: 15px; font-weight: bold; }
+      body {
+        font-family: Arial, sans-serif;
+        padding: 30px;
+        max-width: 800px;
+        margin: auto;
+        background: #fafafa;
+      }
+      h1 {
+        color: #333;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      pre {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      #status {
+        margin-top: 15px;
+        font-weight: bold;
+      }
 
   body
     h1 Upload Document để tóm tắt nội dung
     p Chọn một file (.pdf, .docx, .txt) để AI tóm tắt.
 
-    //- Input này bị ẩn đi, chúng ta sẽ bấm nó bằng nút button ở dưới
-    input(type="file" id="file-input" accept=".pdf,.docx,.txt" style="display: none;")
+    //- Input file ẩn đi
+    input(type="file" id="file-input" accept=".pdf,.docx,.txt" style="display:none;")
     
-    //- Nút này khi bấm sẽ kích hoạt input ở trên
+    //- Nút bấm chọn file
     button(onclick="document.getElementById('file-input').click()") Chọn File
 
-    //- Khu vực hiển thị trạng thái và kết quả
+    //- Hiển thị trạng thái và kết quả
     #status
     #summary-output
 
-    //- SCRIPT XỬ LÝ CHÍNH
+    //- Script chính
     script(type="module").
-      //- Import các thư viện AI
-      import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1";
+      import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1";
       import * as pdfjsLib from "https://mozilla.github.io/pdf.js/build/pdf.mjs";
-      
+
       pdfjsLib.GlobalWorkerOptions.workerSrc = "https://mozilla.github.io/pdf.js/build/pdf.worker.mjs";
 
-      // --- HÀM 1: Đọc file và trích xuất text ---
+      // ⚙️ Cấu hình để luôn tải model từ Hugging Face thay vì localhost
+      env.allowLocalModels = false;
+
+      // --- HÀM: Đọc nội dung file ---
       async function extractTextFromFile(file) {
         const status = document.getElementById('status');
         status.textContent = `Đang đọc file: ${file.name}...`;
@@ -55,7 +85,7 @@ html(lang="vi")
                 textReader.readAsText(file, 'UTF-8');
 
               } else if (extension === 'docx') {
-                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                const result = await mammoth.extractRawText({ arrayBuffer });
                 resolve(result.value);
 
               } else if (extension === 'pdf') {
@@ -80,18 +110,17 @@ html(lang="vi")
         });
       }
 
-      // --- HÀM 2: Tóm tắt văn bản (có chia nhỏ) ---
+      // --- HÀM: Tóm tắt nội dung ---
       async function summarize(text) {
         const status = document.getElementById('status');
         const summaryOutput = document.getElementById('summary-output');
-        
+
         try {
           status.textContent = 'Đang tải mô hình AI (chỉ lần đầu)...';
-          let summarizer = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6');
-          
-          status.textContent = 'Mô hình đã sẵn sàng. Bắt đầu xử lý văn bản...';
+          const summarizer = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6');
+          status.textContent = '✅ Mô hình đã sẵn sàng. Đang tóm tắt...';
 
-          const chunkSize = 400; // Số từ trong mỗi đoạn nhỏ
+          const chunkSize = 400; // mỗi đoạn 400 từ
           const words = text.split(/\s+/);
           const chunks = [];
           for (let i = 0; i < words.length; i += chunkSize) {
@@ -99,50 +128,45 @@ html(lang="vi")
           }
 
           let finalSummary = '';
-          
-          // Giới hạn chỉ tóm tắt tối đa 20 đoạn để tránh treo trình duyệt
-          const maxChunks = 20;
-          const totalChunksToProcess = Math.min(chunks.length, maxChunks);
-          
-          for (let i = 0; i < totalChunksToProcess; i++) {
-            status.textContent = `Đang tóm tắt đoạn ${i + 1}/${totalChunksToProcess}...`;
-            let output = await summarizer(chunks[i], { max_length: 100, min_length: 20 });
+          const maxChunks = 20; // tránh treo tab
+          const totalChunks = Math.min(chunks.length, maxChunks);
+
+          for (let i = 0; i < totalChunks; i++) {
+            status.textContent = `🧠 Đang tóm tắt đoạn ${i + 1}/${totalChunks}...`;
+            const output = await summarizer(chunks[i], { max_length: 100, min_length: 20 });
             finalSummary += output[0].summary_text + ' ';
           }
 
           if (chunks.length > maxChunks) {
-              finalSummary += "\n\n[...Nội dung quá dài, đã dừng tóm tắt tại đây...]";
+            finalSummary += "\n\n[⚠️ Nội dung quá dài, chỉ tóm tắt phần đầu.]";
           }
-          
-          status.textContent = 'Hoàn thành!';
+
+          status.textContent = '✅ Hoàn tất!';
           summaryOutput.innerHTML = `<hr><h2>Kết quả tóm tắt:</h2><pre>${finalSummary.trim()}</pre>`;
 
         } catch (error) {
-          status.textContent = `Lỗi tóm tắt: ${error.message}`;
           console.error(error);
+          status.textContent = `❌ Lỗi tóm tắt: ${error.message}`;
         }
       }
 
-      // --- HÀM 3: Bắt sự kiện khi người dùng chọn file ---
-      const fileInput = document.getElementById('file-input');
-      fileInput.addEventListener('change', async (event) => {
+      // --- HÀM: Khi người dùng chọn file ---
+      document.getElementById('file-input').addEventListener('change', async (event) => {
         const file = event.target.files[0];
         const status = document.getElementById('status');
         const summaryOutput = document.getElementById('summary-output');
-        
-        // Xóa kết quả tóm tắt cũ
         summaryOutput.innerHTML = '';
 
         if (file) {
           try {
-            const textContent = await extractTextFromFile(file);
-            if (textContent && textContent.trim().length > 0) {
-              await summarize(textContent);
+            const text = await extractTextFromFile(file);
+            if (text && text.trim().length > 0) {
+              await summarize(text);
             } else {
-              status.textContent = 'Lỗi: Không tìm thấy nội dung văn bản trong file.';
+              status.textContent = '❌ Không tìm thấy nội dung văn bản trong file.';
             }
           } catch (e) {
-            status.textContent = `Lỗi: ${e.message}`;
+            status.textContent = `❌ Lỗi: ${e.message}`;
             console.error(e);
           }
         }

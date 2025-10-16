@@ -5,9 +5,11 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const { MongoClient } = require('mongodb');
 const MongoStore = require('connect-mongo');
-// Routes
+
+// ====== Routes ======
 const mainRoutes = require('./routes/authRoutes.js');
-const documentRoutes = require('./routes/document'); 
+const documentRoutes = require('./routes/document');
+const userRoutes = require('./routes/user'); // ✅ thêm dòng này để gọi route user/update
 
 const uri = process.env.MONGO_URI;
 if (!uri) {
@@ -28,27 +30,30 @@ async function startServer() {
     const PORT = process.env.PORT || 3000;
     app.locals.db = db;
 
-    // ====== Cấu hình view engine ======
+    // ====== View Engine ======
     app.set('view engine', 'pug');
     app.set('views', 'views');
     app.use(express.static('public'));
-    app.use(express.urlencoded({ extended: false }));
+
+    // ====== Middleware parse body ======
+    app.use(express.json()); // ✅ Bắt buộc để đọc dữ liệu JSON từ fetch()
+    app.use(express.urlencoded({ extended: false })); // cho form thông thường
 
     // ====== Session ======
     app.use(session({
       secret: 'my_session_secret',
       resave: false,
-      saveUninitialized: false, // Sửa thành false
-      store: MongoStore.create({ // <-- THÊM KHỐI NÀY
+      saveUninitialized: false,
+      store: MongoStore.create({
         client: client,
         dbName: 'users_identity',
         collectionName: 'sessions',
-        ttl: 30 * 24 * 60 * 60 // 30 ngày (tính bằng giây)
+        ttl: 30 * 24 * 60 * 60 // 30 ngày
       }),
-      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 ngày (tính bằng mili giây)
+      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 ngày
     }));
 
-    // ====== Flash message ======
+    // ====== Flash Message ======
     app.use(flash());
 
     // ====== Middleware gắn session, flash, db ======
@@ -61,15 +66,16 @@ async function startServer() {
     });
 
     // ====== Routes ======
-    app.use('/', mainRoutes);               // Routes chính (login, register, home, v.v.)
-    app.use('/upload', documentRoutes);     // Routes upload tài liệu (PDF/DOCX)
+    app.use('/user', userRoutes);           // ✅ thêm route user trước main route
+    app.use('/', mainRoutes);               // route chính (login, register,...)
+    app.use('/upload', documentRoutes);     // route upload tài liệu
 
     // ====== 404 fallback ======
     app.use((req, res) => {
       res.status(404).send('404 - Không tìm thấy trang');
     });
 
-    // ====== Khởi động server ======
+    // ====== Start Server ======
     app.listen(PORT, () => console.log(`🚀 Server is listening on port ${PORT}`));
 
   } catch (error) {

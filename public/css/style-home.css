@@ -148,3 +148,13 @@ body {
     text-decoration: underline; /* Hiện gạch chân khi hover */
     background-color: #3a3b3c;
 }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  margin-top: 0;
+  padding-top: 0;
+}

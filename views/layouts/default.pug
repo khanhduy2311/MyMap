@@ -1,7 +1,7 @@
 doctype html
 html(lang="vi")
   head
-    //- Các thẻ meta bắt buộc
+    //- Meta
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
 
@@ -11,46 +11,88 @@ html(lang="vi")
       rel="stylesheet"
     )
 
-    //- Link tới file CSS tùy chỉnh của bạn (nếu có)
-    link(rel="stylesheet", href="/admin/css/style.css")
+    //- Link tới CSS tùy chỉnh trong public/css
+    link(rel="stylesheet", href="/css/style-home.css")
 
-    //- Tiêu đề trang, có thể thay đổi ở mỗi trang con
-    title #{pageTitle} | Admin
+    //- Font Awesome (icon dropdown)
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css")
+
+    //- Tiêu đề trang
+    title #{pageTitle} | MindTree
 
   body.d-flex.flex-column.min-vh-100
-    //- Header chung
+    //- HEADER
     header.bg-dark.text-white.p-3
       .container
         .d-flex.justify-content-between.align-items-center
+          //- Logo
           a(href="/userHome", class="h4 text-white text-decoration-none") MINDTREE
-          //- Hiển thị thông tin người dùng nếu đã đăng nhập
-          if user
-            div
-              span Chào, #{user.name}! |&nbsp;
-              a(href="/logout", class="text-white") Đăng xuất
 
-    //- Phần thân chính của trang
-    main.main-content.flex-grow-1
-      .container.mt-4
+          //- User Section
+          if user
+            .dropdown
+              button.btn.btn-dark.dropdown-toggle.d-flex.align-items-center(type="button", id="userDropdown", data-bs-toggle="dropdown", aria-expanded="false")
+                img.rounded-circle.me-2(
+                  src=user.avatar || '/images/default-avatar.png',
+                  alt="avatar",
+                  style="width:40px;height:40px;object-fit:cover;border:2px solid #ccc;"
+                )
+                span #{user.name || user.username}
+              ul.dropdown-menu.dropdown-menu-end(aria-labelledby="userDropdown")
+                li
+                  a.dropdown-item(href="/userHome")
+                    i.fas.fa-user.me-2
+                    | Trang cá nhân
+                li
+                  a.dropdown-item(href="/profile/edit")
+                    i.fas.fa-cog.me-2
+                    | Cài đặt tài khoản
+                li
+                  a.dropdown-item(href="/upload/document")
+                    i.fas.fa-file-upload.me-2
+                    | Upload tài liệu
+                li
+                  hr.dropdown-divider
+                li
+                  a.dropdown-item.text-danger(href="/logout")
+                    i.fas.fa-right-from-bracket.me-2
+                    | Đăng xuất
+          else
+            div
+              a(href="/login", class="text-white text-decoration-none me-3") Đăng nhập
+              a(href="/register", class="text-white text-decoration-none") Đăng ký
+
+    //- MAIN CONTENT
+    main.main-content.flex-grow-1.mt-0.pt-0
+      .container
         if success_msg && success_msg.length > 0
           .alert.alert-success.alert-dismissible.fade.show(role="alert")
             = success_msg
             button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
-              
+
         if error_msg && error_msg.length > 0
           .alert.alert-danger.alert-dismissible.fade.show(role="alert")
             = error_msg
             button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
-        
+
         block main
 
-    //- Footer chung
+    //- FOOTER
     footer.bg-light.text-center.p-3.mt-auto
       .container
         span &copy; 2025 Bản quyền thuộc về Nhóm 3 anh em siu nhân.
 
-    //- Bootstrap JS Bundle (đã bao gồm Popper.js)
+    //- Bootstrap JS
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
-    
-    //- Link tới file JS tùy chỉnh của bạn (nếu có)
-    script(src="/admin/js/script.js")
+
+    //- CSS thêm hiệu ứng dropdown đẹp hơn
+    style.
+      .dropdown-menu {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn {
+        from {opacity: 0; transform: translateY(-5px);}
+        to {opacity: 1; transform: translateY(0);}
+      }

@@ -1,6 +1,5 @@
 const userModel = require('../models/userModel.js');
 const { ObjectId } = require('mongodb'); 
-
 // Hiển thị trang upload file
 exports.getUploadPage = (req, res) => {
     res.render('upload', { 
@@ -38,7 +37,7 @@ exports.postRegister = async (req, res) => {
     const db = req.app.locals.db; 
 
     // Kiểm tra các trường bắt buộc
-    if (!name || !email || !password || !username) {
+    if (!email || !password || !username) {
       req.flash('error_msg', 'Vui lòng điền đầy đủ thông tin!');
       return res.redirect('/register');
     }
@@ -56,7 +55,6 @@ exports.postRegister = async (req, res) => {
 
     // Tạo user mới
     const newUser = {
-      name: name.trim(),
       email: email.toLowerCase().trim(),
       username: username.toLowerCase().trim(),
       password: password, // Trong thực tế nên hash password
@@ -69,10 +67,12 @@ exports.postRegister = async (req, res) => {
     console.log("5. Tạo người dùng thành công, kết quả:", result); // LOG 5
 
     req.session.user = {
-      _id: result.insertedId,
-      name: newUser.name,
-      // ...
-    };
+  _id: result.insertedId,
+  name: newUser.name || newUser.username,
+  username: newUser.username,
+  email: newUser.email
+};
+
 
     console.log("6. Đăng ký thành công! Chuẩn bị chuyển hướng..."); // LOG 6
     req.flash('success_msg', 'Đăng ký thành công!');
@@ -224,5 +224,51 @@ exports.postAvatarUpload = async (req, res) => {
     }
     
     res.redirect('/userHome');
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { userId, name, username, bio } = req.body;
+
+    if (!userId) {
+      return res.json({ success: false, message: "Thiếu userId" });
+    }
+
+    const db = req.app.locals.db;
+
+    // Kiểm tra username trùng (ngoại trừ user hiện tại)
+    if (username) {
+      const existingUser = await db.collection('users').findOne({
+        username: username,
+        _id: { $ne: new ObjectId(userId) }
+      });
+      if (existingUser) {
+        return res.json({ success: false, message: "Tên người dùng đã tồn tại!" });
+      }
+    }
+
+    // Cập nhật thông tin
+    const result = await db.collection('users').updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { name, username, bio } }
+    );
+
+    if (result.modifiedCount === 1) {
+      // Cập nhật session để phản ánh thay đổi ngay
+      if (req.session.user) {
+        req.session.user.name = name;
+        req.session.user.username = username;
+        req.session.user.bio = bio;
+        await req.session.save();
+      }
+
+      return res.json({ success: true, message: "Cập nhật thành công" });
+    } else {
+      return res.json({ success: false, message: "Không tìm thấy người dùng hoặc không có thay đổi" });
+    }
+  } catch (err) {
+    console.error("❌ Lỗi khi cập nhật thông tin:", err);
+    res.json({ success: false, message: "Lỗi máy chủ: " + err.message });
   }
 };

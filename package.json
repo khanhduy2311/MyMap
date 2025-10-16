@@ -12,6 +12,7 @@
   "dependencies": {
     "@google/genai": "^1.25.0",
     "@google/generative-ai": "^0.24.1",
+    "@huggingface/transformers": "^3.7.5",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
