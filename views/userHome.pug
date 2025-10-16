@@ -2,20 +2,20 @@ extends ../views/layouts/default.pug
 
 block main
   .container.mt-4
-    //- ===================== FLASH MESSAGE =====================
+    // ===================== FLASH MESSAGE =====================
     if error_msg && error_msg.length > 0
       .alert.alert-danger.alert-dismissible.fade.show(role="alert")
-        strong Lỗi! 
+        strong Lỗi!
         | #{error_msg}
         button.btn-close(type="button", data-bs-dismiss="alert")
 
     if success_msg && success_msg.length > 0
       .alert.alert-success.alert-dismissible.fade.show(role="alert")
-        strong Thành công! 
+        strong Thành công!
         | #{success_msg}
         button.btn-close(type="button", data-bs-dismiss="alert")
 
-    //- ===================== HEADER =====================
+    // ===================== HEADER =====================
     .d-flex.justify-content-between.align-items-center.mb-4
       h1.text-primary
         i.fas.fa-user-circle.me-2
@@ -24,7 +24,7 @@ block main
         i.fas.fa-plus.me-2
         | Tạo Mindmap mới
 
-    //- ===================== NAVIGATION TABS =====================
+    // ===================== NAVIGATION TABS =====================
     ul.nav.nav-tabs(id="profileTabs", role="tablist")
       li.nav-item(role="presentation")
         button#info-tab.nav-link.active(data-bs-toggle="tab", data-bs-target="#info", type="button", role="tab") Thông tin cá nhân
@@ -35,10 +35,10 @@ block main
       li.nav-item(role="presentation")
         button#doc-tab.nav-link(data-bs-toggle="tab", data-bs-target="#document", type="button", role="tab") Upload Tài Liệu
 
-    //- ===================== TAB CONTENT =====================
+    // ===================== TAB CONTENT =====================
     .tab-content#profileTabsContent
 
-      //- ===================== TAB 1: THÔNG TIN CÁ NHÂN =====================
+      // ===================== TAB 1: THÔNG TIN CÁ NHÂN =====================
       #info.tab-pane.fade.show.active(role="tabpanel")
         .card.border-top-0
           .card-body.text-center
@@ -47,7 +47,7 @@ block main
             else
               img(src="/images/default-avatar.png", alt="Default Avatar", class="rounded-circle shadow mb-3", style="width:150px;height:150px;object-fit:cover;border:3px solid #ddd;cursor:pointer;", onclick="openEditProfileModal()")
             h3 #{user.name || 'Chưa có tên'}
-            p.text-muted 
+            p.text-muted
               i.fas.fa-user.me-2
               | @#{user.username || 'Chưa có username'}
             p.text-muted
@@ -61,7 +61,7 @@ block main
               i.fas.fa-edit.me-1
               | Chỉnh sửa thông tin
 
-      //- ===================== TAB 2: MINDMAP CỦA TÔI =====================
+      // ===================== TAB 2: MINDMAP CỦA TÔI =====================
       #mindmaps.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body
@@ -76,10 +76,10 @@ block main
             else
               .alert.alert-info.text-center
                 i.fas.fa-info-circle.me-2
-                | Chưa có mindmap nào. 
+                | Chưa có mindmap nào.
                 a.alert-link(href="/mindmaps/create") Tạo mindmap đầu tiên?
 
-      //- ===================== TAB 3: THAY ĐỔI AVATAR =====================
+      // ===================== TAB 3: THAY ĐỔI AVATAR =====================
       #avatar.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body.text-center
@@ -97,7 +97,7 @@ block main
                 i.fas.fa-save.me-2
                 | Lưu ảnh đại diện
 
-      //- ===================== TAB 4: UPLOAD TÀI LIỆU =====================
+      // ===================== TAB 4: UPLOAD TÀI LIỆU =====================
       #document.tab-pane.fade(role="tabpanel")
         .card.border-top-0
           .card-body
@@ -106,6 +106,7 @@ block main
               | Tải lên tài liệu của bạn
             form(action="/upload/document" method="POST" enctype="multipart/form-data")
               .mb-3
+                // ✅ Input phải KHÔNG có nội dung con
                 input#documentInput(type="file" name="documentFile" accept=".pdf,.docx" class="d-none" required)
                 .input-group
                   button.btn.btn-outline-secondary(type="button", onclick="document.getElementById('documentInput').click()")
@@ -118,7 +119,7 @@ block main
                   i.fas.fa-upload.me-2
                   | Tải lên
 
-  //- ===================== MODAL: CHỈNH SỬA THÔNG TIN =====================
+  // ===================== MODAL: CHỈNH SỬA THÔNG TIN =====================
   .modal.fade#editProfileModal(tabindex="-1")
     .modal-dialog
       .modal-content
@@ -140,7 +141,7 @@ block main
           button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Hủy
           button.btn.btn-primary(type="submit", form="editProfileForm") Lưu thay đổi
 
-  //- ===================== JAVASCRIPT =====================
+  // ===================== JAVASCRIPT =====================
   script.
     document.addEventListener('DOMContentLoaded', () => {
       // === Avatar Preview ===
@@ -209,13 +210,13 @@ block main
         const name = document.getElementById('editName').value.trim();
         const username = document.getElementById('editUsername').value.trim();
         const email = document.getElementById('editEmail').value.trim();
-        const userId = "#{user._id}"; // ✅ Lấy giá trị thực từ Pug
+        const userId = "#{user._id}";
 
         try {
           const res = await fetch('/user/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, name, username, email }) // ✅ Gửi dữ liệu đúng
+            body: JSON.stringify({ userId, name, username, email })
           });
           const data = await res.json();
           if (data.success) {

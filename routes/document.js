@@ -6,15 +6,16 @@ const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// THÊM ĐOẠN NÀY VÀO: Route để hiển thị trang upload
+// ===== Hiển thị trang upload =====
 router.get('/', (req, res) => {
-    res.render('upload', {
-        pageTitle: 'Upload & Tóm tắt',
-        summary: null // Ban đầu chưa có kết quả tóm tắt
-    });
+  res.render('upload', {
+    pageTitle: 'Upload & Tóm tắt',
+    summary: null,
+    error: null
+  });
 });
 
-// Cấu hình Multer để nhận file
+// ===== Cấu hình Multer =====
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
@@ -27,71 +28,77 @@ const upload = multer({
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Chỉ chấp nhận file PDF, DOCX, hoặc TXT!'));
+      cb(new Error('Chỉ chấp nhận file PDF, DOCX hoặc TXT!'));
     }
   }
 });
 
-// Cấu hình Gemini AI
+// ===== Cấu hình Gemini AI =====
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Route để upload và tóm tắt
-// Thay thế toàn bộ hàm này trong file routes/document.js
-
+// ===== Route upload và tóm tắt =====
 router.post('/document', upload.single('documentFile'), async (req, res) => {
   try {
+    // Không có file
     if (!req.file) {
-      req.flash('error_msg', 'Vui lòng chọn một file để tải lên.');
-      return res.redirect('/upload');
+      return res.render('upload', {
+        pageTitle: 'Upload & Tóm tắt',
+        summary: null,
+        error: '❌ Vui lòng chọn một file để tải lên.'
+      });
     }
 
-    let extractedText = '';
     const buffer = req.file.buffer;
     const mimetype = req.file.mimetype;
+    let extractedText = '';
 
+    // === Đọc file tùy loại ===
     if (mimetype === 'text/plain') {
       extractedText = buffer.toString('utf8');
     } else if (mimetype === 'application/pdf') {
       const data = await pdf(buffer);
       extractedText = data.text;
     } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      const result = await mammoth.extractRawText({ buffer: buffer });
+      const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
     }
 
-    if (!extractedText) {
-        req.flash('error_msg', 'Không thể đọc nội dung từ file này.');
-        return res.redirect('/upload');
+    if (!extractedText || extractedText.trim().length === 0) {
+      return res.render('upload', {
+        pageTitle: 'Upload & Tóm tắt',
+        summary: null,
+        error: '⚠️ Không thể đọc nội dung từ file này.'
+      });
     }
 
-    // === SỬA Ở ĐÂY ===
-    // Sử dụng tên model mới, nhanh và hiệu quả hơn
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
-    
-    const prompt = `Tóm tắt nội dung sau đây thành một đoạn văn ngắn gọn, dễ hiểu: "${extractedText.substring(0, 8000)}"`;
-    
+    // === Gọi Gemini AI để tóm tắt ===
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // model nhanh và mới nhất
+
+    const prompt = `
+      Hãy tóm tắt nội dung dưới đây thành 1 đoạn văn ngắn gọn, dễ hiểu bằng tiếng Việt:
+      "${extractedText.substring(0, 8000)}"
+    `;
+
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const summary = response.text();
+    const summary = result.response.text();
 
+    // === Render lại trang upload với kết quả ===
     res.render('upload', {
-        pageTitle: 'Upload & Tóm tắt',
-        summary: summary
+      pageTitle: 'Upload & Tóm tắt',
+      summary,
+      error: null
     });
 
- // Thay thế khối catch (error) { ... } trong file routes/document.js
+  } catch (error) {
+    console.error('❌ Lỗi khi xử lý tài liệu:', error);
 
-} catch (error) {
-    console.error('❌ Lỗi khi xử lý tài liệu:', error.message);
-    
-    // THAY VÌ CHUYỂN HƯỚNG, RENDER LẠI TRANG UPLOAD VỚI THÔNG BÁO LỖI
+    // Render lại với lỗi
     res.render('upload', {
-        pageTitle: 'Lỗi Tóm tắt',
-        summary: null, // Không có tóm tắt khi bị lỗi
-        // Truyền biến lỗi để hiển thị ra cho người dùng
-        error: 'Đã xảy ra lỗi khi tóm tắt file: ' + error.message
+      pageTitle: 'Lỗi Tóm tắt',
+      summary: null,
+      error: 'Đã xảy ra lỗi khi tóm tắt file: ' + error.message
     });
-}
+  }
 });
 
 module.exports = router;
