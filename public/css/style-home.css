@@ -30,7 +30,7 @@
 
 /* Hiệu ứng làm mờ (blur) cho ảnh nền */
 .fullscreen-bg-carousel .carousel-inner img {
-    filter: blur(5px); 
+    filter: blur(4px); 
     transform: scale(1.2);
 }
 
