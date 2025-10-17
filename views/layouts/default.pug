@@ -37,11 +37,6 @@ html(lang="vi")
                     i.fas.fa-user.me-2
                     | Hồ sơ của tôi
                 li
-                  //- ✅ ĐÃ SỬA: Cập nhật link trỏ đến trang upload mới
-                  a.dropdown-item(href="/upload/page")
-                    i.fas.fa-file-upload.me-2
-                    | Upload tài liệu
-                li
                   hr.dropdown-divider
                 li
                   a.dropdown-item.text-danger(href="/logout")
@@ -66,7 +61,7 @@ html(lang="vi")
 
         //- Block for page-specific content
         block main
-
+        block scripts
     //- FOOTER
     footer.bg-light.text-center.p-3.mt-auto
       .container

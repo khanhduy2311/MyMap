@@ -7,23 +7,103 @@ block main
         .card
           .card-body
             h2.card-title.text-center.mb-3 Tải lên tài liệu để tóm tắt
-            p.text-center.text-muted.mb-4 Chọn file PDF hoặc DOCX. AI sẽ đọc và tóm tắt nội dung cho bạn.
+            p.text-center.text-muted.mb-4 Chọn file PDF, DOCX, hoặc TXT. AI sẽ đọc và tóm tắt nội dung cho bạn.
             
-            //- Form Upload
-            form(action="/upload/summarize" method="POST" enctype="multipart/form-data")
+            //- Form Upload - Đã được sửa lại để dùng JS
+            form#uploadForm
               .mb-3
                 label.form-label(for="documentFile") Chọn tài liệu
-                input.form-control(type="file" name="documentFile" id="documentFile" accept=".pdf,.docx" required)
+                input.form-control(type="file" name="documentFile" id="documentInput" accept=".pdf,.docx,.txt" required)
               
               .d-grid
                 button.btn.btn-primary.btn-lg(type="submit")
                   i.fas.fa-robot.me-2
                   | Bắt đầu tóm tắt
+            
+            //- Khu vực hiển thị lỗi
+            #errorArea.alert.alert-danger.mt-3(style="display:none;")
 
-        //- Khu vực hiển thị kết quả
-        if summary
-          .card.mt-5
-            .card-header
-              h4.mb-0 Kết quả tóm tắt
-            .card-body
-              p.card-text(style="white-space: pre-wrap;")= summary
+        //- Khu vực hiển thị kết quả và nút Lưu (ẩn mặc định)
+        .card.mt-4#resultArea(style="display:none;")
+          .card-header
+            h4.mb-0 ✅ Phân tích hoàn tất!
+          .card-body.text-center
+            p.card-text.mb-4 Bạn có muốn lưu và tạo Mindmap từ nội dung này không?
+            button.btn.btn-success.btn-lg#createMindmapBtn Lưu và Tạo Mindmap
+
+//- ✅ SỬA LỖI TẠI ĐÂY:
+//- Toàn bộ script phải nằm trong một block riêng hoặc block main.
+//- Tốt nhất là tạo một block mới tên là 'scripts'.
+block scripts
+  script.
+    const uploadForm = document.getElementById('uploadForm');
+    const documentInput = document.getElementById('documentInput');
+    const resultArea = document.getElementById('resultArea');
+    const errorArea = document.getElementById('errorArea');
+    const createMindmapBtn = document.getElementById('createMindmapBtn');
+
+    let mindmapData = null;
+
+    uploadForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const file = documentInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('documentFile', file);
+
+      const submitButton = uploadForm.querySelector('button');
+      submitButton.textContent = 'Đang xử lý...';
+      submitButton.disabled = true;
+      resultArea.style.display = 'none';
+      errorArea.style.display = 'none';
+      errorArea.textContent = '';
+
+      try {
+        const response = await fetch('/upload/summarize', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Có lỗi không xác định.');
+        }
+
+        mindmapData = data;
+        resultArea.style.display = 'block';
+
+      } catch (error) {
+        errorArea.textContent = 'Lỗi: ' + error.message;
+        errorArea.style.display = 'block';
+      } finally {
+        submitButton.textContent = 'Bắt đầu tóm tắt';
+        submitButton.disabled = false;
+      }
+    });
+
+    createMindmapBtn.addEventListener('click', async () => {
+      if (mindmapData) {
+        createMindmapBtn.disabled = true;
+        createMindmapBtn.textContent = 'Đang lưu...';
+
+        try {
+          const response = await fetch('/mindmaps/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mindmapData),
+          });
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'Lỗi khi lưu vào database.');
+          }
+
+          window.location.href = '/dashboard';
+
+        } catch (error) {
+          alert(error.message);
+          createMindmapBtn.disabled = false;
+          createMindmapBtn.textContent = 'Lưu và Tạo Mindmap';
+        }
+      }
+    });

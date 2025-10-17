@@ -11,6 +11,7 @@ const authRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document');
 const dashboardRoutes = require('./routes/dashboardRoutes.js');
 const profileRoutes = require('./routes/profileRoutes.js');
+const mindmapRoutes = require('./routes/mindmap'); // ✅ Đảm bảo import ở đây
 
 const uri = process.env.MONGO_URI;
 if (!uri) {
@@ -30,13 +31,12 @@ async function startServer() {
     const PORT = process.env.PORT || 3000;
     app.locals.db = db;
 
+    // ... (Toàn bộ phần cấu hình middleware giữ nguyên)
     app.set('view engine', 'pug');
     app.set('views', 'views');
     app.use(express.static('public'));
-
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
-
     app.use(session({
       secret: 'my_session_secret',
       resave: false,
@@ -49,9 +49,7 @@ async function startServer() {
       }),
       cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
     }));
-
     app.use(flash());
-
     app.use((req, res, next) => {
       req.db = db;
       res.locals.user = req.session.user;
@@ -59,13 +57,23 @@ async function startServer() {
       res.locals.error_msg = req.flash('error_msg');
       next();
     });
+    // ... (Kết thúc phần middleware)
+
 
     // ====== Đăng ký Routes ======
-    app.use('/dashboard', dashboardRoutes); // ✅ MỚI
-    app.use('/profile', profileRoutes);     // ✅ MỚI
+    app.use('/dashboard', dashboardRoutes);
+    app.use('/profile', profileRoutes);
     app.use('/upload', documentRoutes);
+    
+    // ✅ THÊM DÒNG NÀY ĐỂ KÍCH HOẠT API LƯU MINDMAP
+    app.use('/mindmaps', mindmapRoutes); 
+    
     app.use('/', authRoutes);
 
+    // Xóa dòng require thừa ở đây
+    // const mindmapRoutes = require('./routes/mindmap'); 
+
+    // Xử lý lỗi 404 (đặt ở cuối cùng)
     app.use((req, res) => {
       res.status(404).render('404', { pageTitle: 'Lỗi 404' });
     });
