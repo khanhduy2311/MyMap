@@ -122,7 +122,7 @@ body {
 }
 
 .user-info {
-    font-size: 1rem; /* Cỡ chữ cho phần thông tin người dùng */
+    font-size: 1rem; 
     color: #e4e6eb;
     display: flex;
     align-items: center;
@@ -157,4 +157,113 @@ html, body {
 header {
   margin-top: 0;
   padding-top: 0;
+}
+
+
+
+/* --- TÙY CHỈNH BIẾN CHO NÚT BẮT ĐẦU NGAY --- */
+:root {
+  --button-color: #e84057; /* Màu đỏ hồng chủ đạo */
+  --button-hover-color: #d13247; /* Màu đậm hơn khi di chuột (không dùng trong hiệu ứng này) */
+  --corner-size: 18px;      /* Kích thước của góc cắt */
+}
+
+/* --- THIẾT KẾ NÚT BẮT ĐẦU NGAY --- */
+
+/* Lớp vỏ bọc bên ngoài */
+.register_css {
+  display: inline-block;
+  text-decoration: none;
+  margin-top: 20px;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Phần thân chính của nút (thẻ <span> bên trong) */
+.register_css span {
+  display: block;
+  padding: 10px 40px;
+  background-color: var(--button-color);
+  color: white;
+  font-family: 'Oswald', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  clip-path: polygon(
+    var(--corner-size) 0,
+    100% 0,
+    100% calc(100% - var(--corner-size)),
+    calc(100% - var(--corner-size)) 100%,
+    0 100%,
+    0 var(--corner-size)
+  );
+
+  /* === PHẦN THÊM VÀO CHO HIỆU ỨNG HOVER === */
+  position: relative; /* 1. Cần thiết để định vị cho ::before */
+  z-index: 1;         /* 2. Đảm bảo context stacking hoạt động đúng */
+  overflow: hidden;   /* 3. QUAN TRỌNG: Ẩn ô màu trắng khi nó ở bên ngoài */
+  transition: color 0.4s ease-in-out; /* 4. Thêm hiệu ứng chuyển màu cho chữ */
+}
+
+/* Lớp phủ màu trắng trượt vào */
+.register_css span::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+
+  /* Rất quan trọng: Lớp phủ phải có hình dạng y hệt nút */
+  clip-path: polygon(
+    var(--corner-size) 0,
+    100% 0,
+    100% calc(100% - var(--corner-size)),
+    calc(100% - var(--corner-size)) 100%,
+    0 100%,
+    0 var(--corner-size)
+  );
+  
+  /* Trạng thái ban đầu: Ẩn ở bên trái */
+  transform: translateX(-101%); 
+  
+  /* Hiệu ứng chuyển động */
+  transition: transform 0.4s ease-in-out;
+  
+  /* Đặt lớp phủ nằm sau chữ nhưng trên nền đỏ */
+  z-index: -1; 
+}
+
+/* --- HIỆU ỨNG KHI DI CHUỘT --- */
+
+/* Khi hover, di chuyển lớp phủ trắng vào vị trí */
+.register_css:hover span::before {
+  transform: translateX(0);
+}
+
+/* Đồng thời đổi màu chữ thành đen */
+.register_css:hover span {
+  color: black;
+}
+
+.header-link {
+  background-color: transparent;
+  color: #e4e6eb; /* Màu chữ trắng ngà của header */
+  border: 1px solid #e4e6eb; /* Thêm viền trắng */
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+  border-radius: 4px;
+}
+
+.header-link:hover {
+  background-color: #e4e6eb; /* Nền trắng khi di chuột */
+  color: #242526; /* Chữ màu đen của header */
+  text-decoration: none;
 }
