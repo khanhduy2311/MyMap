@@ -1,4 +1,3 @@
-// File: controllers/documentController.js
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -6,74 +5,85 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 // Cấu hình Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 1. Hiển thị trang upload
+// 1. Hiển thị trang upload (Không thay đổi)
 exports.getUploadPage = (req, res) => {
     res.render('upload', {
         pageTitle: 'Tải lên & Tóm tắt',
-        summary: null
+        summary: null // Giữ nguyên
     });
 };
 
-// 2. Xử lý file, gọi AI và trả về kết quả
+// Hàm xử lý upload và phân tích
 exports.handleUploadAndSummarize = async (req, res) => {
     try {
         if (!req.file) {
-            req.flash('error_msg', 'Vui lòng chọn một file để tải lên.');
-            return res.redirect('/upload/page');
+            return res.status(400).json({ error: 'Vui lòng chọn một file để tải lên.' });
         }
 
         const buffer = req.file.buffer;
         const mimetype = req.file.mimetype;
         let extractedText = '';
 
-        // Đọc nội dung file
+        // Đọc nội dung file (Giữ nguyên logic này)
         if (mimetype === 'application/pdf') {
             const data = await pdf(buffer);
             extractedText = data.text;
         } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             const result = await mammoth.extractRawText({ buffer });
             extractedText = result.value;
+        } else if (mimetype === 'text/plain') {
+            extractedText = buffer.toString('utf8');
         }
 
         if (!extractedText || extractedText.trim().length === 0) {
-            req.flash('error_msg', 'Không thể đọc nội dung từ file này.');
-            return res.redirect('/upload/page');
+            return res.status(400).json({ error: 'Không thể đọc nội dung từ file này.' });
         }
-
-        // Gọi Gemini AI để tóm tắt
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-        // ✅ THAY ĐỔI 1: Tăng giới hạn ký tự lên rất nhiều
-        // Giờ đây chúng ta sẽ gửi đi 300,000 ký tự đầu tiên
+        
+        // Sửa lại tên model cho chính xác
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
         const documentContent = extractedText.substring(0, 300000);
 
-        // ✅ THAY ĐỔI 2: Cải thiện câu lệnh (prompt) để phù hợp với việc làm Mindmap
         const prompt = `
-        Bạn là một trợ lý chuyên nghiệp, hãy phân tích và tóm tắt tài liệu sau đây để chuẩn bị tạo một sơ đồ tư duy (mindmap).
-        Vui lòng trích xuất và trình bày các ý chính theo cấu trúc sau:
-        
-        1.  **Chủ đề chính:** Nêu rõ chủ đề bao quát của toàn bộ tài liệu.
-        2.  **Các chương/phần chính:** Liệt kê các chương hoặc các phần quan trọng nhất dưới dạng gạch đầu dòng.
-        3.  **Các khái niệm cốt lõi:** Với mỗi chương/phần chính, rút ra vài khái niệm hoặc định nghĩa quan trọng nhất.
-        
-        Nội dung tài liệu:
-        ---
-        "${documentContent}"
-        ---
+            Phân tích văn bản sau đây và trích xuất cấu trúc để tạo một sơ đồ tư duy (mindmap).
+            Xác định chủ đề chính, các chủ đề phụ và các điểm chính trong mỗi chủ đề phụ.
+            Chỉ trả lời bằng một đối tượng JSON hợp lệ duy nhất, không thêm bất kỳ văn bản giải thích hay markdown nào.
+            JSON phải có cấu trúc như sau:
+            {
+              "mainTopic": "Chủ đề chính của văn bản",
+              "subTopics": [
+                {
+                  "title": "Tiêu đề của chủ đề phụ 1",
+                  "points": ["Điểm chính 1.1", "Điểm chính 1.2"]
+                },
+                {
+                  "title": "Tiêu đề của chủ đề phụ 2",
+                  "points": ["Điểm chính 2.1", "Điểm chính 2.2"]
+                }
+              ],
+              "summary": "Một câu tóm tắt ngắn gọn về toàn bộ nội dung."
+            }
+            
+            Văn bản cần phân tích:
+            ---
+            ${documentContent}
+            ---
         `;
 
         const result = await model.generateContent(prompt);
-        const summary = result.response.text();
+        const rawText = result.response.text();
 
-        // Render lại trang upload với kết quả tóm tắt
-        res.render('upload', {
-            pageTitle: 'Kết quả Tóm tắt',
-            summary: summary
-        });
+        // ✅ SỬA LỖI TẠI ĐÂY: Dọn dẹp chuỗi JSON trước khi parse
+        // Loại bỏ các ký tự markdown ```json và ``` mà AI trả về
+        const cleanedJsonText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        // Parse chuỗi JSON đã được làm sạch
+        const analysisResult = JSON.parse(cleanedJsonText);
+
+        // Trả về kết quả dưới dạng JSON
+        res.status(200).json(analysisResult);
 
     } catch (error) {
         console.error('❌ Lỗi khi xử lý tài liệu:', error);
-        req.flash('error_msg', 'Đã xảy ra lỗi: ' + error.message);
-        res.redirect('/upload/page');
+        res.status(500).json({ error: 'Đã xảy ra lỗi khi phân tích tài liệu: ' + error.message });
     }
 };

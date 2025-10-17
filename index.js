@@ -9,8 +9,8 @@ const MongoStore = require('connect-mongo');
 // ====== Routes ======
 const authRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document');
-const dashboardRoutes = require('./routes/dashboardRoutes.js'); // ✅ MỚI
-const profileRoutes = require('./routes/profileRoutes.js');   // ✅ MỚI
+const dashboardRoutes = require('./routes/dashboardRoutes.js');
+const profileRoutes = require('./routes/profileRoutes.js');
 
 const uri = process.env.MONGO_URI;
 if (!uri) {
