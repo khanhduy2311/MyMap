@@ -1,54 +1,44 @@
 doctype html
 html(lang="vi")
   head
-    //- Meta
+    //- Meta tags
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
 
-    //- Bootstrap CSS từ CDN
-    link(
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css",
-      rel="stylesheet"
-    )
-
-    //- Link tới CSS tùy chỉnh trong public/css
+    //- Stylesheets
+    link(href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css", rel="stylesheet")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css")
     link(rel="stylesheet", href="/css/style-home.css")
 
-    //- Font Awesome (icon dropdown)
-    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css")
-
-    //- Tiêu đề trang
+    //- Page Title
     title #{pageTitle} | MindTree
 
   body.d-flex.flex-column.min-vh-100
     //- HEADER
-    header.bg-dark.text-white.p-3
+    header.bg-dark.text-white.p-3.shadow-sm
       .container
         .d-flex.justify-content-between.align-items-center
           //- Logo
-          a(href="/userHome", class="h4 text-white text-decoration-none") MINDTREE
+          a(href="/", class="h4 text-white text-decoration-none") MINDTREE
 
           //- User Section
           if user
             .dropdown
-              button.btn.btn-dark.dropdown-toggle.d-flex.align-items-center(type="button", id="userDropdown", data-bs-toggle="dropdown", aria-expanded="false")
-                img.rounded-circle.me-2(
-                  src=user.avatar || '/images/default-avatar.png',
-                  alt="avatar",
-                  style="width:40px;height:40px;object-fit:cover;border:2px solid #ccc;"
-                )
+              button.btn.btn-dark.dropdown-toggle.d-flex.align-items-center(type="button", data-bs-toggle="dropdown")
+                img.rounded-circle.me-2(src=user.avatar || '/images/default-avatar.png', alt="avatar", style="width:40px;height:40px;object-fit:cover;border:2px solid #ccc;")
                 span #{user.name || user.username}
-              ul.dropdown-menu.dropdown-menu-end(aria-labelledby="userDropdown")
+              ul.dropdown-menu.dropdown-menu-end
                 li
-                  a.dropdown-item(href="/userHome")
+                  a.dropdown-item(href="/dashboard")
+                    i.fas.fa-th-large.me-2
+                    | Bảng điều khiển
+                li
+                  a.dropdown-item(href="/profile")
                     i.fas.fa-user.me-2
-                    | Trang cá nhân
+                    | Hồ sơ của tôi
                 li
-                  a.dropdown-item(href="/profile/edit")
-                    i.fas.fa-cog.me-2
-                    | Cài đặt tài khoản
-                li
-                  a.dropdown-item(href="/upload/document")
+                  //- ✅ ĐÃ SỬA: Cập nhật link trỏ đến trang upload mới
+                  a.dropdown-item(href="/upload/page")
                     i.fas.fa-file-upload.me-2
                     | Upload tài liệu
                 li
@@ -59,22 +49,22 @@ html(lang="vi")
                     | Đăng xuất
           else
             div
-              a(href="/login", class="text-white text-decoration-none me-3") Đăng nhập
-              a(href="/register", class="text-white text-decoration-none") Đăng ký
+              a(href="/login", class="btn btn-outline-light me-2") Đăng nhập
+              a(href="/register", class="btn btn-primary") Đăng ký
 
     //- MAIN CONTENT
-    main.main-content.flex-grow-1.mt-0.pt-0
-      .container
+    main.flex-grow-1
+      .container.mt-3
+        //- Flash Messages
         if success_msg && success_msg.length > 0
-          .alert.alert-success.alert-dismissible.fade.show(role="alert")
-            = success_msg
-            button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
+          .alert.alert-success.alert-dismissible.fade.show= success_msg
+            button(type="button", class="btn-close", data-bs-dismiss="alert")
 
         if error_msg && error_msg.length > 0
-          .alert.alert-danger.alert-dismissible.fade.show(role="alert")
-            = error_msg
-            button(type="button", class="btn-close", data-bs-dismiss="alert", aria-label="Close")
+          .alert.alert-danger.alert-dismissible.fade.show= error_msg
+            button(type="button", class="btn-close", data-bs-dismiss="alert")
 
+        //- Block for page-specific content
         block main
 
     //- FOOTER
@@ -82,17 +72,5 @@ html(lang="vi")
       .container
         span &copy; 2025 Bản quyền thuộc về Nhóm 3 anh em siu nhân.
 
-    //- Bootstrap JS
+    //- SCRIPTS
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
-
-    //- CSS thêm hiệu ứng dropdown đẹp hơn
-    style.
-      .dropdown-menu {
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: fadeIn 0.2s ease;
-      }
-      @keyframes fadeIn {
-        from {opacity: 0; transform: translateY(-5px);}
-        to {opacity: 1; transform: translateY(0);}
-      }

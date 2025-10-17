@@ -1,40 +1,27 @@
 extends ../views/layouts/default.pug
 block main
-  //- Dòng tiêu đề và nút hành động chính
-  .d-flex.justify-content-between.align-items-center.mb-4
-    h1 Bảng điều khiển
-    a(href="/mindmaps/create", class="btn btn-primary btn-lg") + Tạo Mindmap mới
+  .container.mt-4
+    //- Header trang
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.text-primary
+        i.fas.fa-th-large.me-2
+        | Mindmap của bạn
+      a.btn.btn-primary.btn-lg(href="/upload/document")
+        i.fas.fa-plus.me-2
+        | Tạo Mindmap mới
 
-  p Chào mừng, <strong>#{user.name}</strong>! Quản lý các ý tưởng của bạn tại đây.
-
-  hr
-
-  //- Các thẻ thông tin tổng quan
-  .row
-    .col-lg-4.mb-4
-      .card.text-white.bg-primary
-        .card-header Tổng số Mindmap
-        .card-body
-          h5.card-title 12 // Ví dụ, bạn sẽ lấy số liệu thật từ database
-          p.card-text Số lượng mindmap bạn đã tạo.
-
-    .col-lg-4.mb-4
-      .card.text-white.bg-success
-        .card-header Mindmap công khai
-        .card-body
-          h5.card-title 3 // Ví dụ
-          p.card-text Các mindmap bạn đã chia sẻ với mọi người.
-
-    .col-lg-4.mb-4
-      .card.text-white.bg-info
-        .card-header Hoạt động gần đây
-        .card-body
-          h5.card-title "Dự án cuối kỳ" // Ví dụ
-          p.card-text Mindmap được chỉnh sửa gần nhất.
-
-  //- Danh sách các mindmap truy cập gần đây
-  h3.mt-4 Chỉnh sửa gần đây
-  .list-group
-    a(href="#", class="list-group-item list-group-item-action") Sơ đồ tư duy cho Dự án X
-    a(href="#", class="list-group-item list-group-item-action") Lên kế hoạch du lịch
-    a(href="#", class="list-group-item list-group-item-action") Brainstorm ý tưởng sản phẩm mới
+    //- Danh sách Mindmap
+    if mindmaps && mindmaps.length > 0
+      .list-group
+        each mindmap in mindmaps
+          a.list-group-item.list-group-item-action.d-flex.justify-content-between.align-items-center(href=`/mindmaps/${mindmap._id}`)
+            span
+              i.fas.fa-diagram-project.me-2
+              | #{mindmap.title}
+            small.text-muted #{mindmap.createdAt ? new Date(mindmap.createdAt).toLocaleDateString('vi-VN') : ''}
+    else
+      .alert.alert-info.text-center.p-5
+        h4.alert-heading Chưa có mindmap nào!
+        p.mb-0 Hãy bắt đầu sáng tạo bằng cách tạo ra mindmap đầu tiên của bạn.
+        hr
+        a.btn.btn-outline-info(href="/upload/document") Tạo ngay

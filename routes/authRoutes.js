@@ -1,15 +1,15 @@
 // File: routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
-
-// === IMPORT MIDDLEWARES & CONTROLLERS ===
-const uploadAvatarMiddleware = require('../middlewares/avatarUpload.js');
 const authController = require('../controllers/authController.js');
 const authMiddleware = require('../middlewares/middlewares.js');
-const userController = require('../controllers/authController.js');
 
 // === ROUTE TRANG CHỦ ===
 router.get('/', (req, res) => {
+  // Nếu đã đăng nhập thì vào dashboard, nếu chưa thì vào trang home
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
   res.render('home', { pageTitle: 'Trang Chủ' });
 });
 
@@ -23,17 +23,5 @@ router.post('/login', authController.postLogin);
 
 // === ROUTE ĐĂNG XUẤT ===
 router.get('/logout', authMiddleware.checkLoggedIn, authController.logout);
-
-// === ROUTE TRANG NGƯỜI DÙNG ===
-router.get('/admin/dashboard', authMiddleware.checkLoggedIn, authController.getDashboardPage);
-router.get('/userHome', authMiddleware.checkLoggedIn, authController.getUserHomePage);
-
-// === ROUTE UPLOAD ẢNH ĐẠI DIỆN ===
-router.post(
-  '/upload/avatar',
-  authMiddleware.checkLoggedIn,
-  uploadAvatarMiddleware.single('avatar'),
-  authController.postAvatarUpload
-);
 
 module.exports = router;

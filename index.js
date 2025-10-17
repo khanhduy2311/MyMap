@@ -7,9 +7,10 @@ const { MongoClient } = require('mongodb');
 const MongoStore = require('connect-mongo');
 
 // ====== Routes ======
-const mainRoutes = require('./routes/authRoutes.js');
+const authRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document');
-const userRoutes = require('./routes/user'); // ✅ thêm dòng này để gọi route user/update
+const dashboardRoutes = require('./routes/dashboardRoutes.js'); // ✅ MỚI
+const profileRoutes = require('./routes/profileRoutes.js');   // ✅ MỚI
 
 const uri = process.env.MONGO_URI;
 if (!uri) {
@@ -24,22 +25,18 @@ async function startServer() {
     await client.connect();
     console.log("✅ Successfully connected to MongoDB Atlas!");
 
-    const db = client.db('users_identity'); // Tên database của bạn
-
+    const db = client.db('users_identity');
     const app = express();
     const PORT = process.env.PORT || 3000;
     app.locals.db = db;
 
-    // ====== View Engine ======
     app.set('view engine', 'pug');
     app.set('views', 'views');
     app.use(express.static('public'));
 
-    // ====== Middleware parse body ======
-    app.use(express.json()); // ✅ Bắt buộc để đọc dữ liệu JSON từ fetch()
-    app.use(express.urlencoded({ extended: false })); // cho form thông thường
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: false }));
 
-    // ====== Session ======
     app.use(session({
       secret: 'my_session_secret',
       resave: false,
@@ -48,15 +45,13 @@ async function startServer() {
         client: client,
         dbName: 'users_identity',
         collectionName: 'sessions',
-        ttl: 30 * 24 * 60 * 60 // 30 ngày
+        ttl: 30 * 24 * 60 * 60
       }),
-      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 ngày
+      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
     }));
 
-    // ====== Flash Message ======
     app.use(flash());
 
-    // ====== Middleware gắn session, flash, db ======
     app.use((req, res, next) => {
       req.db = db;
       res.locals.user = req.session.user;
@@ -65,21 +60,20 @@ async function startServer() {
       next();
     });
 
-    // ====== Routes ======
-    app.use('/user', userRoutes);           // ✅ thêm route user trước main route
-    app.use('/', mainRoutes);               // route chính (login, register,...)
-    app.use('/upload', documentRoutes);     // route upload tài liệu
+    // ====== Đăng ký Routes ======
+    app.use('/dashboard', dashboardRoutes); // ✅ MỚI
+    app.use('/profile', profileRoutes);     // ✅ MỚI
+    app.use('/upload', documentRoutes);
+    app.use('/', authRoutes);
 
-    // ====== 404 fallback ======
     app.use((req, res) => {
-      res.status(404).send('404 - Không tìm thấy trang');
+      res.status(404).render('404', { pageTitle: 'Lỗi 404' });
     });
 
-    // ====== Start Server ======
     app.listen(PORT, () => console.log(`🚀 Server is listening on port ${PORT}`));
 
   } catch (error) {
-    console.error("❌ Failed to connect to the database. Server is not started.", error);
+    console.error("❌ Failed to connect to the database.", error);
     process.exit(1);
   }
 }

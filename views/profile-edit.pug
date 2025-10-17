@@ -1,0 +1,48 @@
+extends ../views/layouts/default.pug
+block main
+  .container.mt-5
+    .row.justify-content-center
+      .col-md-6
+        .card
+          .card-header
+            h4 Chỉnh sửa thông tin
+          .card-body
+            form#editProfileForm
+              .mb-3
+                label.form-label(for="editName") Họ và tên
+                input#editName.form-control(type="text", value=user.name || '')
+              .mb-3
+                label.form-label(for="editUsername") Tên người dùng
+                input#editUsername.form-control(type="text", value=user.username || '')
+              .mb-3
+                label.form-label(for="editEmail") Email
+                input#editEmail.form-control(type="email", value=user.email || '', readonly)
+                small.form-text.text-muted Email không thể thay đổi.
+              .d-flex.justify-content-end
+                a.btn.btn-secondary.me-2(href="/profile") Hủy
+                button.btn.btn-primary(type="submit") Lưu thay đổi
+  
+  script.
+    document.getElementById('editProfileForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('editName').value.trim();
+      const username = document.getElementById('editUsername').value.trim();
+      const userId = "#{user._id}";
+
+      try {
+        const res = await fetch('/profile/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, name, username })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Cập nhật thành công!');
+          window.location.href = '/profile';
+        } else {
+          alert('❌ ' + (data.message || 'Có lỗi xảy ra.'));
+        }
+      } catch (err) {
+        alert('⚠️ Lỗi khi gửi dữ liệu: ' + err.message);
+      }
+    });

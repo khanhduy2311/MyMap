@@ -1,173 +1,29 @@
-doctype html
-html(lang="vi")
-  head
-    meta(charset="UTF-8")
-    title Tóm tắt File (PDF, DOCX, TXT)
-    
-    //- Thư viện đọc file PDF và DOCX
-    script(src="https://mozilla.github.io/pdf.js/build/pdf.mjs" type="module")
-    script(src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js")
+extends ../views/layouts/default.pug
 
-    //- CSS trang trí
-    style.
-      body {
-        font-family: Arial, sans-serif;
-        padding: 30px;
-        max-width: 800px;
-        margin: auto;
-        background: #fafafa;
-      }
-      h1 {
-        color: #333;
-      }
-      button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
-        cursor: pointer;
-        margin-top: 10px;
-      }
-      button:hover {
-        background-color: #0056b3;
-      }
-      pre {
-        background: #f5f5f5;
-        padding: 15px;
-        border-radius: 8px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-      }
-      #status {
-        margin-top: 15px;
-        font-weight: bold;
-      }
+block main
+  .container.mt-4
+    .row.justify-content-center
+      .col-lg-8
+        .card
+          .card-body
+            h2.card-title.text-center.mb-3 Tải lên tài liệu để tóm tắt
+            p.text-center.text-muted.mb-4 Chọn file PDF hoặc DOCX. AI sẽ đọc và tóm tắt nội dung cho bạn.
+            
+            //- Form Upload
+            form(action="/upload/summarize" method="POST" enctype="multipart/form-data")
+              .mb-3
+                label.form-label(for="documentFile") Chọn tài liệu
+                input.form-control(type="file" name="documentFile" id="documentFile" accept=".pdf,.docx" required)
+              
+              .d-grid
+                button.btn.btn-primary.btn-lg(type="submit")
+                  i.fas.fa-robot.me-2
+                  | Bắt đầu tóm tắt
 
-  body
-    h1 Upload Document để tóm tắt nội dung
-    p Chọn một file (.pdf, .docx, .txt) để AI tóm tắt.
-
-    //- Input file ẩn đi
-    input(type="file" id="file-input" accept=".pdf,.docx,.txt" style="display:none;")
-    
-    //- Nút bấm chọn file
-    button(onclick="document.getElementById('file-input').click()") Chọn File
-
-    //- Hiển thị trạng thái và kết quả
-    #status
-    #summary-output
-
-    //- Script chính
-    script(type="module").
-      import { env, pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1";
-      import * as pdfjsLib from "https://mozilla.github.io/pdf.js/build/pdf.mjs";
-
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://mozilla.github.io/pdf.js/build/pdf.worker.mjs";
-
-      // ⚙️ Cấu hình để luôn tải model từ Hugging Face thay vì localhost
-      env.allowLocalModels = false;
-
-      // --- HÀM: Đọc nội dung file ---
-      async function extractTextFromFile(file) {
-        const status = document.getElementById('status');
-        status.textContent = `Đang đọc file: ${file.name}...`;
-        const extension = file.name.split('.').pop().toLowerCase();
-        const reader = new FileReader();
-
-        return new Promise((resolve, reject) => {
-          reader.onload = async (event) => {
-            const arrayBuffer = event.target.result;
-            try {
-              if (extension === 'txt') {
-                const textReader = new FileReader();
-                textReader.onload = (e) => resolve(e.target.result);
-                textReader.readAsText(file, 'UTF-8');
-
-              } else if (extension === 'docx') {
-                const result = await mammoth.extractRawText({ arrayBuffer });
-                resolve(result.value);
-
-              } else if (extension === 'pdf') {
-                const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-                let allText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                  const page = await pdf.getPage(i);
-                  const textContent = await page.getTextContent();
-                  allText += textContent.items.map(item => item.str).join(' ') + '\n';
-                }
-                resolve(allText);
-
-              } else {
-                reject(new Error('Định dạng file không được hỗ trợ.'));
-              }
-            } catch (err) {
-              reject(err);
-            }
-          };
-          reader.onerror = (error) => reject(error);
-          reader.readAsArrayBuffer(file);
-        });
-      }
-
-      // --- HÀM: Tóm tắt nội dung ---
-      async function summarize(text) {
-        const status = document.getElementById('status');
-        const summaryOutput = document.getElementById('summary-output');
-
-        try {
-          status.textContent = 'Đang tải mô hình AI (chỉ lần đầu)...';
-          const summarizer = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6');
-          status.textContent = '✅ Mô hình đã sẵn sàng. Đang tóm tắt...';
-
-          const chunkSize = 400; // mỗi đoạn 400 từ
-          const words = text.split(/\s+/);
-          const chunks = [];
-          for (let i = 0; i < words.length; i += chunkSize) {
-            chunks.push(words.slice(i, i + chunkSize).join(' '));
-          }
-
-          let finalSummary = '';
-          const maxChunks = 20; // tránh treo tab
-          const totalChunks = Math.min(chunks.length, maxChunks);
-
-          for (let i = 0; i < totalChunks; i++) {
-            status.textContent = `🧠 Đang tóm tắt đoạn ${i + 1}/${totalChunks}...`;
-            const output = await summarizer(chunks[i], { max_length: 100, min_length: 20 });
-            finalSummary += output[0].summary_text + ' ';
-          }
-
-          if (chunks.length > maxChunks) {
-            finalSummary += "\n\n[⚠️ Nội dung quá dài, chỉ tóm tắt phần đầu.]";
-          }
-
-          status.textContent = '✅ Hoàn tất!';
-          summaryOutput.innerHTML = `<hr><h2>Kết quả tóm tắt:</h2><pre>${finalSummary.trim()}</pre>`;
-
-        } catch (error) {
-          console.error(error);
-          status.textContent = `❌ Lỗi tóm tắt: ${error.message}`;
-        }
-      }
-
-      // --- HÀM: Khi người dùng chọn file ---
-      document.getElementById('file-input').addEventListener('change', async (event) => {
-        const file = event.target.files[0];
-        const status = document.getElementById('status');
-        const summaryOutput = document.getElementById('summary-output');
-        summaryOutput.innerHTML = '';
-
-        if (file) {
-          try {
-            const text = await extractTextFromFile(file);
-            if (text && text.trim().length > 0) {
-              await summarize(text);
-            } else {
-              status.textContent = '❌ Không tìm thấy nội dung văn bản trong file.';
-            }
-          } catch (e) {
-            status.textContent = `❌ Lỗi: ${e.message}`;
-            console.error(e);
-          }
-        }
-      });
+        //- Khu vực hiển thị kết quả
+        if summary
+          .card.mt-5
+            .card-header
+              h4.mb-0 Kết quả tóm tắt
+            .card-body
+              p.card-text(style="white-space: pre-wrap;")= summary

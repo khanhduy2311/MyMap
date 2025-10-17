@@ -1,0 +1,56 @@
+extends ../views/layouts/default.pug
+block main
+  .container.mt-4
+    .row
+      //- Cột thông tin cá nhân
+      .col-md-6.mb-4
+        .card.h-100
+          .card-header
+            h4 Thông tin cá nhân
+          .card-body.text-center
+            img(src=user.avatar || '/images/default-avatar.png', alt="Avatar", class="rounded-circle shadow mb-3", style="width:150px;height:150px;object-fit:cover;border:3px solid #ddd;")
+            h3 #{user.name || 'Chưa có tên'}
+            p.text-muted @#{user.username || 'Chưa có username'}
+            p.text-muted 
+              i.fas.fa-envelope.me-2
+              | #{user.email || 'Chưa có email'}
+            p.text-muted 
+              i.fas.fa-calendar.me-2
+              | Tham gia: #{user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'Không rõ'}
+            a.btn.btn-outline-primary.btn-sm.mt-2(href="/profile/edit")
+              i.fas.fa-edit.me-1
+              | Chỉnh sửa thông tin
+
+      //- Cột đổi avatar
+      .col-md-6.mb-4
+        .card.h-100
+          .card-header
+            h4 Cập nhật ảnh đại diện
+          .card-body.text-center
+            form(action="/profile/avatar" method="POST" enctype="multipart/form-data" class="d-flex flex-column align-items-center")
+              input#avatarInput(type="file" name="avatar" accept="image/*" class="d-none" required)
+              button.btn.btn-outline-secondary.mb-3(type="button", onclick="document.getElementById('avatarInput').click()")
+                i.fas.fa-upload.me-2
+                | Chọn ảnh mới
+              span#fileNameAvatar.text-muted.mb-3 Chưa có file nào được chọn
+              img#avatarPreview.rounded-circle.shadow(style="width:150px;height:150px;object-fit:cover;display:none;border:3px solid #ddd;")
+              button.btn.btn-primary.mt-4(type="submit")
+                i.fas.fa-save.me-2
+                | Lưu ảnh đại diện
+
+  //- Script cho preview ảnh
+  script.
+    document.getElementById('avatarInput')?.addEventListener('change', e => {
+      const file = e.target.files[0];
+      const fileNameAvatar = document.getElementById('fileNameAvatar');
+      const avatarPreview = document.getElementById('avatarPreview');
+      if (file) {
+        fileNameAvatar.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = e => {
+          avatarPreview.src = e.target.result;
+          avatarPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
