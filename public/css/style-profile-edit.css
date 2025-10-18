@@ -1,0 +1,92 @@
+/* File: /public/css/style-profile-edit.css */
+
+/* === BỐ CỤC CHÍNH BẰNG CSS GRID === */
+.profile-edit-grid {
+    display: grid;
+    /* Tạo 2 cột có chiều rộng bằng nhau tuyệt đối */
+    grid-template-columns: 1fr 1fr;
+    /* Khoảng cách giữa 2 cột */
+    gap: 24px;
+}
+
+/* === TÙY CHỈNH CHO CÁC CARD === */
+
+/* Biến mỗi cột thành flex container để card bên trong có thể co giãn */
+.profile-edit-card {
+    display: flex;
+}
+
+/* Buộc card phải giãn ra để lấp đầy chiều cao của cột */
+.profile-edit-card .card {
+    width: 100%;
+    flex-grow: 1;
+    /* THÊM 2 DÒNG NÀY: Biến card thành flex container */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Căn giữa tiêu đề của card */
+.card-header h4 {
+    text-align: center;
+    font-weight: 600;
+    margin: 0; /* Xóa margin mặc định của h4 */
+}
+
+/* === CÀI ĐẶT CHO MÀN HÌNH NHỎ (RESPONSIVE) === */
+@media (max-width: 768px) {
+    .profile-edit-grid {
+        /* Chuyển về 1 cột duy nhất trên màn hình nhỏ */
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Biến card-body thành flex container để căn giữa form */
+.profile-edit-card:nth-child(2) .card-body {
+    display: flex;
+    /* Căn giữa form theo chiều dọc */
+    justify-content: center;
+    /* Căn giữa form theo chiều ngang */
+    align-items: center;
+}
+
+/* Sắp xếp các nội dung bên trong form theo chiều dọc */
+.profile-edit-card:nth-child(2) form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* css nút xóa */
+.btn-close-preview {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    
+    background-color: white;
+    color: #333;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+
+    font-size: 1.5rem;
+    font-weight: 600;
+    
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    line-height: 1;
+    box-sizing: border-box;
+    padding-bottom: 5px;     
+    padding-left: 1px;
+}
+
+.btn-close-preview:hover {
+    background-color: #f1f1f1;
+    transform: scale(1.1);
+}

@@ -1,0 +1,25 @@
+/* =================================================================== */
+/* HIỆU ỨNG KHI TẢI TRANG                                          */
+/* =================================================================== */
+
+/* 1. Định nghĩa chuyển động */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px); /* Bắt đầu từ vị trí thấp hơn 30px */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0); /* Trở về vị trí ban đầu */
+  }
+}
+
+/* 2. Tạo một class để áp dụng hiệu ứng */
+.fade-in-up {
+  opacity: 0; 
+  animation: fadeInUp 0.7s ease-out forwards;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
