@@ -1,0 +1,48 @@
+/* =================================================================== */
+/* STYLE CHO CÁC TRANG KHI ĐÃ ĐĂNG NHẬP                  */
+/* =================================================================== */
+
+
+/* --- CÀI ĐẶT CHUNG & RESET --- */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+
+/* --- TÙY CHỈNH HEADER --- */
+
+/* Tăng cỡ chữ cho tên người dùng trong dropdown */
+header .dropdown span {
+    font-size: 1.1rem;
+    vertical-align: middle;
+}
+
+/* Tùy chỉnh kích thước nút dropdown chứa avatar */
+header .dropdown .btn {
+    font-size: 1rem;
+}
+
+
+/* --- HIỆU ỨNG CHO DROPDOWN MENU (Chuyển từ file default.pug ra) --- */
+.dropdown-menu {
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

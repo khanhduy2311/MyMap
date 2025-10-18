@@ -98,9 +98,9 @@ header .btn {
 }
 
 .main-header {
-    background-color: #242526; /* Màu xám đen giống ảnh */
+    background-color: #242526; 
     border-bottom: 1px solid #393a3b;
-    padding: 0.75rem 0; /* Giảm chiều cao một chút */
+    padding: 0.75rem 0;
     width: 100%;
     position: fixed; /* Giữ header cố định trên cùng */
     top: 0;
