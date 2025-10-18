@@ -17,6 +17,10 @@ block main
               i.fas.fa-diagram-project.me-2
               | #{mindmap.title}
             small.text-muted #{mindmap.createdAt ? new Date(mindmap.createdAt).toLocaleDateString('vi-VN') : ''}
+        //- Nút "Tạo Mindmap mới" đã được di chuyển vào đây
+        a.btn.btn-primary.btn-lg(href="/upload/page")
+          i.fas.fa-plus.me-2
+          | Tạo Mindmap mới
             
     //- Trạng thái trống (đã được cập nhật)
     else
@@ -24,7 +28,4 @@ block main
         h4.alert-heading Chưa có mindmap nào!
         p.mb-4 Hãy bắt đầu sáng tạo bằng cách tạo ra mindmap đầu tiên của bạn.
         
-        //- Nút "Tạo Mindmap mới" đã được di chuyển vào đây
-        a.btn.btn-primary.btn-lg(href="/upload/page")
-          i.fas.fa-plus.me-2
-          | Tạo Mindmap mới
+        
