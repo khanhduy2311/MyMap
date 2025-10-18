@@ -11,7 +11,7 @@ const authRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document');
 const dashboardRoutes = require('./routes/dashboardRoutes.js');
 const profileRoutes = require('./routes/profileRoutes.js');
-const mindmapRoutes = require('./routes/mindmap'); // ✅ Đảm bảo import ở đây
+const mindmapRoutes = require('./routes/mindmap');
 
 const uri = process.env.MONGO_URI;
 if (!uri) {
@@ -31,12 +31,16 @@ async function startServer() {
     const PORT = process.env.PORT || 3000;
     app.locals.db = db;
 
-    // ... (Toàn bộ phần cấu hình middleware giữ nguyên)
+    // ... (Cấu hình middleware)
     app.set('view engine', 'pug');
     app.set('views', 'views');
     app.use(express.static('public'));
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: false }));
+
+    // 💡 SỬA Ở ĐÂY: Tăng giới hạn payload cho server của bạn
+    // Lỗi 'PayloadTooLargeError' xảy ra ở đây, không phải ở Gemini.
+    app.use(express.json({ limit: '50mb' }));
+    app.use(express.urlencoded({ limit: '50mb', extended: true })); // Đặt extended: true để hỗ trợ JSON lồng nhau
+
     app.use(session({
       secret: 'my_session_secret',
       resave: false,
@@ -65,13 +69,10 @@ async function startServer() {
     app.use('/profile', profileRoutes);
     app.use('/upload', documentRoutes);
     
-    // ✅ THÊM DÒNG NÀY ĐỂ KÍCH HOẠT API LƯU MINDMAP
-    app.use('/mindmaps', mindmapRoutes); 
+    // Kích hoạt API lưu mindmap
+    app.use('/mindmap', mindmapRoutes); 
     
     app.use('/', authRoutes);
-
-    // Xóa dòng require thừa ở đây
-    // const mindmapRoutes = require('./routes/mindmap'); 
 
     // Xử lý lỗi 404 (đặt ở cuối cùng)
     app.use((req, res) => {

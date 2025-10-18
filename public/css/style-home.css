@@ -267,3 +267,251 @@ header {
   color: #242526; /* Chữ màu đen của header */
   text-decoration: none;
 }
+/* ===== STYLE CHO TRANG UPLOAD ===== */
+
+/* Container chính cho trang upload */
+.upload-container {
+    position: relative;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    padding: 2rem;
+}
+
+/* Card styling cho upload */
+.upload-card {
+    background: white;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.upload-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Progress bar animations */
+.progress {
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, #e84057, #ff6b6b);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 10px;
+}
+
+/* Result area animations */
+#resultArea {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.5s ease-in-out;
+}
+
+#resultArea.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* JSON preview styling */
+#mindmapPreview {
+    background: #1a1a1a;
+    color: #00ff88;
+    border: 1px solid #333;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    transition: all 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
+}
+
+#mindmapPreview.show {
+    max-height: 400px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Button animations */
+#submitBtn, #createMindmapBtn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: 600;
+}
+
+#submitBtn {
+    background: linear-gradient(45deg, #e84057, #ff6b6b);
+}
+
+#createMindmapBtn {
+    background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+#submitBtn:hover, #createMindmapBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(232, 64, 87, 0.4);
+}
+
+/* Loading spinner */
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error area animations */
+#errorArea {
+    animation: shake 0.5s ease-in-out, fadeIn 0.3s ease;
+    background: linear-gradient(45deg, #dc3545, #e84057);
+    color: white;
+    border: none;
+    border-radius: 8px;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* File input styling */
+.form-control {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.form-control:focus {
+    border-color: #e84057;
+    box-shadow: 0 0 0 0.25rem rgba(232, 64, 87, 0.25);
+    background: white;
+}
+
+.form-control:hover {
+    border-color: #e84057;
+    background: white;
+}
+
+/* Progress text styling */
+#progressText {
+    font-weight: 600;
+    color: #e84057;
+}
+
+/* View JSON button */
+#viewJsonBtn {
+    background: linear-gradient(45deg, #6c757d, #868e96);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+#viewJsonBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+}
+
+/* Success header */
+.card-header.bg-success {
+    background: linear-gradient(45deg, #28a745, #20c997) !important;
+    border: none;
+    font-weight: 600;
+}
+
+/* Custom scrollbar for JSON preview */
+#mindmapPreview::-webkit-scrollbar {
+    width: 8px;
+}
+
+#mindmapPreview::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+#mindmapPreview::-webkit-scrollbar-thumb {
+    background: #00ff88;
+    border-radius: 4px;
+}
+
+#mindmapPreview::-webkit-scrollbar-thumb:hover {
+    background: #00cc6a;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .upload-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .hero-text {
+        left: 30px;
+        right: 30px;
+        max-width: none;
+    }
+    
+    .hero-text h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero-text p.lead {
+        font-size: 1.2rem;
+    }
+    
+    #mindmapPreview {
+        font-size: 0.7rem;
+        max-height: 300px;
+    }
+}
+
+/* Smooth transitions for all interactive elements */
+.btn, .card, .form-control, .progress-bar, .alert {
+    transition: all 0.3s ease;
+}
+
+/* Pulse animation for active processing */
+.processing {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(232, 64, 87, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(232, 64, 87, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(232, 64, 87, 0); }
+}
+
+/* Fade in animation for page load */
+.container.mt-4 {
+    animation: fadeInUp 0.8s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
