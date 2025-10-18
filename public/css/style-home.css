@@ -1,4 +1,66 @@
-/* --- PHẦN NỀN SLIDESHOW --- */
+/* =================================================================== */
+/* STYLE CHO TRANG CHỦ (KHÔNG ĐĂNG NHẬP)                  */
+/* =================================================================== */
+
+/* --- CÀI ĐẶT BIẾN TOÀN CỤC --- */
+:root {
+  --button-color: #e84057;      /* Màu đỏ hồng chủ đạo */
+  --button-hover-color: #d13247;/* Màu đậm hơn khi di chuột */
+  --corner-size: 18px;         /* Kích thước của góc cắt */
+}
+
+/* --- CÀI ĐẶT CHUNG & BODY --- */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Thêm khoảng trống ở body để không bị header che mất */
+body.has-fullscreen-bg {
+    padding-top: 85px; /* Chiều cao tương ứng với header */
+}
+
+/* --- HEADER --- */
+.main-header {
+    background-color: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem 0; /* THAY ĐỔI: Tăng từ 0.75rem lên 1rem */
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.logo-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e4e6eb;
+    text-decoration: none;
+    letter-spacing: 1px;
+}
+
+/* Nút "Đăng Nhập" (phiên bản cuối cùng - ghost button) */
+.header-link {
+  background-color: transparent;
+  color: #e4e6eb;
+  border: 1px solid #e4e6eb;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+  border-radius: 4px;
+}
+
+.header-link:hover {
+  background-color: #e4e6eb;
+  color: #242526;
+  text-decoration: none;
+}
+
+/* --- NỀN SLIDESHOW TOÀN MÀN HÌNH --- */
 .fullscreen-bg-carousel {
     position: fixed;
     top: 0;
@@ -8,7 +70,6 @@
     z-index: -1;
 }
 
-/* Lớp phủ màu đen nhẹ (tùy chọn, có thể xóa nếu chỉ muốn blur) */
 .fullscreen-bg-carousel::after {
     content: '';
     position: absolute;
@@ -16,7 +77,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.3); /* Lớp phủ tối nhẹ */
+    background-color: rgba(0, 0, 0, 0.3);
     z-index: 0;
 }
 
@@ -28,149 +89,40 @@
     object-fit: cover;
 }
 
-/* Hiệu ứng làm mờ (blur) cho ảnh nền */
 .fullscreen-bg-carousel .carousel-inner img {
-    filter: blur(4px); 
+    filter: blur(4px);
     transform: scale(1.2);
 }
 
-
-/* --- PHẦN HEADER & FOOTER (Không đổi) --- */
-body.has-fullscreen-bg header {
-    background-color: #343a40 !important;
-    padding: 0.7rem 0;
-}
-
-body.has-fullscreen-bg .logo-header {
-    text-shadow: none;
-}
-
-body.has-fullscreen-bg footer {
-    background-color: transparent !important;
-}
-
-
-/* --- PHẦN NỘI DUNG CHỮ --- */
+/* --- NỘI DUNG CHÍNH (HERO TEXT) --- */
 .content-overlay {
     position: relative;
     width: 100%;
     flex-grow: 1;
 }
 
-/* SỬA LẠI HOÀN TOÀN ĐOẠN NÀY */
 .hero-text {
     position: absolute;
-    top: 120px;      /* Cách header 60px */
-    left: 100px;     /* Cách lề trái 50px */
-    color: white;   /* Đổi chữ lại thành màu trắng để nổi bật trên nền mờ */
+    top: 85px;
+    left: 100px;
+    color: white;
     max-width: 600px;
-    text-align: left; /* Căn lề trái cho văn bản */
-    text-shadow: 1px 1px 5px rgba(0,0,0,0.5); /* Thêm bóng để chữ dễ đọc hơn */
+    text-align: left;
+    text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
 }
 
 .hero-text h1 {
     font-size: 5rem;
     font-weight: 700;
 }
+
 .hero-text p.lead {
     font-weight: bold;
     font-style: italic;
     font-size: 1.75rem;
 }
 
-/* === TÙY CHỈNH FONT CHỮ HEADER === */
-
-/* Tăng cỡ chữ cho logo MINDTREE */
-header .logo-header {
-    font-size: 1.75rem; /* Cỡ h4 mặc định là 1.5rem */
-}
-
-/* Tăng cỡ chữ cho dòng chữ "Chào, ..." */
-header span {
-    font-size: 1.1rem;
-    vertical-align: middle; /* Giúp căn chữ thẳng hàng hơn với các nút */
-}
-
-/* Tăng cỡ chữ cho các nút Đăng nhập, Đăng ký, Đăng xuất */
-/* Bỏ class .btn-sm để nút to hơn một chút */
-header .btn {
-    font-size: 1rem; /* Cỡ chữ mặc định của nút */
-}
-
-.main-header {
-    background-color: #242526; 
-    border-bottom: 1px solid #393a3b;
-    padding: 0.75rem 0;
-    width: 100%;
-    position: fixed; /* Giữ header cố định trên cùng */
-    top: 0;
-    left: 0;
-    z-index: 1000;
-}
-
-/* Thêm khoảng trống ở body để không bị header che mất */
-body {
-    padding-top: 70px; /* Chiều cao tương ứng với header */
-}
-
-.logo-header {
-    font-size: 1.5rem; /* Cỡ chữ cho logo */
-    font-weight: 700;
-    color: #e4e6eb;
-    text-decoration: none;
-    letter-spacing: 1px;
-}
-
-.user-info {
-    font-size: 1rem; 
-    color: #e4e6eb;
-    display: flex;
-    align-items: center;
-}
-
-.user-info span {
-    margin: 0 0.5rem;
-}
-
-/* Style cho các link Đăng nhập, Đăng ký, Đăng xuất */
-.header-link {
-    color: #e4e6eb;
-    text-decoration: underline; /* Bỏ gạch chân mặc định */
-    font-weight: 600;
-    padding: 0.5rem;
-    transition: background-color 0.2s ease-in-out;
-    border-radius: 4px;
-}
-
-/* Thêm hiệu ứng gạch chân khi di chuột vào */
-.header-link:hover {
-    color: #fff;
-    text-decoration: underline; /* Hiện gạch chân khi hover */
-    background-color: #3a3b3c;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-}
-
-header {
-  margin-top: 0;
-  padding-top: 0;
-}
-
-
-
-/* --- TÙY CHỈNH BIẾN CHO NÚT BẮT ĐẦU NGAY --- */
-:root {
-  --button-color: #e84057; /* Màu đỏ hồng chủ đạo */
-  --button-hover-color: #d13247; /* Màu đậm hơn khi di chuột (không dùng trong hiệu ứng này) */
-  --corner-size: 18px;      /* Kích thước của góc cắt */
-}
-
-/* --- THIẾT KẾ NÚT BẮT ĐẦU NGAY --- */
-
-/* Lớp vỏ bọc bên ngoài */
+/* --- NÚT "BẮT ĐẦU NGAY" --- */
 .register_css {
   display: inline-block;
   text-decoration: none;
@@ -181,7 +133,6 @@ header {
   border-radius: 0;
 }
 
-/* Phần thân chính của nút (thẻ <span> bên trong) */
 .register_css span {
   display: block;
   padding: 10px 40px;
@@ -201,15 +152,12 @@ header {
     0 100%,
     0 var(--corner-size)
   );
-
-  /* === PHẦN THÊM VÀO CHO HIỆU ỨNG HOVER === */
-  position: relative; /* 1. Cần thiết để định vị cho ::before */
-  z-index: 1;         /* 2. Đảm bảo context stacking hoạt động đúng */
-  overflow: hidden;   /* 3. QUAN TRỌNG: Ẩn ô màu trắng khi nó ở bên ngoài */
-  transition: color 0.4s ease-in-out; /* 4. Thêm hiệu ứng chuyển màu cho chữ */
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  transition: color 0.4s ease-in-out;
 }
 
-/* Lớp phủ màu trắng trượt vào */
 .register_css span::before {
   content: '';
   position: absolute;
@@ -218,8 +166,6 @@ header {
   width: 100%;
   height: 100%;
   background-color: white;
-
-  /* Rất quan trọng: Lớp phủ phải có hình dạng y hệt nút */
   clip-path: polygon(
     var(--corner-size) 0,
     100% 0,
@@ -228,29 +174,25 @@ header {
     0 100%,
     0 var(--corner-size)
   );
-  
-  /* Trạng thái ban đầu: Ẩn ở bên trái */
-  transform: translateX(-101%); 
-  
-  /* Hiệu ứng chuyển động */
+  transform: translateX(-101%);
   transition: transform 0.4s ease-in-out;
-  
-  /* Đặt lớp phủ nằm sau chữ nhưng trên nền đỏ */
-  z-index: -1; 
+  z-index: -1;
 }
 
-/* --- HIỆU ỨNG KHI DI CHUỘT --- */
-
-/* Khi hover, di chuyển lớp phủ trắng vào vị trí */
 .register_css:hover span::before {
   transform: translateX(0);
 }
 
-/* Đồng thời đổi màu chữ thành đen */
 .register_css:hover span {
   color: black;
 }
 
+<<<<<<< HEAD
+/* --- FOOTER --- */
+/* Khi có ảnh nền, footer sẽ trong suốt */
+body.has-fullscreen-bg footer {
+    background-color: transparent !important;
+=======
 .header-link {
   background-color: transparent;
   color: #e4e6eb; /* Màu chữ trắng ngà của header */
@@ -514,4 +456,5 @@ header {
         opacity: 1;
         transform: translateY(0);
     }
+>>>>>>> 3b23c519eb65f3f74378cf949f14afd32bf87a0f
 }
