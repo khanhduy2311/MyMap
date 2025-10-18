@@ -7,6 +7,13 @@ block main
       h1.text-primary
         i.fas.fa-th-large.me-2
         | Mindmap của bạn
+    
+    //- Nút "Tạo Mindmap mới" đã được di chuyển vào đây
+    a.btn.btn-primary.btn-lg(href="/upload/page")
+      i.fas.fa-plus.me-2
+      | Tạo Mindmap mới
+
+
 
     //- Danh sách Mindmap
     if mindmaps && mindmaps.length > 0
@@ -24,9 +31,6 @@ block main
         h4.alert-heading Chưa có mindmap nào!
         p.mb-4 Hãy bắt đầu sáng tạo bằng cách tạo ra mindmap đầu tiên của bạn.
 
-  //- Nút "Tạo Mindmap mới" đã được di chuyển vào đây
-  a.btn.btn-primary.btn-lg(href="/upload/page")
-    i.fas.fa-plus.me-2
-    | Tạo Mindmap mới
+    
         
         
