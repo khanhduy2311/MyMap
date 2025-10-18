@@ -1,6 +1,8 @@
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const {
+    GoogleGenerativeAI
+} = require("@google/generative-ai");
 
 // Cấu hình Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -17,7 +19,9 @@ exports.getUploadPage = (req, res) => {
 exports.handleUploadAndSummarize = async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ error: 'Vui lòng chọn một file để tải lên.' });
+            return res.status(400).json({
+                error: 'Vui lòng chọn một file để tải lên.'
+            });
         }
 
         const buffer = req.file.buffer;
@@ -29,39 +33,84 @@ exports.handleUploadAndSummarize = async (req, res) => {
             const data = await pdf(buffer);
             extractedText = data.text;
         } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            const result = await mammoth.extractRawText({ buffer });
+            const result = await mammoth.extractRawText({
+                buffer
+            });
             extractedText = result.value;
         } else if (mimetype === 'text/plain') {
             extractedText = buffer.toString('utf8');
         }
 
         if (!extractedText || extractedText.trim().length === 0) {
-            return res.status(400).json({ error: 'Không thể đọc nội dung từ file này.' });
+            return res.status(400).json({
+                error: 'Không thể đọc nội dung từ file này.'
+            });
         }
-        
+
         // Sửa lại tên model cho chính xác
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.0-flash"
+        });
         const documentContent = extractedText.substring(0, 300000);
 
         const prompt = `
-            Phân tích văn bản sau đây và trích xuất cấu trúc để tạo một sơ đồ tư duy (mindmap).
-            Xác định chủ đề chính, các chủ đề phụ và các điểm chính trong mỗi chủ đề phụ.
-            Chỉ trả lời bằng một đối tượng JSON hợp lệ duy nhất, không thêm bất kỳ văn bản giải thích hay markdown nào.
-            JSON phải có cấu trúc như sau:
+         Phân tích văn bản sau đây và trích xuất cấu trúc để tạo một sơ đồ tư duy (mindmap).
+Xác định chủ đề chính, các chủ đề phụ và các điểm chính trong mỗi chủ đề phụ.
+Chỉ trả lời bằng một đối tượng JSON hợp lệ duy nhất, không thêm bất kỳ văn bản giải thích hay markdown nào.
+Json cần có cấu trúc như sau:
+{
+  "mainTopic": "Tên Môn Học Của Giáo Trình",
+  "subTopics": [
+    {
+      "chapterTitle": "Chương I: Giới thiệu tổng quan",
+      "mainSections": [
+        {
+          "title": "1. Khái niệm cơ bản",
+          "subsections": [
             {
-              "mainTopic": "Chủ đề chính của văn bản",
-              "subTopics": [
-                {
-                  "title": "Tiêu đề của chủ đề phụ 1",
-                  "points": ["Điểm chính 1.1", "Điểm chính 1.2"]
-                },
-                {
-                  "title": "Tiêu đề của chủ đề phụ 2",
-                  "points": ["Điểm chính 2.1", "Điểm chính 2.2"]
-                }
-              ],
-              "summary": "Một câu tóm tắt ngắn gọn về toàn bộ nội dung."
+              "subtitle": "a. Định nghĩa A",
+              "points": [
+                "Nội dung ý chính đầu tiên của định nghĩa A.",
+                "Nội dung ý chính thứ hai của định nghĩa A."
+              ]
+            },
+            {
+              "subtitle": "b. Lịch sử hình thành B",
+              "points": [
+                "Ý chính về lịch sử B."
+              ]
             }
+          ]
+        },
+        {
+          "title": "2. Vai trò và tầm quan trọng",
+          "subsections": [
+            {
+              "subtitle": "a. Đối với ngành",
+              "points": [
+                "Phân tích vai trò 1.",
+                "Phân tích vai trò 2."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapterTitle": "Chương II: Phân tích chuyên sâu",
+      "mainSections": [
+        {
+          "title": "1. Mô hình XYZ",
+          "subsections": []
+        }
+      ]
+    }
+  ],
+  "summary": "Tóm tắt chung về toàn bộ giáo trình."
+}
+Đoạn trên là ví dụ về một đoạn mã Json, hãy bám theo đó đi theo các cấu trúc được đề ra (mainTopic -> subTopics -> chapterTitle -> titile -> subtitle -> points) lưu ý là các phân cấp nhỏ hơn ở bên trong một phân cấp lơn hơn đôi khi sẽ không tồn tại.
+Có thể dựa vào phần mục lục để lấy ra các subTopics, chapterTitle từ đó đi vào đọc cụ thể trong văn bản để phân tích ra các title, subtitle (nếu có) 
+Bản Json output cần đảm bảo đủ nội dung văn bản đề ra, chỉ tóm tắt các points lại thành các đoạn ngắn gọn, ngoài ra các phân cấp cao hơn nếu có không thể thiếu 
             
             Văn bản cần phân tích:
             ---
@@ -84,6 +133,8 @@ exports.handleUploadAndSummarize = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Lỗi khi xử lý tài liệu:', error);
-        res.status(500).json({ error: 'Đã xảy ra lỗi khi phân tích tài liệu: ' + error.message });
+        res.status(500).json({
+            error: 'Đã xảy ra lỗi khi phân tích tài liệu: ' + error.message
+        });
     }
 };
