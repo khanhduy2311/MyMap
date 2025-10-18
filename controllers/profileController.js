@@ -52,9 +52,16 @@ exports.updateUserProfile = async (req, res) => {
         // Cập nhật session
         req.session.user.name = name;
         req.session.user.username = username;
-        await req.session.save();
+        
+        // === THAY ĐỔI Ở ĐÂY ===
+        // 1. Gán một flash message vào session
+        req.flash('success_msg', 'Cập nhật thông tin thành công!');
 
-        res.json({ success: true, message: 'Cập nhật thông tin thành công!' });
+        // 2. Lưu session và gửi về tín hiệu success (không cần gửi message nữa)
+        req.session.save(() => {
+            res.json({ success: true });
+        });
+
     } catch (err) {
         console.error('❌ Lỗi khi cập nhật thông tin:', err);
         res.status(500).json({ success: false, message: 'Lỗi máy chủ khi cập nhật.' });
@@ -71,7 +78,6 @@ exports.postAvatarUpload = async (req, res) => {
             req.flash('error_msg', 'Vui lòng chọn ảnh hợp lệ!');
             return res.redirect('/profile');
         }
-
         const avatarUrl = req.file.path;
         const result = await userModel.updateUserAvatar(db, userId, avatarUrl);
 
@@ -79,11 +85,9 @@ exports.postAvatarUpload = async (req, res) => {
             req.flash('error_msg', 'Không thể cập nhật ảnh đại diện!');
             return res.redirect('/profile');
         }
-
         req.session.user.avatar = avatarUrl;
         req.flash('success_msg', 'Cập nhật ảnh đại diện thành công!');
         res.redirect('/profile');
-
     } catch (err) {
         console.error('❌ Lỗi upload avatar:', err);
         req.flash('error_msg', 'Đã xảy ra lỗi khi tải ảnh lên.');

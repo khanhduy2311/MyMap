@@ -1,458 +1,450 @@
 /* =================================================================== */
-/* STYLE CHO TRANG CHỦ (KHÔNG ĐĂNG NHẬP)                  */
+/* STYLE CHO TRANG CHỦ (KHÔNG ĐĂNG NHẬP)                  */
 /* =================================================================== */
 
 /* --- CÀI ĐẶT BIẾN TOÀN CỤC --- */
 :root {
-  --button-color: #e84057;      /* Màu đỏ hồng chủ đạo */
-  --button-hover-color: #d13247;/* Màu đậm hơn khi di chuột */
-  --corner-size: 18px;         /* Kích thước của góc cắt */
+  --button-color: #e84057;      /* Màu đỏ hồng chủ đạo */
+  --button-hover-color: #d13247;/* Màu đậm hơn khi di chuột */
+  --corner-size: 18px;         /* Kích thước của góc cắt */
 }
 
 /* --- CÀI ĐẶT CHUNG & BODY --- */
 html, body {
-  margin: 0;
-  padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 /* Thêm khoảng trống ở body để không bị header che mất */
 body.has-fullscreen-bg {
-    padding-top: 85px; /* Chiều cao tương ứng với header */
+    padding-top: 85px; /* Chiều cao tương ứng với header */
 }
 
 /* --- HEADER --- */
 .main-header {
-    background-color: rgba(20, 20, 20, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1.5rem 0; /* THAY ĐỔI: Tăng từ 0.75rem lên 1rem */
-    width: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
+    background-color: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem 0; /* THAY ĐỔI: Tăng từ 0.75rem lên 1rem */
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
 }
 
 .logo-header {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #e4e6eb;
-    text-decoration: none;
-    letter-spacing: 1px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e4e6eb;
+    text-decoration: none;
+    letter-spacing: 1px;
 }
 
 /* Nút "Đăng Nhập" (phiên bản cuối cùng - ghost button) */
 .header-link {
-  background-color: transparent;
-  color: #e4e6eb;
-  border: 1px solid #e4e6eb;
-  text-decoration: none;
-  font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  transition: all 0.2s ease-in-out;
-  border-radius: 4px;
+  background-color: transparent;
+  color: #e4e6eb;
+  border: 1px solid #e4e6eb;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+  border-radius: 4px;
 }
 
 .header-link:hover {
-  background-color: #e4e6eb;
-  color: #242526;
-  text-decoration: none;
+  background-color: #e4e6eb;
+  color: #242526;
+  text-decoration: none;
 }
 
 /* --- NỀN SLIDESHOW TOÀN MÀN HÌNH --- */
 .fullscreen-bg-carousel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
 }
 
 .fullscreen-bg-carousel::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
-    z-index: 0;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 0;
 }
 
 .fullscreen-bg-carousel .carousel-item,
 .fullscreen-bg-carousel .carousel-inner,
 .fullscreen-bg-carousel .carousel-inner img {
-    height: 100%;
-    width: 100%;
-    object-fit: cover;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
 }
 
 .fullscreen-bg-carousel .carousel-inner img {
-    filter: blur(4px);
-    transform: scale(1.2);
+    filter: blur(4px);
+    transform: scale(1.2);
 }
 
 /* --- NỘI DUNG CHÍNH (HERO TEXT) --- */
 .content-overlay {
-    position: relative;
-    width: 100%;
-    flex-grow: 1;
+    position: relative;
+    width: 100%;
+    flex-grow: 1;
 }
 
 .hero-text {
-    position: absolute;
-    top: 85px;
-    left: 100px;
-    color: white;
-    max-width: 600px;
-    text-align: left;
-    text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+    position: absolute;
+    top: 85px;
+    left: 100px;
+    color: white;
+    max-width: 600px;
+    text-align: left;
+    text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
 }
 
 .hero-text h1 {
-    font-size: 5rem;
-    font-weight: 700;
+    font-size: 5rem;
+    font-weight: 700;
 }
 
 .hero-text p.lead {
-    font-weight: bold;
-    font-style: italic;
-    font-size: 1.75rem;
+    font-weight: bold;
+    font-style: italic;
+    font-size: 1.75rem;
 }
 
 /* --- NÚT "BẮT ĐẦU NGAY" --- */
 .register_css {
-  display: inline-block;
-  text-decoration: none;
-  margin-top: 20px;
-  border: none;
-  background-color: transparent;
-  padding: 0;
-  border-radius: 0;
+  display: inline-block;
+  text-decoration: none;
+  margin-top: 20px;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
 }
 
 .register_css span {
-  display: block;
-  padding: 10px 40px;
-  background-color: var(--button-color);
-  color: white;
-  font-family: 'Oswald', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-  clip-path: polygon(
-    var(--corner-size) 0,
-    100% 0,
-    100% calc(100% - var(--corner-size)),
-    calc(100% - var(--corner-size)) 100%,
-    0 100%,
-    0 var(--corner-size)
-  );
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-  transition: color 0.4s ease-in-out;
+  display: block;
+  padding: 10px 40px;
+  background-color: var(--button-color);
+  color: white;
+  font-family: 'Oswald', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  clip-path: polygon(
+    var(--corner-size) 0,
+    100% 0,
+    100% calc(100% - var(--corner-size)),
+    calc(100% - var(--corner-size)) 100%,
+    0 100%,
+    0 var(--corner-size)
+  );
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  transition: color 0.4s ease-in-out;
 }
 
 .register_css span::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: white;
-  clip-path: polygon(
-    var(--corner-size) 0,
-    100% 0,
-    100% calc(100% - var(--corner-size)),
-    calc(100% - var(--corner-size)) 100%,
-    0 100%,
-    0 var(--corner-size)
-  );
-  transform: translateX(-101%);
-  transition: transform 0.4s ease-in-out;
-  z-index: -1;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  clip-path: polygon(
+    var(--corner-size) 0,
+    100% 0,
+    100% calc(100% - var(--corner-size)),
+    calc(100% - var(--corner-size)) 100%,
+    0 100%,
+    0 var(--corner-size)
+  );
+  transform: translateX(-101%);
+  transition: transform 0.4s ease-in-out;
+  z-index: -1;
 }
 
 .register_css:hover span::before {
-  transform: translateX(0);
+  transform: translateX(0);
 }
 
 .register_css:hover span {
-  color: black;
+  color: black;
 }
 
 /* --- FOOTER --- */
 /* Khi có ảnh nền, footer sẽ trong suốt */
 body.has-fullscreen-bg footer {
-    background-color: transparent !important;
-.header-link {
-  background-color: transparent;
-  color: #e4e6eb; /* Màu chữ trắng ngà của header */
-  border: 1px solid #e4e6eb; /* Thêm viền trắng */
-  text-decoration: none;
-  font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  transition: all 0.2s ease-in-out;
-  border-radius: 4px;
+    background-color: transparent !important;
 }
-}
+/* * KHỐI .header-link BỊ LỖI ĐÃ ĐƯỢC XÓA KHỎI ĐÂY 
+ */
 
 .header-link:hover {
-  background-color: #e4e6eb; /* Nền trắng khi di chuột */
-  color: #242526; /* Chữ màu đen của header */
-  text-decoration: none;
+  background-color: #e4e6eb; /* Nền trắng khi di chuột */
+  color: #242526; /* Chữ màu đen của header */
+  text-decoration: none;
 }
 /* ===== STYLE CHO TRANG UPLOAD ===== */
 
 /* Container chính cho trang upload */
 .upload-container {
-    position: relative;
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    margin: 2rem auto;
-    padding: 2rem;
+    position: relative;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    padding: 2rem;
 }
 
 /* Card styling cho upload */
 .upload-card {
-    background: white;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    background: white;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
 }
 
 .upload-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 /* Progress bar animations */
 .progress {
-    height: 8px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.1);
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .progress-bar {
-    background: linear-gradient(45deg, #e84057, #ff6b6b);
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 10px;
+    background: linear-gradient(45deg, #e84057, #ff6b6b);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 10px;
 }
 
 /* Result area animations */
 #resultArea {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.5s ease-in-out;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.5s ease-in-out;
 }
 
 #resultArea.show {
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* JSON preview styling */
 #mindmapPreview {
-    background: #1a1a1a;
-    color: #00ff88;
-    border: 1px solid #333;
-    border-radius: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    transition: all 0.3s ease;
-    max-height: 0;
-    overflow: hidden;
+    background: #1a1a1a;
+    color: #00ff88;
+    border: 1px solid #333;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    transition: all 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
 }
 
 #mindmapPreview.show {
-    max-height: 400px;
-    padding: 1rem;
-    margin-top: 1rem;
+    max-height: 400px;
+    padding: 1rem;
+    margin-top: 1rem;
 }
 
 /* Button animations */
 #submitBtn, #createMindmapBtn {
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    border: none;
-    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: 600;
 }
 
 #submitBtn {
-    background: linear-gradient(45deg, #e84057, #ff6b6b);
+    background: linear-gradient(45deg, #e84057, #ff6b6b);
 }
 
 #createMindmapBtn {
-    background: linear-gradient(45deg, #28a745, #20c997);
+    background: linear-gradient(45deg, #28a745, #20c997);
 }
 
 #submitBtn:hover, #createMindmapBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(232, 64, 87, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(232, 64, 87, 0.4);
 }
 
 /* Loading spinner */
 .fa-spinner {
-    animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Error area animations */
 #errorArea {
-    animation: shake 0.5s ease-in-out, fadeIn 0.3s ease;
-    background: linear-gradient(45deg, #dc3545, #e84057);
-    color: white;
-    border: none;
-    border-radius: 8px;
+    animation: shake 0.5s ease-in-out, fadeIn 0.3s ease;
+    background: linear-gradient(45deg, #dc3545, #e84057);
+    color: white;
+    border: none;
+    border-radius: 8px;
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-8px); }
-    75% { transform: translateX(8px); }
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* File input styling */
 .form-control {
-    border: 2px dashed #dee2e6;
-    border-radius: 8px;
-    padding: 1rem;
-    transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.8);
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
 }
 
 .form-control:focus {
-    border-color: #e84057;
-    box-shadow: 0 0 0 0.25rem rgba(232, 64, 87, 0.25);
-    background: white;
+    border-color: #e84057;
+    box-shadow: 0 0 0 0.25rem rgba(232, 64, 87, 0.25);
+    background: white;
 }
 
 .form-control:hover {
-    border-color: #e84057;
-    background: white;
+    border-color: #e84057;
+    background: white;
 }
 
 /* Progress text styling */
 #progressText {
-    font-weight: 600;
-    color: #e84057;
+    font-weight: 600;
+    color: #e84057;
 }
 
 /* View JSON button */
 #viewJsonBtn {
-    background: linear-gradient(45deg, #6c757d, #868e96);
-    border: none;
-    transition: all 0.3s ease;
+    background: linear-gradient(45deg, #6c757d, #868e96);
+    border: none;
+    transition: all 0.3s ease;
 }
 
 #viewJsonBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
 }
 
 /* Success header */
 .card-header.bg-success {
-    background: linear-gradient(45deg, #28a745, #20c997) !important;
-    border: none;
-    font-weight: 600;
+    background: linear-gradient(45deg, #28a745, #20c997) !important;
+    border: none;
+    font-weight: 600;
 }
 
 /* Custom scrollbar for JSON preview */
 #mindmapPreview::-webkit-scrollbar {
-    width: 8px;
+    width: 8px;
 }
 
 #mindmapPreview::-webkit-scrollbar-track {
-    background: #2a2a2a;
-    border-radius: 4px;
+    background: #2a2a2a;
+    border-radius: 4px;
 }
 
 #mindmapPreview::-webkit-scrollbar-thumb {
-    background: #00ff88;
-    border-radius: 4px;
+    background: #00ff88;
+    border-radius: 4px;
 }
 
 #mindmapPreview::-webkit-scrollbar-thumb:hover {
-    background: #00cc6a;
+    background: #00cc6a;
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
-    .upload-container {
-        margin: 1rem;
-        padding: 1.5rem;
-    }
-    
-    .hero-text {
-        left: 30px;
-        right: 30px;
-        max-width: none;
-    }
-    
-    .hero-text h1 {
-        font-size: 2.5rem;
-    }
-    
-    .hero-text p.lead {
-        font-size: 1.2rem;
-    }
-    
-    #mindmapPreview {
-        font-size: 0.7rem;
-        max-height: 300px;
-    }
+    .upload-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .hero-text {
+        left: 30px;
+        right: 30px;
+        max-width: none;
+    }
+    
+    .hero-text h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero-text p.lead {
+        font-size: 1.2rem;
+    }
+    
+    #mindmapPreview {
+        font-size: 0.7rem;
+        max-height: 300px;
+    }
 }
 
 /* Smooth transitions for all interactive elements */
 .btn, .card, .form-control, .progress-bar, .alert {
-    transition: all 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 /* Pulse animation for active processing */
 .processing {
-    animation: pulse 2s infinite;
+    animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(232, 64, 87, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(232, 64, 87, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(232, 64, 87, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(232, 64, 87, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(232, 64, 87, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(232, 64, 87, 0); }
 }
 
 /* Fade in animation for page load */
 .container.mt-4 {
-    animation: fadeInUp 0.8s ease;
+    animation: fadeInUp 0.8s ease;
 }
 
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
