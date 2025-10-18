@@ -21,6 +21,24 @@ block main
               .d-flex.justify-content-end
                 a.btn.btn-secondary.me-2(href="/profile") Hủy
                 button.btn.btn-primary(type="submit") Lưu thay đổi
+
+        //- Cột đổi avatar
+      .col-md-6.mb-4
+        .card.h-100
+          .card-header
+            h4 Cập nhật ảnh đại diện
+          .card-body.text-center
+            form(action="/profile/avatar" method="POST" enctype="multipart/form-data" class="d-flex flex-column align-items-center")
+              input#avatarInput(type="file" name="avatar" accept="image/*" class="d-none" required)
+              button.btn.btn-outline-secondary.mb-3(type="button", onclick="document.getElementById('avatarInput').click()")
+                i.fas.fa-upload.me-2
+                | Chọn ảnh mới
+              span#fileNameAvatar.text-muted.mb-3 Chưa có file nào được chọn
+              img#avatarPreview.rounded-circle.shadow(style="width:150px;height:150px;object-fit:cover;display:none;border:3px solid #ddd;")
+              button.btn.btn-primary.mt-4(type="submit")
+                i.fas.fa-save.me-2
+                | Lưu ảnh đại diện
+  
   
   script.
     document.getElementById('editProfileForm')?.addEventListener('submit', async (e) => {
@@ -44,5 +62,23 @@ block main
         }
       } catch (err) {
         alert('⚠️ Lỗi khi gửi dữ liệu: ' + err.message);
+      }
+    });
+
+
+  //- Script cho preview ảnh
+  script.
+    document.getElementById('avatarInput')?.addEventListener('change', e => {
+      const file = e.target.files[0];
+      const fileNameAvatar = document.getElementById('fileNameAvatar');
+      const avatarPreview = document.getElementById('avatarPreview');
+      if (file) {
+        fileNameAvatar.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = e => {
+          avatarPreview.src = e.target.result;
+          avatarPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
       }
     });

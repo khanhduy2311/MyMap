@@ -4,7 +4,11 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/middlewares.js');
 const dashboardController = require('../controllers/dashboardController.js');
 
+// Thêm dòng này để import middleware noCache
+const noCache = require('../middlewares/noCache.js');
+
 // Route chính sau khi đăng nhập
-router.get('/', authMiddleware.checkLoggedIn, dashboardController.getDashboardPage);
+// Thêm noCache vào giữa authMiddleware và dashboardController
+router.get('/', authMiddleware.checkLoggedIn, noCache, dashboardController.getDashboardPage);
 
 module.exports = router;
