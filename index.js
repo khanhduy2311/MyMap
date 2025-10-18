@@ -70,7 +70,7 @@ async function startServer() {
     app.use('/upload', documentRoutes);
     
     // Kích hoạt API lưu mindmap
-    app.use('/mindmap', mindmapRoutes); 
+    app.use('/mindmaps', mindmapRoutes); 
     
     app.use('/', authRoutes);
 

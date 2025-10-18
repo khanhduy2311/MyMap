@@ -1,0 +1,30 @@
+extends layouts/default.pug
+
+block main
+  .container.mt-5.text-center
+    .row.justify-content-center
+      .col-md-8
+        .card.border-danger.shadow-sm
+          .card-body.p-5
+            //- Icon lỗi
+            i.fas.fa-exclamation-triangle.fa-5x.text-danger.mb-4
+
+            //- Tiêu đề (lấy từ biến pageTitle mà index.js gửi qua)
+            h1.card-title.fw-bold= pageTitle || 'Lỗi 404'
+            
+            h2.card-subtitle.mb-3.text-muted Không tìm thấy trang
+            
+            p.card-text.fs-5.mb-4
+              | Rất tiếc, trang bạn đang tìm kiếm có thể đã bị xóa, 
+              | đổi tên hoặc không bao giờ tồn tại.
+
+            //- Nút bấm quay về, tự động điều hướng
+            //- (Biến 'user' được truyền vào từ middleware trong index.js)
+            if user
+              a.btn.btn-primary.btn-lg.px-5(href="/dashboard")
+                i.fas.fa-home.me-2
+                | Về trang Dashboard
+            else
+              a.btn.btn-primary.btn-lg.px-5(href="/login")
+                i.fas.fa-sign-in-alt.me-2
+                | Về trang Đăng nhập

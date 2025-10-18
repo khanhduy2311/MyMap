@@ -18,14 +18,26 @@ block main
 
             form#uploadForm
               .mb-4
+                //
+                // BẮT ĐẦU SỬA LỖI THỤT ĐẦU DÒNG
+                // Bốn dòng (label, input, .mt-2, #fileInfo) dưới đây phải thẳng hàng
+                //
                 .file-upload-area.border.rounded-3.p-4.text-center
                   i.fas.fa-cloud-upload-alt.display-4.text-muted.mb-3
+                  
                   label.form-label.fw-bold.fs-5(for="documentFile") 
                     | Chọn hoặc kéo thả file vào đây
-                  input.form-control.d-none(type="file" name="documentFile" id="documentFile" accept=".pdf,.docx,.txt" required)
+                  
+                  // Đã xóa 'required'
+                  input.form-control.d-none(type="file" name="documentFile" id="documentFile" accept=".pdf,.docx,.txt")
+                  
                   .mt-2
                     small.text-muted PDF, DOCX, TXT (Tối đa 50MB)
+                  
                   #fileInfo.mt-2
+                //
+                // KẾT THÚC SỬA
+                //
 
               .d-grid
                 button#submitBtn.btn.btn-primary.btn-lg.py-3(type="submit")
@@ -91,9 +103,11 @@ block main
               
               .card.border-0
                 .card-body.p-0
-                  pre#mindmapPreview.bg-dark.text-light.p-4.rounded-3
+                  // Dòng này đã đúng, tôi giữ nguyên style của bạn
+                  pre#mindmapPreview.bg-dark.text-light.p-4.rounded-3(style="max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;")
 
 block scripts
+  // Toàn bộ code <script> của bạn không thay đổi
   script.
     //- Lấy các phần tử DOM
     const uploadForm = document.getElementById('uploadForm');
