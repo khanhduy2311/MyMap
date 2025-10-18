@@ -10,6 +10,9 @@ html(lang="vi")
     link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css")
     link(rel="stylesheet", href="/css/style-home.css")
 
+    //- THÊM BLOCK NÀY VÀO
+    block styles
+
     //- Page Title
     title #{pageTitle} | MindTree
 
@@ -26,7 +29,7 @@ html(lang="vi")
             .dropdown
               button.btn.btn-dark.dropdown-toggle.d-flex.align-items-center(type="button", data-bs-toggle="dropdown")
                 img.rounded-circle.me-2(src=user.avatar || '/images/default-avatar.png', alt="avatar", style="width:40px;height:40px;object-fit:cover;border:2px solid #ccc;")
-                span #{user.name || user.username}
+                span #{user.username || user.username}
               ul.dropdown-menu.dropdown-menu-end
                 li
                   a.dropdown-item(href="/dashboard")

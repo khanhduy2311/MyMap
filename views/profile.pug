@@ -1,25 +1,59 @@
+
 extends ../views/layouts/default.pug
+
+//- Thêm link đến file CSS riêng của trang profile
+block styles
+  link(rel="stylesheet", href="/css/style-profile.css")
+
 block main
-  .container.mt-4
-    .row
-      //- Cột thông tin cá nhân
-      .col-md-6.mb-4
-        .card.h-100
-          .card-header
-            h4 Thông tin cá nhân
-          .card-body.text-center
-            img(src=user.avatar || '/images/default-avatar.png', alt="Avatar", class="rounded-circle shadow mb-3", style="width:150px;height:150px;object-fit:cover;border:3px solid #ddd;")
-            h3 #{user.name || 'Chưa có tên'}
-            p.text-muted @#{user.username || 'Chưa có username'}
-            p.text-muted 
-              i.fas.fa-envelope.me-2
-              | #{user.email || 'Chưa có email'}
-            p.text-muted 
-              i.fas.fa-calendar.me-2
-              | Tham gia: #{user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'Không rõ'}
-            a.btn.btn-outline-primary.btn-sm.mt-2(href="/profile/edit")
-              i.fas.fa-edit.me-1
-              | Chỉnh sửa thông tin
+  .container-fluid.mt-5.mb-5
+    .row.justify-content-center
+      .col-lg-12.col-md-12
+        .profile-page-card
+          .card-header.text-center.bg-white
+            h4.mb-0 Thông tin cá nhân
 
+          //- BỐ CỤC MỚI THEO SƠ ĐỒ
+          .profile-layout-container
 
+            //- THAY THẾ CÁC DÒNG PATH CŨ BẰNG CÁC DÒNG MỚI NÀY
+            svg.connector-lines(viewBox="0 0 400 300", preserveAspectRatio="xMidYMid meet")
+              //- Đường nối Tên người dùng (trên, trái) 
+              path(d="M 168 118 L 115 65 L 40 65")
+              //- Đường nối Email (trên, phải) 
+              path(d="M 232 118 L 285 65 L 360 65")
+              //- Đường nối Ngày tham gia (dưới, trái) 
+              path(d="M 168 170 L 103 235 L 40 235")
+              //- Đường nối Số project (dưới, phải) 
+              path(d="M 232 170 L 297 235 L 360 235")
 
+            //- Khối Tên người dùng (trên, trái)
+            .info-box.top-left
+              i.fas.fa-user.fa-2x
+              .label Tên người dùng
+              .value #{user.username || 'Chưa có tên'}
+
+            //- Khối Email (trên, phải)
+            .info-box.top-right
+              i.fas.fa-envelope.fa-2x
+              .label Email
+              .value #{user.email || 'Chưa có email'}
+
+            //- Avatar và nút chỉnh sửa (chính giữa)
+            .avatar-container
+              img.profile-avatar(src=user.avatar || '/images/default-avatar.png', alt="Avatar")
+              a.edit-link(href="/profile/edit")
+                i.fas.fa-edit.me-1
+                | Chỉnh sửa thông tin
+
+            //- Khối Ngày tham gia (dưới, trái)
+            .info-box.bottom-left
+              i.fas.fa-calendar-alt.fa-2x
+              .label Ngày tham gia
+              .value #{user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'Không rõ'}
+
+            //- Khối Số project (dưới, phải)
+            .info-box.bottom-right
+              i.fas.fa-project-diagram.fa-2x
+              .label Số project
+              .value #{user.projectCount || 0}
