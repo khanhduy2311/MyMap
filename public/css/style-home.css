@@ -191,8 +191,8 @@ body.has-fullscreen-bg {
 /* Khi có ảnh nền, footer sẽ trong suốt */
 body.has-fullscreen-bg footer {
     background-color: transparent !important;
+}
 
-    
 .header-link {
   background-color: transparent;
   color: #e4e6eb; /* Màu chữ trắng ngà của header */
