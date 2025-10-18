@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Dùng model hợp lệ (hiện tại Google khuyên dùng: gemini-1.5-flash hoặc gemini-1.5-pro)
-const MODEL_NAME = "gemini-2.0-flash";
+const MODEL_NAME = "gemini-2.5-flash";
 
 async function testGemini() {
   try {

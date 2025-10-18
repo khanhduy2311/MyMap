@@ -187,12 +187,10 @@ body.has-fullscreen-bg {
   color: black;
 }
 
-<<<<<<< HEAD
 /* --- FOOTER --- */
 /* Khi có ảnh nền, footer sẽ trong suốt */
 body.has-fullscreen-bg footer {
     background-color: transparent !important;
-=======
 .header-link {
   background-color: transparent;
   color: #e4e6eb; /* Màu chữ trắng ngà của header */
@@ -202,6 +200,7 @@ body.has-fullscreen-bg footer {
   padding: 0.5rem 0.75rem;
   transition: all 0.2s ease-in-out;
   border-radius: 4px;
+}
 }
 
 .header-link:hover {
@@ -456,5 +455,4 @@ body.has-fullscreen-bg footer {
         opacity: 1;
         transform: translateY(0);
     }
->>>>>>> 3b23c519eb65f3f74378cf949f14afd32bf87a0f
 }
