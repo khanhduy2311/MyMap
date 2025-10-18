@@ -98,6 +98,6 @@ exports.logout = (req, res) => {
         if (err) {
             console.error('❌ Lỗi khi đăng xuất:', err);
         }
-        res.redirect('/login');
+        res.redirect('/');
     });
 };
