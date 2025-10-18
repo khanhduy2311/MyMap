@@ -1,7 +1,8 @@
 extends ../views/layouts/default.pug
-
+block styles
+  link(rel="stylesheet", href="/css/style-main.css")
 block main
-  .container.mt-4
+  .container.mt-4.fade-in-up
     //- Header trang (Nút đã được xóa khỏi đây)
     .d-flex.justify-content-between.align-items-center.mb-4
       h1.text-primary
