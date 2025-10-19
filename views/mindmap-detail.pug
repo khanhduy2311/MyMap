@@ -1,18 +1,21 @@
 extends ../views/layouts/default.pug
+
 block main
   .container.mt-4
-    //- Nút quay về
+    //- Nút quay về Dashboard
     a.btn.btn-outline-secondary.mb-4(href="/dashboard")
       i.fas.fa-arrow-left.me-2
       | Quay về Dashboard
 
-    //- Hiển thị tiêu đề chính
+    //- Hiển thị tiêu đề chính của mindmap
     h1.mb-4= mindmap.title
 
-    //- Hiển thị nội dung đã tóm tắt
+    //- Khu vực hiển thị nội dung Markdown thô
+    h5.card-title Nội dung (Định dạng Markdown để Frontend xử lý):
     .card
       .card-body
-        h5.card-title Tóm tắt nội dung
-        //- Dùng thẻ <pre> để giữ nguyên định dạng và xuống dòng của JSON
+        //- Dùng thẻ <pre> và <code> để giữ nguyên định dạng văn bản,
+        //- bao gồm các dấu #, -, thụt đầu dòng, và xuống dòng.
         pre.bg-light.p-3.rounded
-          code= JSON.stringify(mindmap.content, null, 2)
+          code= mindmap.content
+
