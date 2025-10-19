@@ -3,6 +3,8 @@ const router = express.Router();
 const mindmapController = require('../controllers/mindmapController.js');
 const authMiddleware = require('../middlewares/middlewares.js');
 
+router.patch('/:id', authMiddleware.checkLoggedIn, mindmapController.updateMindmapTitleAPI);
+
 // API endpoint: POST /mindmaps/create
 router.post('/create', authMiddleware.checkLoggedIn, mindmapController.createMindmap);
 router.get('/:id', authMiddleware.checkLoggedIn, mindmapController.getMindmapPage);
@@ -16,3 +18,4 @@ router.get('/view', authMiddleware.checkLoggedIn, (req, res) => {
     });
 });
 module.exports = router;
+

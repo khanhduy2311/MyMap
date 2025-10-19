@@ -5,14 +5,30 @@ const userModel = require('../models/userModel.js'); //
 // Hiển thị trang profile chính
 exports.getProfilePage = async (req, res) => {
     try {
-        // === THAY ĐỔI: Dùng usersDb ===
-        const db = req.app.locals.usersDb;
-        // =============================
-        const user = await userModel.findUserById(db, req.session.user._id);
+        // Lấy kết nối đến cả 2 database
+        const usersDb = req.app.locals.usersDb;
+        const mindmapsDb = req.app.locals.mindmapsDb; // <-- Lấy kết nối mindmapsDb
+
+        // Lấy thông tin user (giữ nguyên)
+        const user = await userModel.findUserById(usersDb, req.session.user._id);
+
+        if (!user) {
+            req.flash('error_msg', 'Không tìm thấy người dùng.');
+            return res.redirect('/dashboard');
+        }
+        
+        const collectionName = req.session.user._id.toString();
+        const mindmapCount = await mindmapsDb.collection(collectionName).countDocuments({});
+
+        // Gán số lượng đếm được vào đối tượng user
+        user.projectCount = mindmapCount;
+        
+
         res.render('profile', {
             pageTitle: 'Hồ sơ của bạn',
-            user: user
+            user: user // Đối tượng user bây giờ đã chứa thuộc tính projectCount
         });
+        
     } catch (err) {
         console.error('❌ Lỗi tải trang profile:', err);
         req.flash('error_msg', 'Không thể tải trang hồ sơ.');

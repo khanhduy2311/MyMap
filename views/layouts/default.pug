@@ -1,31 +1,25 @@
 doctype html
 html(lang="vi")
   head
-    //- Meta tags
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
-
-    //- Stylesheets
     link(href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css", rel="stylesheet")
     link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css")
-    link(rel="stylesheet", href="/css/style-home.css")
+    link(rel="stylesheet", href="/css/style-main.css")
     block styles
     title #{pageTitle} | MindTree
 
-  body.d-flex.flex-column.min-vh-100
-    //- HEADER
+  body(class=user ? '' : 'has-fullscreen-bg').d-flex.flex-column.min-vh-100
+    //- HEADER CỐ ĐỊNH
     header.bg-dark.text-white.p-3.shadow-sm
       .container
         .d-flex.justify-content-between.align-items-center
-          //- Logo
           a(href="/", class="h4 text-white text-decoration-none") MINDTREE
-
-          //- User Section
           if user
             .dropdown
               button.btn.btn-dark.dropdown-toggle.d-flex.align-items-center(type="button", data-bs-toggle="dropdown")
                 img.rounded-circle.me-2(src=user.avatar || '/images/default-avatar.png', alt="avatar", style="width:40px;height:40px;object-fit:cover;border:2px solid #ccc;")
-                span #{user.username || user.username}
+                span #{user.username}
               ul.dropdown-menu.dropdown-menu-end
                 li
                   a.dropdown-item(href="/dashboard")
@@ -47,21 +41,16 @@ html(lang="vi")
               a(href="/register", class="btn btn-primary") Đăng ký
 
     //- MAIN CONTENT
-    main.flex-grow-1
-      .container.mt-3
-        //- Flash Messages
-        if success_msg && success_msg.length > 0
-          .alert.alert-success.alert-dismissible.fade.show= success_msg
-            button(type="button", class="btn-close", data-bs-dismiss="alert")
-
-        if error_msg && error_msg.length > 0
-          .alert.alert-danger.alert-dismissible.fade.show= error_msg
-            button(type="button", class="btn-close", data-bs-dismiss="alert")
-        block main
-        block scripts
+    //- Sửa lại: bỏ thẻ main bọc ngoài, để block main tự quyết định layout
+    block main
+      
+    //- FOOTER
     footer.bg-light.text-center.p-3.mt-auto
       .container
         span &copy; 2025 Bản quyền thuộc về Nhóm 3 anh em siu nhân.
+
+    //- SCRIPTS
+    block scripts
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
     script.
       document.addEventListener('DOMContentLoaded', () => {

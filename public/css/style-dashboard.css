@@ -1,0 +1,417 @@
+/* File: /public/css/style-dashboard.css */
+
+/* --- BỐ CỤC CHÍNH --- */
+.dashboard-layout {
+    display: grid;
+    /* Thu hẹp sidebar còn 90px */
+    height: calc(100vh - 72px); 
+}
+
+/* --- SIDEBAR ĐIỀU KHIỂN --- */
+.dashboard-sidebar {
+    position: fixed;
+    top: 72px; /* cao bằng header trong default.pug */
+    left: 0;
+    width: 90px;
+    height: calc(100vh - 72px);
+    
+    background-color: #f6f5ff;
+    border-right: 1px solid #e9ecef;
+    padding: 16px 12px;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 100; /* để nổi lên trên nội dung */
+}
+
+/* --- KHUNG NỘI DUNG CHÍNH --- */
+.dashboard-content {
+    overflow-y: auto;
+    padding: 32px;
+    margin-left: 90px; /* Phải khớp với chiều rộng sidebar */
+}
+
+
+
+
+
+
+
+
+/* --- NÚT TẠO MỚI --- */
+.create-mindmap-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: transparent;
+    border: 2px solid #8c52ff;
+    color: #8c52ff;
+    text-decoration: none;
+    font-size: 1.5rem;
+    box-shadow: none;
+    
+    /* === THAY ĐỔI: ĐỊNH NGHĨA HIỆU ỨNG VÀ ĐỘ TRỄ === */
+    /* Nền sẽ đổi màu trong 0.2s, NHƯNG chỉ bắt đầu sau khi đợi 0.4s */
+    transition: background-color 0.2s ease-in-out 0.4s, color 0.2s ease-in-out 0.4s;
+}
+
+/* Hiệu ứng cho icon bên trong nút */
+.create-mindmap-btn i {
+    /* Icon sẽ xoay trong 0.5s, bắt đầu ngay lập tức */
+    transition: transform 0.5s ease-in-out;
+}
+
+.create-mindmap-btn:hover {
+    /* Khi hover, kích hoạt việc đổi màu nền và màu chữ */
+    background-color: #8c52ff;
+    color: white;
+    transform: scale(1.05); /* Giữ lại hiệu ứng phóng to nhẹ */
+}
+
+/* Khi hover, kích hoạt việc xoay icon */
+.create-mindmap-btn:hover i {
+    transform: rotate(360deg);
+}
+
+
+/* --- MENU ĐIỀU HƯỚỚNG (ICON VÀ CHỮ) --- */
+.sidebar-nav { width: 100%; }
+.sidebar-nav ul { list-style: none; padding: 0; margin: 0; }
+
+.sidebar-nav a {
+    display: flex;
+    /* THAY ĐỔI: Xếp item theo chiều dọc */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    
+    width: 100%;
+    height: 72px; /* Chiều cao cho mỗi mục */
+    border-radius: 8px;
+    
+    color: #525252;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.sidebar-nav a:hover {
+    background-color: #ede9ff;
+    color: #7a3ee6;
+}
+
+.sidebar-nav a.active {
+    background-color: #ede9ff;
+    color: #7a3ee6;
+}
+
+/* Tùy chỉnh cho icon */
+.sidebar-nav a i {
+    font-size: 1.25rem;
+    margin-bottom: 6px; /* Khoảng cách giữa icon và chữ */
+}
+
+/* Tùy chỉnh cho chữ */
+.sidebar-nav a span {
+    font-size: 0.7rem; /* Cỡ chữ nhỏ */
+    font-weight: 500;
+}
+
+/* --- CÁC STYLE CỦA LƯỚI MINDMAP (GIỮ NGUYÊN) --- */
+.mindmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px; }
+.mindmap-card { text-decoration: none; color: #212529; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; transition: all 0.2s ease; background-color: #fff; }
+.mindmap-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); border-color: #0d6efd; }
+.mindmap-card .preview-image { aspect-ratio: 4 / 3; background-color: #f0f2f5; border-bottom: 1px solid #e9ecef; }
+.mindmap-card .card-title { padding: 16px; font-weight: 600; }
+
+/* --- HIỆU ỨNG HOVER CHO MINDMAP CARD --- */
+
+/* 1. Chuẩn bị cho card để chứa các nút hành động */
+.mindmap-card {
+    position: relative; /* Quan trọng để định vị các nút con */
+}
+/* Link bao bọc ảnh và tiêu đề */
+.mindmap-card .card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+/* 2. Khối chứa các nút hành động (mặc định bị ẩn) */
+.card-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Khoảng cách giữa 2 nút */
+    
+    padding: 16px;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); /* Lớp nền mờ */
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    
+    /* Hiệu ứng trượt lên */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s ease;
+}
+
+/* 3. Khi hover vào card, hiển thị khối nút hành động */
+.mindmap-card:not(.is-editing):hover .card-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 4. Style cho các nút "Chỉnh sửa" và "Xóa" */
+.btn-action {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #343a40;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    background-color: rgb(38, 233, 24);
+    transform: scale(1.1);
+}
+
+/* Tùy chỉnh màu cho nút xóa khi hover */
+.btn-action.btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.card-title-display a {
+    text-decoration: none; /* Bỏ gạch chân */
+    color: inherit;        /* Kế thừa màu chữ đen từ card cha */
+    transition: color 0.2s ease; /* Thêm hiệu ứng chuyển màu */
+}
+
+/* Thêm hiệu ứng khi di chuột vào tiêu đề */
+.card-title-display a:hover {
+    color: #0d6efd; /* Đổi thành màu xanh dương khi hover */
+}
+
+/* File: /public/css/style-dashboard.css */
+
+/* --- STYLE CHO TIÊU ĐỀ CHÍNH CỦA TRANG --- */
+.content-title {
+    text-align: center; /* Căn giữa theo chiều ngang */
+    font-family: 'Poppins', sans-serif; /* Dùng font Poppins cho hiện đại */
+    font-size: 2.25rem;  /* Cỡ chữ to, nổi bật */
+    font-weight: 700;   /* Chữ đậm */
+    color: #343a40;     /* Màu xám đen, trông chuyên nghiệp */
+    
+    /* Hiệu ứng nghệ thuật */
+    text-transform: none; /* VIẾT IN HOA */
+    letter-spacing: 3px;     /* Tăng khoảng cách giữa các chữ cái */
+    
+    margin-bottom: 2.5rem; /* Tạo khoảng trống với lưới mindmap bên dưới */
+}
+
+/* --- HIỆU ỨNG HOVER CHO CARD TRONG THÙNG RÁC --- */
+
+/* Khối chứa nút khôi phục (ẩn mặc định) */
+.trash-card-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    
+    opacity: 0;
+    transition: all 0.25s ease;
+}
+
+/* Khi hover vào card, hiện nút khôi phục */
+.mindmap-card:hover .trash-card-actions {
+    opacity: 1;
+}
+
+/* Tùy chỉnh màu cho nút khôi phục khi hover */
+.btn-action.btn-recover:hover {
+    background-color: #4800fd; /* Màu xanh lá cây */
+    color: white;
+}
+
+/* nút xóa */
+.mindmap-card .card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    font-size: 0.75rem;
+    padding: 8px 16px;
+    text-align: center;
+}
+
+/* --- STYLE CHO GIAO DIỆN THÙNG RÁC TRỐNG --- */
+.empty-trash-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%; /* Chiếm toàn bộ chiều cao của khung nội dung */
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-trash-container .empty-icon {
+    font-size: 6rem; /* Icon lớn */
+    color: #8c52ff;  /* Màu tím giống Canva */
+    margin-bottom: 2rem;
+    opacity: 0.7;
+}
+
+.empty-trash-container .empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.5rem;
+}
+
+.empty-trash-container .empty-text {
+    max-width: 400px; /* Giới hạn chiều rộng của dòng chữ phụ */
+}
+
+@keyframes spinAndRainbow {
+  0% {
+    transform: rotate(0deg);
+    color: #8c52ff; /* Màu tím ban đầu */
+  }
+  20% {
+    color: #ff4d4d; /* Đỏ */
+  }
+  40% {
+    color: #ff9a4d; /* Cam */
+  }
+  60% {
+    color: #4dff9a; /* Xanh lá */
+  }
+  80% {
+    color: #4d9aff; /* Xanh dương */
+  }
+  100% {
+    transform: rotate(360deg); /* Hoàn thành 1 vòng quay */
+    color: #8c52ff; /* Quay về màu tím ban đầu */
+  }
+}
+
+
+/* === KHỐI MENU TẠO MỚI (Floating Action Button) - PHIÊN BẢN BÊN TRÁI === */
+
+/* Container chính, cố định ở góc dưới bên trái */
+.create-new-container {
+    position: fixed;
+    bottom: 30px;
+    left: 15px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse; /* Đảo ngược thứ tự: nút chính ở bên phải */
+
+}
+
+/* Nút bấm chính hình tròn */
+.main-fab-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #0d6efd, #0dcaf0);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    z-index: 10;
+}
+
+/* Icon '+' bên trong nút */
+.main-fab-btn i {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Khi hover vào container, nút chính xoay */
+.create-new-container:hover .main-fab-btn i {
+    transform: rotate(225deg);
+}
+
+/* Khối chứa các tùy chọn con */
+.fab-options {
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.9) translateX(-20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Khi hover vào container, các tùy chọn con hiện ra */
+.create-new-container:hover .fab-options {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateX(0);
+}
+
+/* Danh sách các tùy chọn */
+.fab-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Style cho mỗi tùy chọn con */
+.fab-option-item {
+    background-color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    color: #343a40;
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.fab-option-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+/* Style cho các đường kẻ SVG */
+.fab-lines {
+    margin-right: 15px;
+}
+
+.fab-lines path {
+    stroke: #adb5bd;
+    stroke-width: 2;
+    fill: none;
+}

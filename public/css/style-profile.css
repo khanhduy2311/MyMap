@@ -6,7 +6,7 @@
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden; /* Ẩn các phần thừa của đường kẻ */
-    padding-top: 40px; /* <-- THÊM DÒNG NÀY: Tạo khoảng cách 40px ở mép trên */
+    padding-top: 30px; /* <-- THÊM DÒNG NÀY: Tạo khoảng cách 40px ở mép trên */
 }
 
 /* --- BỐ CỤC CHÍNH BẰNG CSS GRID --- */

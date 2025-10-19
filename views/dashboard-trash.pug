@@ -1,0 +1,71 @@
+extends ../views/layouts/default.pug
+
+block styles
+  link(rel="stylesheet", href="/css/style-dashboard.css")
+
+block main
+  .dashboard-layout
+    //- Sidebar (giữ nguyên cấu trúc)
+    aside.dashboard-sidebar
+      nav.sidebar-nav
+        ul
+          li
+            a(href="/dashboard", title="Danh sách Mindmap")
+              i.fas.fa-folder-open
+              span Danh sách
+          li
+            a.active(href="/dashboard/trash", title="Thùng rác")
+              i.fas.fa-trash
+              span Thùng rác
+
+    main.dashboard-content
+      //- SỬ DỤNG LOGIC IF/ELSE ĐỂ HIỂN THỊ NỘI DUNG
+      if mindmaps && mindmaps.length > 0
+        //- Nếu có mindmap, hiển thị tiêu đề và lưới
+        h2.content-title Thùng rác
+        
+        #trashGrid.mindmap-grid
+          each mindmap in mindmaps
+            .mindmap-card(data-id=`${mindmap._id}`)
+              .preview-image
+              .card-title #{mindmap.title}
+              .card-footer
+                small.text-muted Xóa vĩnh viễn sau #{mindmap.remainingDays} ngày
+              .trash-card-actions
+                button.btn-action.btn-recover(type="button", title="Khôi phục")
+                  i.fas.fa-undo-alt
+      else
+        //- Nếu không có mindmap, hiển thị giao diện thùng rác trống
+        .empty-trash-container
+          i.fas.fa-trash-alt.empty-icon
+          h4.empty-title Mọi mindmap bạn xóa sẽ nằm ở đây
+          p.empty-text Bạn có 30 ngày để khôi phục trước khi chúng tự động bị xóa khỏi Thùng rác.
+
+//- Script xử lý nút khôi phục (giữ nguyên)
+block scripts
+  script.
+    document.addEventListener('DOMContentLoaded', () => {
+      const trashGrid = document.getElementById('trashGrid');
+      if (!trashGrid) return; // Thoát nếu không ở trang có mindmap
+
+      trashGrid.addEventListener('click', (event) => {
+        const recoverButton = event.target.closest('.btn-recover');
+        if (!recoverButton) return;
+
+        const mindmapCard = recoverButton.closest('.mindmap-card');
+        const mindmapId = mindmapCard.dataset.id;
+
+        if (confirm('Bạn có muốn khôi phục mindmap này không?')) {
+          fetch(`/dashboard/trash/recover/${mindmapId}`, { method: 'PATCH' })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              window.location.href = '/dashboard';
+            } else {
+              alert('Lỗi: ' + data.message);
+            }
+          })
+          .catch(err => alert('Lỗi kết nối.'));
+        }
+      });
+    });

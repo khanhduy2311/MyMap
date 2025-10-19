@@ -1,83 +1,138 @@
 extends ../views/layouts/default.pug
 
+block styles
+  link(rel="stylesheet", href="/css/style-dashboard.css")
+
 block main
-  .container.mt-4.fade-in-up
-    //- Header trang
-    .d-flex.justify-content-between.align-items-center.mb-4
-      h1.text-primary
-        i.fas.fa-th-large.me-2
-        | Mindmap của bạn
-    
-    //- Nút "Tạo Mindmap mới"
-    a.btn.btn-primary.btn-lg(href="/upload/page")
-      i.fas.fa-plus.me-2
-      | Tạo Mindmap mới
+  .dashboard-layout
+    aside.dashboard-sidebar
+      //- Sidebar chỉ nên chứa menu điều hướng
+      nav.sidebar-nav
+        ul
+          li
+            a.active(href="/dashboard", title="Danh sách Mindmap")
+              i.fas.fa-folder-open
+              span Danh sách
+          li
+            a(href="/dashboard/trash", title="Thùng rác")
+              i.fas.fa-trash
+              span Thùng rác
 
-    //- Danh sách Mindmap
-    if mindmaps && mindmaps.length > 0
-      .list-group
-        //- Lặp qua từng mindmap
-        each mindmap in mindmaps
-          //- SỬA TỪ 'a' (link) THÀNH 'div' (container)
-          .list-group-item.list-group-item-action.d-flex.justify-content-between.align-items-center
-            
-            //- TIÊU ĐỀ (BÂY GIỜ LÀ LINK)
-            a.text-decoration-none.text-dark.flex-grow-1.me-3(href=`/mindmaps/${mindmap._id}`)
-              span
-                i.fas.fa-diagram-project.me-2
-                | #{mindmap.title}
-            
-            //- KHU VỰC CHO NGÀY VÀ NÚT XÓA
-            .d-flex.align-items-center
-              //- Ngày tạo
-              small.text-muted.me-3 #{mindmap.createdAt ? new Date(mindmap.createdAt).toLocaleDateString('vi-VN') : ''}
+    main.dashboard-content
+      h2.content-title Tất cả dự án
+      #mindmapGrid.mindmap-grid
+        if mindmaps && mindmaps.length > 0
+          each mindmap in mindmaps
+            .mindmap-card(data-id=`${mindmap._id}`)
+              a.card-link(href=`/mindmaps/${mindmap._id}`)
+                .preview-image
               
-              //- NÚT XÓA MỚI
-              button.btn.btn-outline-danger.btn-sm.btn-delete(type="button" data-id=`${mindmap._id}` title="Xóa mindmap")
-                i.fas.fa-trash-alt
+              .card-title.card-title-display
+                a(href=`/mindmaps/${mindmap._id}`) #{mindmap.title}
+              
+              .card-title.card-title-edit(style="display: none;")
+                form.inline-edit-form
+                  input(type="text", value=mindmap.title, class="inline-edit-input")
+              
+              .card-actions
+                button.btn-action.btn-edit(type="button", title="Chỉnh sửa tên")
+                  i.fas.fa-pencil-alt
+                button.btn-action.btn-delete(type="button", data-id=`${mindmap._id}`, title="Xóa mindmap")
+                  i.fas.fa-trash-alt
+        else
+          .alert.alert-info.text-center.p-5
+            h4.alert-heading Chưa có mindmap nào!
+            p.mb-0 Hãy bắt đầu sáng tạo bằng cách nhấn vào nút dấu cộng.
 
-    //- Trạng thái trống (nếu không có mindmap)
-    else
-      .alert.alert-info.text-center.p-5
-        h4.alert-heading Chưa có mindmap nào!
-        p.mb-4 Hãy bắt đầu sáng tạo bằng cách tạo ra mindmap đầu tiên của bạn.
+  //- Nút tạo mới phải nằm ở đây, bên ngoài .dashboard-layout để có position: fixed
+  .create-new-container
+    //- Các tùy chọn con
+    .fab-options
+      svg.fab-lines(width="40" height="60" viewbox="0 0 40 60")
+        path(d="M 5 30 Q 20 30 35 15")
+        path(d="M 5 30 Q 20 30 35 45")
+      .fab-options-list
+        a.fab-option-item(href="#")
+          span Tạo mindmap trống
+        a.fab-option-item(href="/upload/page")
+          span Upload tài liệu
 
-//- THÊM JAVASCRIPT XỬ LÝ XÓA VÀO CUỐI FILE
+    //- Nút bấm chính
+    button.main-fab-btn(type="button")
+      i.fas.fa-plus
+  
 block scripts
   script.
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Tìm tất cả các nút xóa
-      const deleteButtons = document.querySelectorAll('.btn-delete');
-      
-      deleteButtons.forEach(button => {
-        // 2. Gán sự kiện click cho từng nút
-        button.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation(); // Ngăn sự kiện click nổi bọt
+      const mindmapGrid = document.getElementById('mindmapGrid');
 
-          const mindmapId = event.target.closest('button').dataset.id;
-          const mindmapItem = event.target.closest('.list-group-item');
+      mindmapGrid.addEventListener('click', (event) => {
+        const target = event.target;
+        const mindmapCard = target.closest('.mindmap-card');
+        if (!mindmapCard) return;
 
-          // 3. Hiển thị xác nhận
+        if (target.closest('.btn-delete')) {
+          const mindmapId = mindmapCard.dataset.id;
           if (confirm('Bạn có chắc chắn muốn xóa mindmap này không?')) {
-            // 4. Gửi yêu cầu DELETE đến server
-            fetch(`/mindmaps/${mindmapId}`, { // URL này khớp với route backend
-              method: 'DELETE',
-            })
-            .then(response => response.json())
+            fetch(`/mindmaps/${mindmapId}`, { method: 'DELETE' })
+            .then(res => res.json())
             .then(data => {
               if (data.success) {
-                // 5. Nếu thành công, xóa mục đó khỏi giao diện
-                mindmapItem.remove();
+                mindmapCard.remove();
               } else {
-                alert('Lỗi: ' + (data.message || 'Không thể xóa'));
+                alert('Lỗi: ' + data.message);
               }
             })
-            .catch(err => {
-              console.error('Fetch error:', err);
-              alert('Đã xảy ra lỗi khi kết nối đến server.');
-            });
+            .catch(err => alert('Lỗi kết nối.'));
           }
-        });
+        } else if (target.closest('.btn-edit')) {
+          mindmapCard.classList.add('is-editing');
+          const displayView = mindmapCard.querySelector('.card-title-display');
+          const editView = mindmapCard.querySelector('.card-title-edit');
+          const input = editView.querySelector('input');
+  
+          displayView.style.display = 'none';
+          editView.style.display = 'block';
+          input.focus();
+          input.select();
+        } 
+        //- ĐÃ XÓA LOGIC XỬ LÝ NÚT HỦY
+      });
+
+      // Xử lý submit form edit (vẫn hoạt động khi nhấn Enter)
+      mindmapGrid.addEventListener('submit', async (event) => {
+        if (!event.target.classList.contains('inline-edit-form')) return;
+        
+        event.preventDefault();
+        const form = event.target;
+        const mindmapCard = form.closest('.mindmap-card');
+        const mindmapId = mindmapCard.dataset.id;
+        const input = form.querySelector('input');
+        const newTitle = input.value.trim();
+
+        try {
+          const res = await fetch(`/mindmaps/${mindmapId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle })
+          });
+          const data = await res.json();
+          
+          if (data.success) {
+            const displayView = mindmapCard.querySelector('.card-title-display');
+            const editView = mindmapCard.querySelector('.card-title-edit');
+            
+            displayView.querySelector('a').textContent = data.newTitle;
+            editView.style.display = 'none';
+            displayView.style.display = 'block';
+            mindmapCard.classList.remove('is-editing');
+          } else {
+            alert('Lỗi: ' + data.message);
+            mindmapCard.classList.remove('is-editing');
+          }
+        } catch (err) {
+          alert('Lỗi kết nối.');
+        }
       });
     });
+
