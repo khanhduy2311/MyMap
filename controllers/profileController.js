@@ -1,11 +1,13 @@
 // File: controllers/profileController.js
 const { ObjectId } = require('mongodb');
-const userModel = require('../models/userModel.js');
+const userModel = require('../models/userModel.js'); //
 
 // Hiển thị trang profile chính
 exports.getProfilePage = async (req, res) => {
     try {
-        const db = req.app.locals.db;
+        // === THAY ĐỔI: Dùng usersDb ===
+        const db = req.app.locals.usersDb;
+        // =============================
         const user = await userModel.findUserById(db, req.session.user._id);
         res.render('profile', {
             pageTitle: 'Hồ sơ của bạn',
@@ -21,7 +23,9 @@ exports.getProfilePage = async (req, res) => {
 // Hiển thị trang chỉnh sửa profile
 exports.getProfileEditPage = async (req, res) => {
     try {
-        const db = req.app.locals.db;
+        // === THAY ĐỔI: Dùng usersDb ===
+        const db = req.app.locals.usersDb;
+        // =============================
         const user = await userModel.findUserById(db, req.session.user._id);
         res.render('profile-edit', {
             pageTitle: 'Chỉnh sửa hồ sơ',
@@ -37,13 +41,16 @@ exports.getProfileEditPage = async (req, res) => {
 // Xử lý cập nhật thông tin (tên, username)
 exports.updateUserProfile = async (req, res) => {
     const { userId, name, username } = req.body;
-    const db = req.app.locals.db;
+    // === THAY ĐỔI: Dùng usersDb ===
+    const db = req.app.locals.usersDb;
+    // =============================
 
     if (!userId || !req.session.user || userId !== req.session.user._id.toString()) {
         return res.status(403).json({ success: false, message: 'Không được phép.' });
     }
 
     try {
+        // Tác vụ này vẫn ở collection 'users' trong 'usersDb'
         await db.collection('users').updateOne(
             { _id: new ObjectId(userId) },
             { $set: { name, username, updatedAt: new Date() } }
@@ -53,11 +60,7 @@ exports.updateUserProfile = async (req, res) => {
         req.session.user.name = name;
         req.session.user.username = username;
         
-        // === THAY ĐỔI Ở ĐÂY ===
-        // 1. Gán một flash message vào session
         req.flash('success_msg', 'Cập nhật thông tin thành công!');
-
-        // 2. Lưu session và gửi về tín hiệu success (không cần gửi message nữa)
         req.session.save(() => {
             res.json({ success: true });
         });
@@ -71,7 +74,9 @@ exports.updateUserProfile = async (req, res) => {
 // Xử lý upload AVATAR
 exports.postAvatarUpload = async (req, res) => {
     try {
-        const db = req.app.locals.db;
+        // === THAY ĐỔI: Dùng usersDb ===
+        const db = req.app.locals.usersDb;
+        // =============================
         const userId = new ObjectId(req.session.user._id);
 
         if (!req.file || !req.file.path) {
@@ -79,6 +84,8 @@ exports.postAvatarUpload = async (req, res) => {
             return res.redirect('/profile');
         }
         const avatarUrl = req.file.path;
+        
+        // Tác vụ này ở 'usersDb'
         const result = await userModel.updateUserAvatar(db, userId, avatarUrl);
 
         if (result.modifiedCount === 0) {

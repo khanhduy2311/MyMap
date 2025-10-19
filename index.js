@@ -26,20 +26,25 @@ async function startServer() {
     await client.connect();
     console.log("✅ Successfully connected to MongoDB Atlas!");
 
-    const db = client.db('users_identity');
+    // === THAY ĐỔI: Khởi tạo 2 database ===
+    const usersDb = client.db('users_identity'); // DB cho user, session
+    const mindmapsDb = client.db('mindmaps'); // DB mới "ngang hàng"
+    // =====================================
+
     const app = express();
     const PORT = process.env.PORT || 3000;
-    app.locals.db = db;
+    
+    // === THAY ĐỔI: Lưu 2 database vào app.locals ===
+    app.locals.usersDb = usersDb;
+    app.locals.mindmapsDb = mindmapsDb;
+    // ==========================================
 
     // ... (Cấu hình middleware)
     app.set('view engine', 'pug');
     app.set('views', 'views');
     app.use(express.static('public'));
-
-    // 💡 SỬA Ở ĐÂY: Tăng giới hạn payload cho server của bạn
-    // Lỗi 'PayloadTooLargeError' xảy ra ở đây, không phải ở Gemini.
     app.use(express.json({ limit: '50mb' }));
-    app.use(express.urlencoded({ limit: '50mb', extended: true })); // Đặt extended: true để hỗ trợ JSON lồng nhau
+    app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
     app.use(session({
       secret: 'my_session_secret',
@@ -47,34 +52,33 @@ async function startServer() {
       saveUninitialized: false,
       store: MongoStore.create({
         client: client,
-        dbName: 'users_identity',
+        dbName: 'users_identity', // Session vẫn lưu ở db user
         collectionName: 'sessions',
         ttl: 30 * 24 * 60 * 60
       }),
       cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
     }));
     app.use(flash());
+    
+    // === THAY ĐỔI: Truyền 2 database qua request ===
     app.use((req, res, next) => {
-      req.db = db;
+      req.usersDb = req.app.locals.usersDb;     // DB cho user
+      req.mindmapsDb = req.app.locals.mindmapsDb; // DB cho mindmap
       res.locals.user = req.session.user;
       res.locals.success_msg = req.flash('success_msg');
       res.locals.error_msg = req.flash('error_msg');
       next();
     });
-    // ... (Kết thúc phần middleware)
+    // ============================================
 
-
-    // ====== Đăng ký Routes ======
+    // ====== Đăng ký Routes (Giữ nguyên) ======
     app.use('/dashboard', dashboardRoutes);
     app.use('/profile', profileRoutes);
     app.use('/upload', documentRoutes);
-    
-    // Kích hoạt API lưu mindmap
     app.use('/mindmaps', mindmapRoutes); 
-    
     app.use('/', authRoutes);
 
-    // Xử lý lỗi 404 (đặt ở cuối cùng)
+    // Xử lý lỗi 404 (Giữ nguyên)
     app.use((req, res) => {
       res.status(404).render('404', { pageTitle: 'Lỗi 404' });
     });

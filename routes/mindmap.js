@@ -6,6 +6,7 @@ const authMiddleware = require('../middlewares/middlewares.js');
 // API endpoint: POST /mindmaps/create
 router.post('/create', authMiddleware.checkLoggedIn, mindmapController.createMindmap);
 router.get('/:id', authMiddleware.checkLoggedIn, mindmapController.getMindmapPage);
+router.delete('/:id', authMiddleware.checkLoggedIn, mindmapController.deleteMindmap);
 router.get('/view', authMiddleware.checkLoggedIn, (req, res) => {
     // Chỉ cần render ra file view EJS, không cần truyền data ở đây
     // Vì data sẽ được lấy từ localStorage phía client

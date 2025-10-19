@@ -16,14 +16,18 @@ exports.getLoginPage = (req, res) => {
 exports.postRegister = async (req, res) => {
     try {
         const { email, password, username } = req.body;
-        const db = req.app.locals.db;
+        // === THAY ĐỔI: Lấy 2 db từ app.locals ===
+        const usersDb = req.app.locals.usersDb;
+        const mindmapsDb = req.app.locals.mindmapsDb;
+        // =======================================
 
         if (!email || !password || !username) {
             req.flash('error_msg', 'Vui lòng điền đầy đủ thông tin!');
             return res.redirect('/register');
         }
 
-        const existingUser = await userModel.findUserByEmailOrUsername(db, email, username);
+        // Tìm user trong usersDb
+        const existingUser = await userModel.findUserByEmailOrUsername(usersDb, email, username);
         if (existingUser) {
             req.flash('error_msg', 'Email hoặc Username đã tồn tại!');
             return res.redirect('/register');
@@ -38,11 +42,24 @@ exports.postRegister = async (req, res) => {
             updatedAt: new Date()
         };
 
-        const result = await userModel.createUser(db, newUser);
+        // Tạo user trong usersDb
+        const result = await userModel.createUser(usersDb, newUser);
+        const newUserIdString = result.insertedId.toString();
         
+        // === LOGIC MỚI: Tạo collection mindmap cho user ===
+        try {
+            // Dùng _id của user làm tên collection mới
+            await mindmapsDb.createCollection(newUserIdString);
+            console.log(`✅ Đã tạo collection mindmap mới: ${newUserIdString}`);
+        } catch (dbError) {
+            console.error(`❌ Lỗi khi tạo collection mindmap cho user ${newUserIdString}:`, dbError);
+            // Cần xử lý lỗi này, ví dụ: xóa user vừa tạo để đồng bộ
+        }
+        // ================================================
+
         req.session.user = {
             _id: result.insertedId,
-            name: newUser.username, // Mặc định name là username
+            name: newUser.username,
             username: newUser.username,
             email: newUser.email,
             avatar: null
@@ -57,20 +74,22 @@ exports.postRegister = async (req, res) => {
         res.redirect('/register');
     }
 };
-
 // Xử lý đăng nhập
 exports.postLogin = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const db = req.app.locals.db;
+        // === THAY ĐỔI: Chỉ dùng usersDb ===
+        const usersDb = req.app.locals.usersDb;
+        // =================================
 
         if (!email || !password) {
             req.flash('error_msg', 'Vui lòng điền đầy đủ email và mật khẩu!');
             return res.redirect('/login');
         }
 
-        const user = await userModel.findUserByEmail(db, email);
-        if (!user || user.password !== password) { // So sánh mật khẩu
+        // Tìm user trong usersDb
+        const user = await userModel.findUserByEmail(usersDb, email);
+        if (!user || user.password !== password) {
             req.flash('error_msg', 'Email hoặc mật khẩu không chính xác!');
             return res.redirect('/login');
         }

@@ -2,21 +2,105 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { v4: uuidv4 } = require('uuid'); // Cần cài đặt: npm install uuid
+const { v4: uuidv4 } = require('uuid');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const authMiddleware = require('../middlewares/middlewares.js');
-// Import controller đã được dọn dẹp
 const documentController = require('../controllers/documentController.js');
 
-// --- SỬA LỖI: KHỞI TẠO GENAI INSTANCE ---
-// Bạn cần tạo một instance của GoogleGenerativeAI với API Key của bạn.
-// Hãy đảm bảo bạn đã cấu hình biến môi trường (ví dụ: trong file .env)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// -----------------------------------------
+// === BẮT ĐẦU SỬA ĐỔI: QUẢN LÝ API KEYS ===
 
-// --- Bộ nhớ tạm lưu trữ Job (Demo đơn giản) ---
+// 1. Đọc danh sách API keys từ file .env
+// Nó sẽ đọc biến GEMINI_API_KEYS, cắt chuỗi tại các dấu phẩy, và loại bỏ các key rỗng.
+const apiKeys = (process.env.GEMINI_API_KEYS || '').split(',').filter(k => k.trim());
+
+// Kiểm tra xem có key nào được cung cấp không
+if (!apiKeys || apiKeys.length === 0) {
+    console.error("❌ Lỗi: Biến môi trường GEMINI_API_KEYS chưa được thiết lập hoặc trống.");
+    console.error("Vui lòng thêm vào file .env: GEMINI_API_KEYS=key1,key2,key3");
+}
+
+// 2. Tạo một trình quản lý key đơn giản
+const keyManager = {
+    keys: apiKeys,
+    currentIndex: 0,
+    
+    /** Lấy key tiếp theo trong danh sách (xoay vòng) */
+    getNextKey: function() {
+        if (this.keys.length === 0) return null;
+        
+        // Lấy key tại vị trí hiện tại
+        const key = this.keys[this.currentIndex];
+        
+        // Di chuyển con trỏ đến vị trí tiếp theo cho lần gọi sau
+        // Nếu đến cuối danh sách, nó sẽ quay về đầu (index 0)
+        this.currentIndex = (this.currentIndex + 1) % this.keys.length;
+        
+        return key;
+    },
+};
+
+/**
+ * 3. Hàm mới: Tự động gọi API và thử lại với key khác nếu bị lỗi quota
+ * @param {string} prompt - Câu lệnh prompt để gửi đến Gemini
+ * @returns {Promise<any>} - Kết quả từ Gemini
+ */
+async function generateWithRetry(prompt) {
+    if (keyManager.keys.length === 0) {
+        throw new Error("Không có API key nào được cấu hình.");
+    }
+
+    // Thử tối đa bằng số lượng key bạn có
+    for (let i = 0; i < keyManager.keys.length; i++) {
+        const currentKey = keyManager.getNextKey();
+        
+        try {
+            // Tạo một instance GenAI MỚI với key hiện tại
+            const genAI = new GoogleGenerativeAI(currentKey);
+            const model = genAI.getGenerativeModel({
+                model: "gemini-2.5-flash",
+                generationConfig: { responseMimeType: "application/json" },
+            });
+
+            const keyIndexForLog = (keyManager.currentIndex - 1 + keyManager.keys.length) % keyManager.keys.length;
+            console.log(`Đang thử gọi API với key index ${keyIndexForLog}...`);
+            
+            // Gọi API
+            const result = await model.generateContent(prompt);
+            
+            // Nếu thành công, trả về kết quả ngay lập tức
+            return result; 
+
+        } catch (error) {
+            const keyIndexForLog = (keyManager.currentIndex - 1 + keyManager.keys.length) % keyManager.keys.length;
+            console.warn(`Lỗi với API key index ${keyIndexForLog}: ${error.message.substring(0, 100)}...`);
+            
+            // Chỉ thử lại nếu lỗi là do QUOTA (429)
+            const isQuotaError = error.message.includes('429') || 
+                                 error.message.includes('Too Many Requests') || 
+                                 error.message.includes('resource exhausted');
+
+            if (isQuotaError) {
+                // Nếu đây là lần thử cuối cùng mà vẫn lỗi
+                if (i === keyManager.keys.length - 1) {
+                    console.error("Đã thử hết tất cả API key. Tất cả đều bị giới hạn quota.");
+                    throw new Error(`Đã thử hết ${keyManager.keys.length} API key, tất cả đều bị giới hạn quota.`);
+                }
+                // Nếu không phải lần cuối, tiếp tục vòng lặp để thử key tiếp theo
+                console.log("Lỗi quota, đang xoay vòng sang key tiếp theo...");
+            } else {
+                // Nếu là lỗi khác (prompt sai, server Gemini lỗi), ném lỗi ra ngay để dừng lại
+                throw error;
+            }
+        }
+    }
+}
+
+// === KẾT THÚC SỬA ĐỔI ===
+
+// --- Các phần khác giữ nguyên logic của bạn ---
+
 const jobStorage = new Map();
 const sseClients = new Map();
 
@@ -24,7 +108,7 @@ const sseClients = new Map();
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // Tăng giới hạn lên 50MB
+    limits: { fileSize: 50 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedMimes = [
             'application/pdf',
@@ -39,10 +123,10 @@ const upload = multer({
     }
 });
 
-// GET: Route hiển thị trang upload (dùng controller)
+// GET: Route hiển thị trang upload
 router.get('/page', authMiddleware.checkLoggedIn, documentController.getUploadPage);
 
-// --- ROUTE MỚI: Bắt đầu tóm tắt ---
+// POST: Route bắt đầu tóm tắt
 router.post('/start-summarize',
     authMiddleware.checkLoggedIn,
     upload.single('documentFile'),
@@ -53,14 +137,8 @@ router.post('/start-summarize',
         const jobId = uuidv4();
         console.log(`Bắt đầu công việc ${jobId}`);
         jobStorage.set(jobId, {
-            status: 'pending',
-            progress: 0,
-            total: 0,
-            results: [],
-            error: null,
-            fileBuffer: req.file.buffer,
-            mimeType: req.file.mimetype,
-            extractedText: null
+            status: 'pending', progress: 0, total: 0, results: [], error: null,
+            fileBuffer: req.file.buffer, mimeType: req.file.mimetype, extractedText: null
         });
         res.status(202).json({ jobId });
         setImmediate(() => {
@@ -69,7 +147,7 @@ router.post('/start-summarize',
     }
 );
 
-// --- ROUTE MỚI: Stream tiến trình tóm tắt ---
+// GET: Route stream tiến trình
 router.get('/summarize-stream', authMiddleware.checkLoggedIn, (req, res) => {
     const { jobId } = req.query;
     if (!jobId || !jobStorage.has(jobId)) {
@@ -105,7 +183,7 @@ router.get('/summarize-stream', authMiddleware.checkLoggedIn, (req, res) => {
     });
 });
 
-// --- Hàm Hỗ Trợ ---
+// Hàm hỗ trợ gửi sự kiện SSE
 function sendSSE(res, eventName, data) {
     if (res && !res.writableEnded) {
         const message = `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -115,17 +193,14 @@ function sendSSE(res, eventName, data) {
     }
 }
 
+// Hàm xử lý chính trong nền
 async function processDocumentInBackground(jobId) {
     const job = jobStorage.get(jobId);
     if (!job || job.status !== 'pending') return;
     job.status = 'processing';
     console.log(`Đang xử lý công việc ${jobId}`);
     
-    // --- SỬA LỖI: KHÔNG LẤY sseRes Ở ĐÂY ---
-    // const sseRes = sseClients.get(jobId); // <-- BỎ DÒNG NÀY
-
     try {
-        // --- SỬA LỖI: Lấy sseRes ngay trước khi dùng ---
         let sseRes = sseClients.get(jobId); 
         if (sseRes) sendSSE(sseRes, 'progress', { message: 'Đang đọc file...' });
         
@@ -152,14 +227,8 @@ async function processDocumentInBackground(jobId) {
         job.total = textChunks.length;
         console.log(`Job ${jobId}: Chia thành ${job.total} phần.`);
 
-        // --- SỬA LỖI: Lấy sseRes ngay trước khi dùng ---
         sseRes = sseClients.get(jobId); 
         if (sseRes) sendSSE(sseRes, 'progress', { type: 'start', totalChunks: job.total });
-        
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            generationConfig: { responseMimeType: "application/json" },
-        });
         
         const promptTemplate = `
 Phân tích văn bản sau đây và trích xuất cấu trúc chi tiết để tạo sơ đồ tư duy (mindmap).
@@ -207,7 +276,6 @@ Văn bản cần phân tích:
             const chunk = textChunks[i];
             if (chunk.trim().length < 50) {
                  job.progress = i + 1;
-                 // --- SỬA LỖI: Lấy sseRes ngay trước khi dùng ---
                  sseRes = sseClients.get(jobId);
                  if (sseRes) sendSSE(sseRes, 'progress', { type: 'chunk_complete', currentChunk: job.progress, totalChunks: job.total });
                  continue;
@@ -217,13 +285,14 @@ Văn bản cần phân tích:
             const prompt = promptTemplate.replace('${documentContent}', chunk);
             
             try {
-                const result = await model.generateContent(prompt); // <-- Tác vụ dài
+                // SỬA ĐỔI Ở ĐÂY: Gọi hàm mới thay vì gọi trực tiếp
+                const result = await generateWithRetry(prompt);
+                
                 const rawText = result.response.text();
                 const analysisResult = JSON.parse(rawText);
                 job.results.push(analysisResult);
                 job.progress = i + 1;
 
-                // --- SỬA LỖI: Lấy sseRes ngay sau await và trước khi dùng ---
                 sseRes = sseClients.get(jobId); 
                 if (sseRes) sendSSE(sseRes, 'progress', { type: 'chunk_complete', currentChunk: job.progress, totalChunks: job.total });
             
@@ -231,7 +300,6 @@ Văn bản cần phân tích:
                 console.warn(`Job ${jobId}: Lỗi xử lý phần ${i + 1}: ${chunkError.message}`);
                  job.progress = i + 1;
                  
-                 // --- SỬA LỖI: Lấy sseRes ngay trước khi dùng ---
                  sseRes = sseClients.get(jobId); 
                  if (sseRes) {
                       sendSSE(sseRes, 'error_event', {
@@ -248,9 +316,8 @@ Văn bản cần phân tích:
         
         const finalMindmap = aggregateResults(job.results);
         job.status = 'complete';
-        console.log(`Job ${jobId}: Xử lý hoàn tất.`); // <-- Log của bạn
+        console.log(`Job ${jobId}: Xử lý hoàn tất.`);
         
-        // --- SỬA LỖI: Lấy sseRes lần cuối để gửi 'complete' ---
         sseRes = sseClients.get(jobId); 
         if (sseRes) {
             sendSSE(sseRes, 'complete', finalMindmap);
@@ -263,7 +330,6 @@ Văn bản cần phân tích:
         job.status = 'error';
         job.error = error.message || 'Lỗi không xác định';
         
-        // --- SỬA LỖI: Lấy sseRes trong khối catch ---
         const sseRes = sseClients.get(jobId); 
         if (sseRes) {
             sendSSE(sseRes, 'error_event', { message: job.error });
@@ -272,7 +338,6 @@ Văn bản cần phân tích:
         sseClients.delete(jobId);
     
     } finally {
-         // ... (khối finally của bạn có thể giữ nguyên) ...
          if (job.status !== 'complete' && job.status !== 'error') {
                console.log(`Job ${jobId} xử lý xong nhưng client đã ngắt kết nối.`);
                sseClients.delete(jobId);
@@ -287,6 +352,7 @@ Văn bản cần phân tích:
     }
 }
 
+// Hàm chia nhỏ văn bản
 function splitTextIntoChunks(text, maxSize = 20000) {
     const chunks = [];
     let i = 0;
@@ -304,6 +370,7 @@ function splitTextIntoChunks(text, maxSize = 20000) {
     return chunks;
 }
 
+// Hàm tổng hợp kết quả
 function aggregateResults(results) {
     if (!results || results.length === 0) return { mainTopic: "Lỗi", subTopics: [], summary: "Không có kết quả." };
     const finalMindmap = {
