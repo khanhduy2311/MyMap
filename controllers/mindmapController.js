@@ -21,12 +21,11 @@ exports.createMindmap = async (req, res) => {
         }
 
         // Chuẩn bị document mới để lưu vào collection của user
-        // Document này không cần 'userId' nữa vì đã được phân tách ở cấp collection
         const newMindmapDocument = {
             title: mindmapData.mainTopic,
             content: mindmapData,
             createdAt: new Date(),
-            deleted: false // 
+            deleted: false 
         };
 
         // Chèn document vào collection dành riêng cho user này
