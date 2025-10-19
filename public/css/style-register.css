@@ -85,3 +85,23 @@ body.register-page {
     text-decoration: underline;
 }
 
+/* === CSS CHO THÔNG BÁO LỖI TRANG ĐĂNG KÝ === */
+
+/*
+  Tìm đến class .alert-danger bên trong .register-container
+*/
+.register-container .alert-danger {
+  margin-bottom: 15px; /* Tạo khoảng cách 15px với ô Email bên dưới */
+  padding: 10px;       /* Đệm bên trong cho thoáng */
+  text-align: center;  /* Căn giữa chữ */
+  font-size: 0.9em;    /* Chữ nhỏ lại một chút */
+  
+  /* Style màu đỏ cho đẹp */
+  color: #721c24;            /* Chữ đỏ đậm */
+  background-color: #f8d7da; /* Nền đỏ nhạt */
+  border: 1px solid #f5c6cb; /* Viền đỏ nhạt */
+  border-radius: 6px;       /* Bo tròn góc */
+  
+  /* Xóa margin-top mặc định của alert nếu có */
+  margin-top: 0; 
+}

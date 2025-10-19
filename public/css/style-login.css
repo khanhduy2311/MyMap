@@ -122,3 +122,27 @@ body.login-page {
 .page-link a:hover {
     text-decoration: underline;
 }
+
+/* === CSS CHO THÔNG BÁO LỖI TRANG ĐĂNG NHẬP === */
+
+/*
+  Tạo khoảng cách với ô input bên dưới và
+  căn giữa nội dung bên trong.
+*/
+.login-form .alert {
+  margin-bottom: 15px; /* Tạo khoảng cách dưới */
+  padding: 10px;       /* Tăng khoảng đệm bên trong */
+  text-align: center;  /* Căn giữa chữ */
+  border-radius: 6px;  /* Bo tròn góc nhẹ */
+  font-size: 0.9em;    /* Giảm kích thước chữ một chút */
+  border: 1px solid transparent; /* Thêm border mặc định */
+}
+
+/*
+  Thêm màu sắc đặc trưng cho thông báo lỗi.
+*/
+.login-form .alert-danger {
+  background-color: #f8d7da; /* Màu nền đỏ nhạt */
+  border-color: #f5c6cb;     /* Màu viền đỏ nhạt hơn */
+  color: #721c24;            /* Màu chữ đỏ đậm */
+}
