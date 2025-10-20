@@ -439,6 +439,16 @@ router.get('/summarize-stream', authMiddleware.checkLoggedIn, (req, res) => { co
 
 // ========== MINDMAP VISUALIZATION HTML GENERATOR ==========
 function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
+  // Đảm bảo markdownContent không rỗng và có định dạng cơ bản
+  if (!markdownContent || markdownContent.trim() === '') {
+    markdownContent = "# Lỗi\nNội dung Markdown trống hoặc không hợp lệ.";
+  }
+
+  // Chuẩn hóa Markdown - đảm bảo có ít nhất một tiêu đề cấp 1
+  if (!markdownContent.includes('# ')) {
+    markdownContent = `# ${title}\n\n${markdownContent}`;
+  }
+
   const escapedMarkdown = markdownContent
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')
@@ -509,70 +519,172 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
         </div>
     </div>
     <script>
-        // === SỬA LỖI SYNTAX ERROR: Xóa dòng console.log trực tiếp ===
-        // console.log(markdownContent); // <-- ĐÃ XÓA/COMMENT
-
         const markdownContent = \`${escapedMarkdown}\`;
 
-        // Log markdown một cách an toàn hơn nếu cần debug
-        // console.log('--- MARKDOWN CONTENT ---');
-        // console.log(markdownContent);
-        // console.log('--- END MARKDOWN ---');
+        // Debug: log markdown content để kiểm tra
+        console.log('Markdown content length:', markdownContent.length);
+        console.log('First 500 chars:', markdownContent.substring(0, 500));
+        console.log('Last 500 chars:', markdownContent.substring(markdownContent.length - 500));
 
         function initializeMarkmap() {
-             const svgElement = document.getElementById('mindmap');
-             const loadingPlaceholder = svgElement ? svgElement.querySelector('#loading-placeholder') : null;
-             if (typeof window.markmap === 'undefined' || typeof window.markmap.Markmap === 'undefined' || typeof window.markmap.Transformer === 'undefined' || typeof window.d3 === 'undefined') {
-                 console.warn('Markmap/D3 libraries not fully loaded yet, retrying...');
-                 if (loadingPlaceholder) loadingPlaceholder.textContent = 'Đang chờ thư viện D3/Markmap...';
-                 setTimeout(initializeMarkmap, 150);
-                 return;
-             }
-             if (!svgElement) {
-                 console.error('SVG element #mindmap not found!');
-                 if (loadingPlaceholder) loadingPlaceholder.innerHTML = '<strong>Lỗi: Không tìm thấy khu vực vẽ sơ đồ.</strong>';
-                 return;
-             }
-             svgElement.innerHTML = ''; // Clear loading message
-             console.log('Markmap libraries loaded, attempting to render.');
-             const { Transformer, Markmap, panZoom } = window.markmap;
-             try {
-                 const transformer = new Transformer();
-                 const { root, features } = transformer.transform(markdownContent);
-                 if (!root || !root.content) {
-                     throw new Error('Nội dung Markdown không hợp lệ hoặc không thể phân tích thành cấu trúc sơ đồ.');
-                 }
-                 const options = { autoFit: true };
-                 const mm = Markmap.create(svgElement, options, root);
-                 console.log('Markmap instance created.');
-                 if (panZoom) {
-                     const pz = panZoom(svgElement.querySelector('g'));
-                     console.log('Pan and zoom enabled.');
-                 } else {
-                     console.warn('PanZoom function not found in window.markmap.');
-                 }
-             } catch (error) {
-                 console.error('❌ Error rendering mindmap:', error);
-                 svgElement.innerHTML = \`
+            const svgElement = document.getElementById('mindmap');
+            const loadingPlaceholder = svgElement ? svgElement.querySelector('#loading-placeholder') : null;
+            
+            // Kiểm tra thư viện đã load chưa
+            if (typeof window.markmap === 'undefined' || typeof window.markmap.Markmap === 'undefined' || typeof window.markmap.Transformer === 'undefined' || typeof window.d3 === 'undefined') {
+                console.warn('Markmap/D3 libraries not fully loaded yet, retrying...');
+                if (loadingPlaceholder) loadingPlaceholder.textContent = 'Đang chờ thư viện D3/Markmap...';
+                setTimeout(initializeMarkmap, 150);
+                return;
+            }
+            
+            if (!svgElement) {
+                console.error('SVG element #mindmap not found!');
+                if (loadingPlaceholder) loadingPlaceholder.innerHTML = '<strong>Lỗi: Không tìm thấy khu vực vẽ sơ đồ.</strong>';
+                return;
+            }
+
+            svgElement.innerHTML = ''; // Clear loading message
+            console.log('Markmap libraries loaded, attempting to render.');
+            
+            const { Transformer, Markmap, panZoom } = window.markmap;
+            
+            try {
+                const transformer = new Transformer();
+                console.log('Transforming markdown...');
+                
+                const { root, features } = transformer.transform(markdownContent);
+                console.log('Transformation result:', { root, features });
+                
+                if (!root) {
+                    console.error('Invalid root:', root);
+                    throw new Error('Nội dung Markdown không hợp lệ hoặc không thể phân tích thành cấu trúc sơ đồ.');
+                }
+                
+                const options = { 
+                    autoFit: true,
+                    duration: 500,
+                    nodeMinHeight: 16,
+                    spacingVertical: 5,
+                    spacingHorizontal: 80,
+                    paddingX: 8
+                };
+                
+                const mm = Markmap.create(svgElement, options, root);
+                console.log('Markmap instance created successfully.');
+                
+                // Fit to view
+                setTimeout(() => {
+                    if (mm.fit) mm.fit();
+                }, 100);
+                
+                if (panZoom && svgElement.querySelector('g')) {
+                    try {
+                        const pz = panZoom(svgElement.querySelector('g'));
+                        console.log('Pan and zoom enabled.');
+                    } catch (panZoomError) {
+                        console.warn('PanZoom failed:', panZoomError);
+                    }
+                } else {
+                    console.warn('PanZoom function not available or no SVG group found.');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error rendering mindmap:', error);
+                console.error('Error stack:', error.stack);
+                
+                // Hiển thị lỗi chi tiết hơn
+                let errorMessage = error.message || 'Lỗi không xác định.';
+                if (error.message.includes('Markdown')) {
+                    errorMessage += ' Cấu trúc Markdown có vấn đề.';
+                }
+                
+                svgElement.innerHTML = \`
                     <foreignObject width="100%" height="100%">
                          <body xmlns="http://www.w3.org/1999/xhtml">
                              <div class="loading-error">
                                  <strong>Lỗi khi vẽ sơ đồ:</strong><br/>
-                                 \${error.message || 'Lỗi không xác định.'}<br/>
-                                 <small>Nội dung Markdown có thể không hợp lệ. Kiểm tra console để biết chi tiết.</small>
+                                 \${errorMessage}<br/>
+                                 <small style="margin-top: 10px; display: block;">
+                                     <strong>Debug info:</strong><br/>
+                                     Content length: \${markdownContent.length}<br/>
+                                     Check console for details.
+                                 </small>
                              </div>
                          </body>
                      </foreignObject>
-                 \`;
-             }
-         }
-
-        function downloadMindmap() {
-            try { const svg = document.getElementById('mindmap'); if (!svg) throw new Error('SVG element not found.'); const g = svg.querySelector('g'); if (!g) throw new Error('Mindmap group element not found.'); const svgData = new XMLSerializer().serializeToString(svg); const bbox = g.getBBox ? g.getBBox() : { x: 0, y: 0, width: svg.clientWidth || 800, height: svg.clientHeight || 600 }; const padding = 20; const canvas = document.createElement('canvas'); canvas.width = Math.max(bbox.width + padding * 2, svg.clientWidth || 800); canvas.height = Math.max(bbox.height + padding * 2, svg.clientHeight || 600); const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Could not get canvas context.'); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height); const img = new Image(); img.onload = function() { const scale = Math.min( (canvas.width - padding * 2) / bbox.width, (canvas.height - padding * 2) / bbox.height ); const drawWidth = bbox.width * scale; const drawHeight = bbox.height * scale; const drawX = (canvas.width - drawWidth) / 2 - bbox.x * scale; const drawY = (canvas.height - drawHeight) / 2 - bbox.y * scale; ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight); try { const pngFile = canvas.toDataURL('image/png'); const downloadLink = document.createElement('a'); downloadLink.download = 'mindmap.png'; downloadLink.href = pngFile; document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); } catch (e) { console.error("Error generating or downloading PNG:", e); alert("Lỗi khi tạo file PNG để tải về."); } }; img.onerror = function(e) { console.error("Error loading SVG into Image:", e); alert("Lỗi khi tải dữ liệu sơ đồ để chuyển đổi sang ảnh."); } const svgBase64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData))); img.src = svgBase64; } catch (error) { console.error('Error in downloadMindmap:', error); alert('Không thể tải sơ đồ dưới dạng ảnh: ' + error.message); }
+                \`;
+            }
         }
 
-        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initializeMarkmap); } else { initializeMarkmap(); }
-        let resizeTimer; window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { console.log('Window resized, re-rendering mindmap.'); initializeMarkmap(); }, 250); });
+        function downloadMindmap() {
+            try { 
+                const svg = document.getElementById('mindmap'); 
+                if (!svg) throw new Error('SVG element not found.'); 
+                const g = svg.querySelector('g'); 
+                if (!g) throw new Error('Mindmap group element not found.'); 
+                const svgData = new XMLSerializer().serializeToString(svg); 
+                const bbox = g.getBBox ? g.getBBox() : { x: 0, y: 0, width: svg.clientWidth || 800, height: svg.clientHeight || 600 }; 
+                const padding = 20; 
+                const canvas = document.createElement('canvas'); 
+                canvas.width = Math.max(bbox.width + padding * 2, svg.clientWidth || 800); 
+                canvas.height = Math.max(bbox.height + padding * 2, svg.clientHeight || 600); 
+                const ctx = canvas.getContext('2d'); 
+                if (!ctx) throw new Error('Could not get canvas context.'); 
+                ctx.fillStyle = '#FFFFFF'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height); 
+                const img = new Image(); 
+                img.onload = function() { 
+                    const scale = Math.min( 
+                        (canvas.width - padding * 2) / bbox.width, 
+                        (canvas.height - padding * 2) / bbox.height 
+                    ); 
+                    const drawWidth = bbox.width * scale; 
+                    const drawHeight = bbox.height * scale; 
+                    const drawX = (canvas.width - drawWidth) / 2 - bbox.x * scale; 
+                    const drawY = (canvas.height - drawHeight) / 2 - bbox.y * scale; 
+                    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight); 
+                    try { 
+                        const pngFile = canvas.toDataURL('image/png'); 
+                        const downloadLink = document.createElement('a'); 
+                        downloadLink.download = 'mindmap.png'; 
+                        downloadLink.href = pngFile; 
+                        document.body.appendChild(downloadLink); 
+                        downloadLink.click(); 
+                        document.body.removeChild(downloadLink); 
+                    } catch (e) { 
+                        console.error("Error generating or downloading PNG:", e); 
+                        alert("Lỗi khi tạo file PNG để tải về."); 
+                    } 
+                }; 
+                img.onerror = function(e) { 
+                    console.error("Error loading SVG into Image:", e); 
+                    alert("Lỗi khi tải dữ liệu sơ đồ để chuyển đổi sang ảnh."); 
+                } 
+                const svgBase64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData))); 
+                img.src = svgBase64; 
+            } catch (error) { 
+                console.error('Error in downloadMindmap:', error); 
+                alert('Không thể tải sơ đồ dưới dạng ảnh: ' + error.message); 
+            }
+        }
+
+        // Khởi tạo khi trang load
+        if (document.readyState === 'loading') { 
+            document.addEventListener('DOMContentLoaded', initializeMarkmap); 
+        } else { 
+            initializeMarkmap(); 
+        }
+        
+        // Xử lý resize
+        let resizeTimer; 
+        window.addEventListener('resize', () => { 
+            clearTimeout(resizeTimer); 
+            resizeTimer = setTimeout(() => { 
+                console.log('Window resized, re-rendering mindmap.'); 
+                initializeMarkmap(); 
+            }, 250); 
+        });
     </script>
 </body>
 </html>`;
