@@ -6,41 +6,67 @@
 }
 
 /* === STYLE CHO TRẠNG THÁI DASHBOARD TRỐNG === */
-.empty-dashboard-container { display: flex; align-items: center; justify-content: center; height: 100%; position: relative; }
-/* Container chính cho giao diện trống */
+.empty-dashboard-container {
+    margin-top: 30px;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    text-align: center;
+    position: relative; /* Giữ lại để định vị cho helper-text nếu cần */
+}
 
 /* Tiêu đề chính "Chưa có mindmap nào!" */
-.empty-dashboard-center .empty-title {
+.empty-title {
     text-align: center; /* Căn giữa theo chiều ngang */
     font-family: 'Poppins', sans-serif; /* Dùng font Poppins cho hiện đại */
-    font-size: 2.25rem;  /* Cỡ chữ to, nổi bật */
-    font-weight: 700;   /* Chữ đậm */
+    font-size: 1.5rem;  /* Cỡ chữ to, nổi bật */
+    font-weight: 600;   /* Chữ đậm */
     color: #343a40;     /* Màu xám đen, trông chuyên nghiệp */
-    
-    /* Hiệu ứng nghệ thuật */
-    text-transform: none; /* VIẾT IN HOA */
+    text-transform: none; 
     letter-spacing: 3px;     /* Tăng khoảng cách giữa các chữ cái */
-    
-    margin-bottom: 2.5rem; /* Tạo khoảng trống với lưới mindmap bên dưới */
+    margin-bottom: 0.5rem; /* Tạo khoảng trống với lưới mindmap bên dưới */
     align-items: center;
     justify-content: center;
 }
-
-/*----------------------------------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------------------------------*/
+.sub-empty-title {
+    font-size: 1.2rem;   /* Cỡ chữ nhỏ hơn tiêu đề chính */
+    font-weight: 400;    /* Chữ thường, không in đậm */
+    color: #6c757d;      /* Màu xám nhạt */
+    margin-top: 0.5rem;  /* Tạo một chút khoảng cách với dòng trên */
+    letter-spacing: normal; /* Bỏ giãn cách chữ */
+    text-transform: none;   /* Bỏ VIẾT IN HOA */
+}
+.bi.bi-folder-x.blank-folder{
+    font-size: 11rem; /* Icon lớn */
+    color: #8c52ff;  
+    margin-bottom: 2rem;
+    opacity: 0.7;
+}
 
 /* Dòng chữ hướng dẫn gần nút dấu cộng */
-.fab-helper-text { position: fixed; bottom: 100px; left: 110px; font-style: italic; color: #adb5bd; max-width: 200px; }
-.fab-helper-text p { margin: 0; }
+.fab-helper-arrow { 
+    position: fixed; 
+    bottom: 90px; 
+    left: 110px; 
+    
+}
 .helper-arrow {
-    z-index: 1044;
     position: absolute;
-    top: -60px; /* Điều chỉnh vị trí dọc */
-    left: -20px; /* Điều chỉnh vị trí ngang */
-    stroke: #adb5bd;
-    /* Thêm đầu mũi tên */
-    marker-end: url(#arrowhead);
+    bottom: -15px; 
+    left: -20px; 
+    stroke: #d1d1d2;
+}
+.helper-text{
+    margin : 0;
+    font-style: italic; 
+    color: #adb5bd; 
+    max-width: 250px; 
+   
+}   
+.fab-helper-text{
+    position: fixed;
+    bottom: 130px;
+    left: 180px;
 }
 
 /* --- SIDEBAR ĐIỀU KHIỂN --- */
