@@ -1,21 +1,57 @@
-/* File: /public/css/style-dashboard.css */
 
 /* --- BỐ CỤC CHÍNH --- */
 .dashboard-layout {
     display: grid;
-    /* Thu hẹp sidebar còn 90px */
     height: calc(100vh - 72px); 
+}
+
+/* === STYLE CHO TRẠNG THÁI DASHBOARD TRỐNG === */
+.empty-dashboard-container { display: flex; align-items: center; justify-content: center; height: 100%; position: relative; }
+/* Container chính cho giao diện trống */
+
+/* Tiêu đề chính "Chưa có mindmap nào!" */
+.empty-dashboard-center .empty-title {
+    text-align: center; /* Căn giữa theo chiều ngang */
+    font-family: 'Poppins', sans-serif; /* Dùng font Poppins cho hiện đại */
+    font-size: 2.25rem;  /* Cỡ chữ to, nổi bật */
+    font-weight: 700;   /* Chữ đậm */
+    color: #343a40;     /* Màu xám đen, trông chuyên nghiệp */
+    
+    /* Hiệu ứng nghệ thuật */
+    text-transform: none; /* VIẾT IN HOA */
+    letter-spacing: 3px;     /* Tăng khoảng cách giữa các chữ cái */
+    
+    margin-bottom: 2.5rem; /* Tạo khoảng trống với lưới mindmap bên dưới */
+    align-items: center;
+    justify-content: center;
+}
+
+/*----------------------------------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------------------------------*/
+
+/* Dòng chữ hướng dẫn gần nút dấu cộng */
+.fab-helper-text { position: fixed; bottom: 100px; left: 110px; font-style: italic; color: #adb5bd; max-width: 200px; }
+.fab-helper-text p { margin: 0; }
+.helper-arrow {
+    z-index: 1044;
+    position: absolute;
+    top: -60px; /* Điều chỉnh vị trí dọc */
+    left: -20px; /* Điều chỉnh vị trí ngang */
+    stroke: #adb5bd;
+    /* Thêm đầu mũi tên */
+    marker-end: url(#arrowhead);
 }
 
 /* --- SIDEBAR ĐIỀU KHIỂN --- */
 .dashboard-sidebar {
     position: fixed;
-    top: 72px; /* cao bằng header trong default.pug */
+    top: 72px; 
     left: 0;
     width: 90px;
     height: calc(100vh - 72px);
-    
-    background-color: #f6f5ff;
+    background-image: linear-gradient(to bottom, #f2f3ff, #ffd6ff);
+    background-color: #e0c1f6;
     border-right: 1px solid #e9ecef;
     padding: 16px 12px;
     
@@ -23,21 +59,16 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    z-index: 100; /* để nổi lên trên nội dung */
+    z-index: 100; 
 }
 
 /* --- KHUNG NỘI DUNG CHÍNH --- */
 .dashboard-content {
     overflow-y: auto;
     padding: 32px;
-    margin-left: 90px; /* Phải khớp với chiều rộng sidebar */
+    margin-left: 90px;
+    background-image: linear-gradient(135deg, #ffecee 0%, #bbdbfe 100%);
 }
-
-
-
-
-
-
 
 
 /* --- NÚT TẠO MỚI --- */
@@ -55,8 +86,6 @@
     text-decoration: none;
     font-size: 1.5rem;
     box-shadow: none;
-    
-    /* === THAY ĐỔI: ĐỊNH NGHĨA HIỆU ỨNG VÀ ĐỘ TRỄ === */
     /* Nền sẽ đổi màu trong 0.2s, NHƯNG chỉ bắt đầu sau khi đợi 0.4s */
     transition: background-color 0.2s ease-in-out 0.4s, color 0.2s ease-in-out 0.4s;
 }
@@ -80,7 +109,7 @@
 }
 
 
-/* --- MENU ĐIỀU HƯỚỚNG (ICON VÀ CHỮ) --- */
+/* --- MENU ĐIỀU HƯỚNG (ICON VÀ CHỮ) --- */
 .sidebar-nav { width: 100%; }
 .sidebar-nav ul { list-style: none; padding: 0; margin: 0; }
 
@@ -102,12 +131,12 @@
 
 .sidebar-nav a:hover {
     background-color: #ede9ff;
-    color: #7a3ee6;
+    color: #9d4edd;
 }
 
 .sidebar-nav a.active {
     background-color: #ede9ff;
-    color: #7a3ee6;
+    color: #9d4edd;
 }
 
 /* Tùy chỉnh cho icon */
@@ -124,9 +153,8 @@
 
 /* --- CÁC STYLE CỦA LƯỚI MINDMAP (GIỮ NGUYÊN) --- */
 .mindmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px; }
-.mindmap-card { text-decoration: none; color: #212529; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; transition: all 0.2s ease; background-color: #fff; }
-.mindmap-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); border-color: #0d6efd; }
-.mindmap-card .preview-image { aspect-ratio: 4 / 3; background-color: #f0f2f5; border-bottom: 1px solid #e9ecef; }
+.mindmap-card:hover { transform: translateY(-5px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); border-color: #0d6efd; }
+.mindmap-card .preview-image { aspect-ratio: 4 / 3; background-color: #f4f0f5; border-bottom: 1px solid #e9ecef; border-radius: 8px 8px 8px 8px;}
 .mindmap-card .card-title { padding: 16px; font-weight: 600; }
 
 /* --- HIỆU ỨNG HOVER CHO MINDMAP CARD --- */
@@ -210,7 +238,6 @@
     color: #0d6efd; /* Đổi thành màu xanh dương khi hover */
 }
 
-/* File: /public/css/style-dashboard.css */
 
 /* --- STYLE CHO TIÊU ĐỀ CHÍNH CỦA TRANG --- */
 .content-title {
@@ -227,26 +254,26 @@
     margin-bottom: 2.5rem; /* Tạo khoảng trống với lưới mindmap bên dưới */
 }
 
+/*------------------------------------------*/
+
+
 /* --- HIỆU ỨNG HOVER CHO CARD TRONG THÙNG RÁC --- */
 
 /* Khối chứa nút khôi phục (ẩn mặc định) */
 .trash-card-actions {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    /* Căn giữa theo chiều dọc và ngang */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     
+    z-index: 3; /* Nằm trên cùng */
     opacity: 0;
     transition: all 0.25s ease;
 }
 
 /* Khi hover vào card, hiện nút khôi phục */
+.mindmap-card:hover .card-footer,
 .mindmap-card:hover .trash-card-actions {
     opacity: 1;
 }
@@ -259,12 +286,34 @@
 
 /* nút xóa */
 .mindmap-card .card-footer {
-    background-color: #f8f9fa;
-    border-top: 1px solid #e9ecef;
-    font-size: 0.75rem;
-    padding: 8px 16px;
-    text-align: center;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Hiệu ứng kính mờ */
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 0.8rem;
+    padding: 10px 16px;
+    
+    /* Mặc định ẩn đi */
+    opacity: 0;
+    transition: all 0.25s ease;
+    z-index: 2; /* Nằm trên ảnh nhưng dưới nút recover */
 }
+
+
+/*------------------------------------------*/
+
+
 
 /* --- STYLE CHO GIAO DIỆN THÙNG RÁC TRỐNG --- */
 .empty-trash-container {

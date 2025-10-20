@@ -2,7 +2,6 @@
 /* HIỆU ỨNG KHI TẢI TRANG                                          */
 /* =================================================================== */
 
-/* 1. Định nghĩa chuyển động */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -23,20 +22,28 @@
 .delay-1 { animation-delay: 0.1s; }
 .delay-2 { animation-delay: 0.2s; }
 .delay-3 { animation-delay: 0.3s; }
-
+.colors {
+    background-color: #2c0735 !important; /* Nền đen-xám */
+}
 body > header {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000; /* Đảm bảo header luôn nằm trên cùng */
-
-    /* Thống nhất giao diện cho cả 2 trạng thái đăng nhập */
-    background-color: #212529; /* Luôn là nền đen-xám */
+    z-index: 1000; 
+    background-color: #ffffff; /* Luôn là nền trắng */
     padding: 0.75rem 0;
     border-bottom: 1px solid #393a3b;
 }
 body {
     /* Giá trị này cần lớn hơn hoặc bằng chiều cao của header */
     padding-top: 90px; 
+}
+
+.menu-info{
+    background-color: #2c0735 !important;
+    color: #ffffff;
+}
+.menu-info:hover{
+  background-color: #3c096c !important;
 }

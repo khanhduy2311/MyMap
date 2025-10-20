@@ -2,16 +2,16 @@
 
 /* --- THIẾT LẬP CHUNG --- */
 .profile-page-card {
-    background-color: #fff;
+    background-image: linear-gradient(135deg, #ffecee 0%, #bbdbfe 100%);
+
+    background-color: #f2daff;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden; /* Ẩn các phần thừa của đường kẻ */
-    padding-top: 30px; /* <-- THÊM DÒNG NÀY: Tạo khoảng cách 40px ở mép trên */
+    padding-top: 30px; 
 }
 
 /* --- BỐ CỤC CHÍNH BẰNG CSS GRID --- */
-/* File: /public/css/style-profile.css */
-
 .profile-layout-container {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -23,7 +23,6 @@
     position: relative;
     min-height: 450px;
 
-    /* === THÊM 2 DÒNG NÀY ĐỂ GIẢI QUYẾT VẤN ĐỀ === */
     max-width: 950px; /* Giới hạn chiều rộng tối đa của cả khối */
     margin: 0 auto;     /* Tự động căn giữa khối này trong card */
 }
@@ -90,7 +89,6 @@
 }
 
 
-/* THÊM ĐOẠN CSS MỚI NÀY VÀO */
 /* --- CÁC ĐƯỜNG KẺ NỐI BẰNG SVG --- */
 svg.connector-lines {
     position: absolute;
@@ -107,17 +105,12 @@ svg.connector-lines path {
     fill: none;      /* Không tô màu bên trong */
 }
 
-
-/* =================================================================== */
-/* STYLE TÙY CHỈNH CHO TIÊU ĐỀ PROFILE                             */
-/* =================================================================== */
-
 /* Tùy chỉnh lại phần header của card */
 .profile-page-card .card-header {
     border-bottom: none;
     background-color: transparent;
-    padding-top: 0;    /* <-- SỬA LẠI THÀNH 0 */
-    padding-bottom: 0; /* <-- SỬA LẠI THÀNH 0 */
+    padding-top: 0; 
+    padding-bottom: 0; 
 }
 
 /* Tùy chỉnh cho thẻ h4 chứa chữ "Thông tin cá nhân" */

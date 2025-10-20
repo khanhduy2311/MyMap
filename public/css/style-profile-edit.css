@@ -1,5 +1,3 @@
-/* File: /public/css/style-profile-edit.css */
-
 /* === BỐ CỤC CHÍNH BẰNG CSS GRID === */
 .profile-edit-grid {
     display: grid;
@@ -10,22 +8,17 @@
 }
 
 /* === TÙY CHỈNH CHO CÁC CARD === */
-
-/* Biến mỗi cột thành flex container để card bên trong có thể co giãn */
 .profile-edit-card {
     display: flex;
 }
 
-/* Buộc card phải giãn ra để lấp đầy chiều cao của cột */
 .profile-edit-card .card {
     width: 100%;
     flex-grow: 1;
-    /* THÊM 2 DÒNG NÀY: Biến card thành flex container */
     display: flex;
     flex-direction: column;
 }
 
-/* Căn giữa tiêu đề của card */
 .card-header h4 {
     text-align: center;
     font-weight: 600;
@@ -43,9 +36,7 @@
 /* Biến card-body thành flex container để căn giữa form */
 .profile-edit-card:nth-child(2) .card-body {
     display: flex;
-    /* Căn giữa form theo chiều dọc */
     justify-content: center;
-    /* Căn giữa form theo chiều ngang */
     align-items: center;
 }
 
