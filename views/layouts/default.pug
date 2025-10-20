@@ -11,7 +11,7 @@ html(lang="vi")
     title #{pageTitle} | MindTree
 
   body(class=user ? '' : 'has-fullscreen-bg').d-flex.flex-column.min-vh-100
-    header.colors.text-white.p-3.shadow-sm
+    header.colors-header.text-white.p-3.shadow-sm
       .container
         .d-flex.justify-content-between.align-items-center
           a(href="/", class="h4 text-white text-decoration-none") MINDTREE
@@ -44,7 +44,18 @@ html(lang="vi")
     //- Sửa lại: bỏ thẻ main bọc ngoài, để block main tự quyết định layout
     block main
       
-    //- FOOTER
+    #confirmModal.modal-overlay
+      .modal-content
+        h4#modalTitle.modal-title Đưa 1 mục vào thùng rác?
+        p#modalMessage.modal-text Bạn có thể khôi phục các mục này từ thùng rác trong vòng 30 ngày.
+        .modal-actions
+          button#confirmCancelBtn.btn.btn-secondary Hủy
+          button#confirmDeleteBtn.btn.btn-danger Đưa vào thùng rác
+    
+    //- thanh footer
+    footer.mt-auto.colors-footer.text-white.py-3.shadow-sm
+      .container.text-center
+        | &copy; 2025 Copyrights by 3 anh em siêu nhân.
     
 
     //- SCRIPTS

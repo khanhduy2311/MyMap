@@ -60,14 +60,48 @@ block scripts
     document.addEventListener('DOMContentLoaded', () => {
       const mindmapGrid = document.getElementById('mindmapGrid');
 
-      mindmapGrid.addEventListener('click', (event) => {
+      //- Hiển thị modal xác nhận 
+      function showConfirmModal(title, message) {
+        const modal = document.getElementById('confirmModal');
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalMessage').textContent = message;
+        modal.classList.add('show');
+
+        return new Promise((resolve) => {
+          const cancelBtn = document.getElementById('confirmCancelBtn');
+          const deleteBtn = document.getElementById('confirmDeleteBtn');
+
+          function handleCancel() {
+            modal.classList.remove('show');
+            resolve(false);
+          }
+          
+          function handleConfirm() {
+            modal.classList.remove('show');
+            resolve(true);
+          }
+
+          cancelBtn.addEventListener('click', handleCancel, { once: true });
+          deleteBtn.addEventListener('click', handleConfirm, { once: true });
+        });
+      }
+
+      mindmapGrid.addEventListener('click', async (event) => { // <-- Thêm "async"
         const target = event.target;
         const mindmapCard = target.closest('.mindmap-card');
         if (!mindmapCard) return;
 
+        // Xử lý nút xóa
         if (target.closest('.btn-delete')) {
           const mindmapId = mindmapCard.dataset.id;
-          if (confirm('Bạn có chắc chắn muốn xóa mindmap này không?')) {
+
+          // === THAY THẾ confirm() BẰNG MODAL MỚI ===
+          const userConfirmed = await showConfirmModal(
+            'Đưa mindmap vào thùng rác?', 
+            'Bạn có thể khôi phục mục này trong vòng 30 ngày.'
+          );
+
+          if (userConfirmed) {
             fetch(`/mindmaps/${mindmapId}`, { method: 'DELETE' })
             .then(res => res.json())
             .then(data => {
@@ -79,19 +113,32 @@ block scripts
             })
             .catch(err => alert('Lỗi kết nối.'));
           }
-        } else if (target.closest('.btn-edit')) {
+        } 
+        // Xử lý nút edit
+        else if (target.closest('.btn-edit')) {
           mindmapCard.classList.add('is-editing');
           const displayView = mindmapCard.querySelector('.card-title-display');
           const editView = mindmapCard.querySelector('.card-title-edit');
           const input = editView.querySelector('input');
-  
+
           displayView.style.display = 'none';
           editView.style.display = 'block';
           input.focus();
           input.select();
         } 
-        //- ĐÃ XÓA LOGIC XỬ LÝ NÚT HỦY
+        // Xử lý nút hủy (đã được thêm lại)
+        else if (target.closest('.inline-edit-cancel')) {
+          const displayView = mindmapCard.querySelector('.card-title-display');
+          const editView = mindmapCard.querySelector('.card-title-edit');
+          const input = editView.querySelector('input');
+
+          input.value = displayView.querySelector('a').textContent;
+          editView.style.display = 'none';
+          displayView.style.display = 'block';
+          mindmapCard.classList.remove('is-editing');
+        }
       });
+
 
       // Xử lý submit form edit (vẫn hoạt động khi nhấn Enter)
       mindmapGrid.addEventListener('submit', async (event) => {

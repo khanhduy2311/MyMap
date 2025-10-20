@@ -61,17 +61,17 @@ block scripts
         const mindmapCard = recoverButton.closest('.mindmap-card');
         const mindmapId = mindmapCard.dataset.id;
 
-        if (confirm('Bạn có muốn khôi phục mindmap này không?')) {
-          fetch(`/dashboard/trash/recover/${mindmapId}`, { method: 'PATCH' })
+        // Hành động khôi phục sẽ được thực hiện ngay lập tức
+        fetch(`/dashboard/trash/recover/${mindmapId}`, { method: 'PATCH' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
+              // Nếu thành công, chuyển hướng về trang dashboard
               window.location.href = '/dashboard';
             } else {
               alert('Lỗi: ' + data.message);
-            }
+            }     
           })
           .catch(err => alert('Lỗi kết nối.'));
-        }
       });
     });
