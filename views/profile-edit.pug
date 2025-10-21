@@ -28,7 +28,61 @@ block main
               .d-flex.justify-content-end
                 a.btn.btn-secondary.me-2(href="/profile") Hủy
                 button.btn.btn-primary(type="submit") Lưu thay đổi
+              hr.my-4
+              h4.mb-3 Đổi mật khẩu
+              .form-group
+                .mb-3
+                  label.form-label(for="newPassword") Mật khẩu mới
+                  input#newPassword.form-control(type="password" required)
+                
+                .mb-3
+                  label.form-label(for="confirmPassword") Xác nhận mật khẩu mới
+                  input#confirmPassword.form-control(type="password" required)
+                
+                .d-flex.justify-content-end
+                  button#changePasswordBtn.btn.btn-danger(type="button") Đổi mật khẩu
 
+              script.
+                document.getElementById('changePasswordBtn').addEventListener('click', async function() {
+                  const password = document.getElementById('newPassword').value;
+                  const confirmPassword = document.getElementById('confirmPassword').value;
+                  
+                  console.log("🎯 BẮT ĐẦU ĐỔI MẬT KHẨU");
+                  console.log("Mật khẩu:", password);
+                  console.log("Xác nhận:", confirmPassword);
+                  
+                  if (!password || !confirmPassword) {
+                    alert('Vui lòng nhập đầy đủ mật khẩu!');
+                    return;
+                  }
+                  
+                  if (password !== confirmPassword) {
+                    alert('Mật khẩu xác nhận không khớp!');
+                    return;
+                  }
+                  
+                  try {
+                    const response = await fetch('/profile/change-password', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        password: password,
+                        confirmPassword: confirmPassword
+                      })
+                    });
+                    
+                    console.log("📨 Response status:", response.status);
+                    
+                    // Chuyển hướng
+                    window.location.href = '/profile';
+                    
+                  } catch (error) {
+                    console.error('❌ Lỗi:', error);
+                    alert('Có lỗi xảy ra!');
+                  }
+                });
       //- Card 2: Cập nhật ảnh đại diện
       .profile-edit-card
         .card

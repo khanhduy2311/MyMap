@@ -21,5 +21,5 @@ router.post(
   uploadAvatarMiddleware.single('avatar'),
   profileController.postAvatarUpload
 );
-
+router.post('/change-password', authMiddleware.checkLoggedIn, profileController.changePassword);
 module.exports = router;

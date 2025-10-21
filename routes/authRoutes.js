@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController.js');
 const authMiddleware = require('../middlewares/middlewares.js');
-
+const profileController = require('../controllers/profileController.js');
 // === ROUTE TRANG CHỦ ===
 router.get('/', (req, res) => {
   // Nếu đã đăng nhập thì vào dashboard, nếu chưa thì vào trang home
@@ -29,5 +29,4 @@ router.post('/reset-password/:token', authMiddleware.bypassLogin, authController
 
 // === ROUTE ĐĂNG XUẤT ===
 router.get('/logout', authMiddleware.checkLoggedIn, authController.logout);
-
 module.exports = router;

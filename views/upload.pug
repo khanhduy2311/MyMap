@@ -24,11 +24,8 @@ block main
                   label.form-label.fw-bold.fs-5(for="documentFile")
                     | Chọn hoặc kéo thả file vào đây
 
-                  //- Input tag (Dòng 32)
                   input.form-control.d-none(type="file" name="documentFile" id="documentFile" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.gif")
 
-                  //- === SỬA LỖI Ở ĐÂY ===
-                  //- Đảm bảo .mt-2 và #fileInfo ngang hàng với input, không thụt vào sâu hơn
                   .mt-2
                     small.text-muted PDF, DOCX, TXT, Ảnh (Tối đa 50MB)
 
@@ -117,7 +114,15 @@ block scripts
   script(src="https://cdn.jsdelivr.net/npm/markmap-lib@0.11.6")
 
   script.
-    //- Toàn bộ code JS bên trong block scripts giữ nguyên như lần sửa trước
+    // Biến toàn cục để theo dõi trạng thái
+    let isSaving = false;
+    let mindmapData = null;
+    let visualizationUrl = null;
+    let eventSource = null;
+    let isProcessing = false;
+    let currentFile = null;
+    let startTime = null;
+
     function renderDemoMindmap() {
       try {
         if (typeof window.markmap === 'undefined' || typeof window.markmap.Transformer === 'undefined') {
@@ -143,6 +148,7 @@ block scripts
     }
     document.addEventListener('DOMContentLoaded', renderDemoMindmap);
 
+    // DOM Elements
     const uploadForm = document.getElementById('uploadForm');
     const documentInput = document.getElementById('documentFile');
     const fileInfo = document.getElementById('fileInfo');
@@ -167,56 +173,67 @@ block scripts
     const rawTextArea = document.getElementById('rawTextArea');
     const completionTimeSpan = document.getElementById('completionTime');
 
-
-    let mindmapData = null;
-    let visualizationUrl = null;
-    let eventSource = null;
-    let isProcessing = false;
-    let currentFile = null;
-    let startTime = null;
-
-
+    // File Upload Handlers
     fileUploadArea.addEventListener('click', () => documentInput.click());
-    fileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.classList.add('border-primary', 'bg-light'); });
-    fileUploadArea.addEventListener('dragleave', () => { fileUploadArea.classList.remove('border-primary', 'bg-light'); });
-    fileUploadArea.addEventListener('drop', (e) => { e.preventDefault(); fileUploadArea.classList.remove('border-primary', 'bg-light'); if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files[0]); });
-    documentInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFileSelection(e.target.files[0]); });
+    fileUploadArea.addEventListener('dragover', (e) => { 
+      e.preventDefault(); 
+      fileUploadArea.classList.add('border-primary', 'bg-light'); 
+    });
+    fileUploadArea.addEventListener('dragleave', () => { 
+      fileUploadArea.classList.remove('border-primary', 'bg-light'); 
+    });
+    fileUploadArea.addEventListener('drop', (e) => { 
+      e.preventDefault(); 
+      fileUploadArea.classList.remove('border-primary', 'bg-light'); 
+      if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files[0]); 
+    });
+    documentInput.addEventListener('change', (e) => { 
+      if (e.target.files.length > 0) handleFileSelection(e.target.files[0]); 
+    });
 
     function handleFileSelection(file) {
       const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'image/jpeg', 'image/png', 'image/gif'];
-       if (!allowedTypes.includes(file.type)) {
-           showError(`Loại file không hợp lệ: ${file.type}. Chỉ chấp nhận PDF, DOCX, TXT, JPG, PNG, GIF.`);
-           resetFileSelection();
-           return;
-       }
+      if (!allowedTypes.includes(file.type)) {
+        showError(`Loại file không hợp lệ: ${file.type}. Chỉ chấp nhận PDF, DOCX, TXT, JPG, PNG, GIF.`);
+        resetFileSelection();
+        return;
+      }
 
       currentFile = file;
       const fileSize = (file.size / (1024 * 1024)).toFixed(2);
-      if (fileSize > 50) { showError('File quá lớn! Vui lòng chọn file nhỏ hơn 50MB.'); resetFileSelection(); return;
+      if (fileSize > 50) { 
+        showError('File quá lớn! Vui lòng chọn file nhỏ hơn 50MB.'); 
+        resetFileSelection(); 
+        return;
       }
-      fileInfo.innerHTML = `<div class="alert alert-success py-2 d-flex justify-content-between align-items-center"><span class="me-2"><i class="fas fa-file me-2"></i><strong>${file.name}</strong> (${fileSize} MB)</span><button type="button" class="btn-close btn-sm" onclick="resetFileSelection(event)"></button></div>`;
+      
+      fileInfo.innerHTML = `<div class="alert alert-success py-2 d-flex justify-content-between align-items-center">
+        <span class="me-2"><i class="fas fa-file me-2"></i><strong>${file.name}</strong> (${fileSize} MB)</span>
+        <button type="button" class="btn-close btn-sm" onclick="resetFileSelection(event)"></button>
+      </div>`;
+      
       fileUploadArea.classList.add('border-success');
       submitBtn.disabled = false;
-       hideError();
+      hideError();
     }
 
     function resetFileSelection(event) {
-        if(event) event.stopPropagation();
+      if(event) event.stopPropagation();
       documentInput.value = '';
       fileInfo.innerHTML = '';
       fileUploadArea.classList.remove('border-success', 'border-primary', 'bg-light');
       currentFile = null;
       submitBtn.disabled = true;
-       hideError();
+      hideError();
     }
 
+    // Upload Form Handler
     uploadForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (isProcessing || !currentFile) {
-           showError(isProcessing ? 'Đang xử lý file trước đó. Vui lòng đợi...' : 'Vui lòng chọn một file.');
-           return;
-       }
-
+        showError(isProcessing ? 'Đang xử lý file trước đó. Vui lòng đợi...' : 'Vui lòng chọn một file.');
+        return;
+      }
 
       isProcessing = true;
       startTime = Date.now();
@@ -234,64 +251,67 @@ block scripts
 
       rawTextSection.classList.add('d-none');
       rawTextArea.textContent = '';
-       resetResultButtons();
+      resetResultButtons();
 
       const formData = new FormData();
       formData.append('documentFile', currentFile);
 
       try {
-        const startResponse = await fetch('/upload/start-summarize', { method: 'POST', body: formData });
+        const startResponse = await fetch('/upload/start-summarize', { 
+          method: 'POST', 
+          body: formData 
+        });
 
         if (!startResponse.ok) {
-           let errorData;
-           try { errorData = await startResponse.json(); }
-           catch (e) { errorData = { error: `Lỗi ${startResponse.status}: ${startResponse.statusText}` }; }
-           throw new Error(errorData.error || `Lỗi server ${startResponse.status}`);
-         }
+          let errorData;
+          try { errorData = await startResponse.json(); }
+          catch (e) { errorData = { error: `Lỗi ${startResponse.status}: ${startResponse.statusText}` }; }
+          throw new Error(errorData.error || `Lỗi server ${startResponse.status}`);
+        }
+        
         const { jobId } = await startResponse.json();
-         if (!jobId) throw new Error("Server không trả về Job ID hợp lệ.");
+        if (!jobId) throw new Error("Server không trả về Job ID hợp lệ.");
 
         progressStatus.textContent = 'Đã có Job ID, đang kết nối stream...';
         eventSource = new EventSource(`/upload/summarize-stream?jobId=${encodeURIComponent(jobId)}`);
 
         eventSource.onopen = () => {
-             console.log("SSE connection opened.");
-             progressStatus.textContent = 'Đã kết nối, đang xử lý tài liệu...';
+          console.log("SSE connection opened.");
+          progressStatus.textContent = 'Đã kết nối, đang xử lý tài liệu...';
         };
 
         eventSource.addEventListener('progress', (event) => {
           try {
-              const data = JSON.parse(event.data);
-
-              if (data.totalChunks && data.totalChunks > 0 && typeof data.chunkCurrent !== 'undefined') {
-                const percent = Math.max(0, Math.min(100, Math.round((data.chunkCurrent / data.totalChunks) * 100)));
-                updateProgressBar(percent, `${percent}%`);
-                progressStatus.textContent = `Đang xử lý phần ${data.chunkCurrent}/${data.totalChunks}...`;
-              } else if (data.message) {
-                 progressStatus.textContent = data.message;
-                 if (data.message.includes('trích xuất')) updateProgressBar(10, '10%');
-                 else if (data.message.includes('chia thành')) updateProgressBar(15, '15%');
-                 else if (data.message.includes('tổng hợp')) updateProgressBar(90, '90%');
-                 else if (data.message.includes('tạo sơ đồ')) updateProgressBar(95, '95%');
-              }
+            const data = JSON.parse(event.data);
+            if (data.totalChunks && data.totalChunks > 0 && typeof data.chunkCurrent !== 'undefined') {
+              const percent = Math.max(0, Math.min(100, Math.round((data.chunkCurrent / data.totalChunks) * 100)));
+              updateProgressBar(percent, `${percent}%`);
+              progressStatus.textContent = `Đang xử lý phần ${data.chunkCurrent}/${data.totalChunks}...`;
+            } else if (data.message) {
+              progressStatus.textContent = data.message;
+              if (data.message.includes('trích xuất')) updateProgressBar(10, '10%');
+              else if (data.message.includes('chia thành')) updateProgressBar(15, '15%');
+              else if (data.message.includes('tổng hợp')) updateProgressBar(90, '90%');
+              else if (data.message.includes('tạo sơ đồ')) updateProgressBar(95, '95%');
+            }
           } catch(e) {
-               console.error("Error parsing progress event data:", e, event.data);
+            console.error("Error parsing progress event data:", e, event.data);
           }
         });
 
         eventSource.addEventListener('debug_raw', (event) => {
-           try {
-               rawTextSection.classList.remove('d-none');
-               const data = JSON.parse(event.data);
-               rawTextArea.textContent += `\n\n[Chunk ${data.chunk}] ${data.rawText}`;
-               rawTextArea.scrollTop = rawTextArea.scrollHeight;
-           } catch (e) {
-                console.error("Error parsing debug_raw event:", e, event.data);
-           }
+          try {
+            rawTextSection.classList.remove('d-none');
+            const data = JSON.parse(event.data);
+            rawTextArea.textContent += `\n\n[Chunk ${data.chunk}] ${data.rawText}`;
+            rawTextArea.scrollTop = rawTextArea.scrollHeight;
+          } catch (e) {
+            console.error("Error parsing debug_raw event:", e, event.data);
+          }
         });
 
         eventSource.addEventListener('complete', (event) => {
-           console.log("SSE complete event received.");
+          console.log("SSE complete event received.");
           if (eventSource) eventSource.close();
           try {
             const data = JSON.parse(event.data);
@@ -303,7 +323,6 @@ block scripts
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             completionTimeSpan.innerHTML = `<i class="fas fa-clock me-1"></i> Thời gian: ${duration}s`;
 
-
             setTimeout(() => {
               progressArea.style.display = 'none';
               resultArea.style.display = 'block';
@@ -314,41 +333,40 @@ block scripts
 
               createMindmapBtn.disabled = !mindmapData;
               if (visualizationUrl) {
-                  viewVisualizationBtn.style.display = 'inline-flex';
-                  viewVisualizationBtn.onclick = () => { window.open(visualizationUrl, '_blank'); };
+                viewVisualizationBtn.style.display = 'inline-flex';
+                viewVisualizationBtn.onclick = () => { window.open(visualizationUrl, '_blank'); };
               } else {
-                  viewVisualizationBtn.style.display = 'none';
+                viewVisualizationBtn.style.display = 'none';
               }
-
             }, 500);
           } catch (e) {
             console.error("Lỗi parse JSON 'complete':", e, event.data);
             showError('Lỗi xử lý dữ liệu kết quả từ server.');
-             resetProcessingState();
+            resetProcessingState();
           }
         });
 
         eventSource.addEventListener('error', (event) => {
-           console.error("SSE error_event received:", event.data);
-            if (eventSource) eventSource.close();
-            try {
-                 const errorData = JSON.parse(event.data);
-                 showError(`Lỗi từ Server: ${errorData.message || 'Lỗi không xác định'}`);
-            } catch(e) {
-                 showError('Lỗi không xác định từ server hoặc mất kết nối.');
-            }
-            resetProcessingState();
+          console.error("SSE error_event received:", event.data);
+          if (eventSource) eventSource.close();
+          try {
+            const errorData = JSON.parse(event.data);
+            showError(`Lỗi từ Server: ${errorData.message || 'Lỗi không xác định'}`);
+          } catch(e) {
+            showError('Lỗi không xác định từ server hoặc mất kết nối.');
+          }
+          resetProcessingState();
         });
 
         eventSource.onerror = (e) => {
-           console.error("SSE Connection Error:", e);
+          console.error("SSE Connection Error:", e);
           if (!mindmapData && isProcessing) {
             showError('Mất kết nối với server hoặc có lỗi mạng trong quá trình xử lý.');
-             if (eventSource) eventSource.close();
-             resetProcessingState();
+            if (eventSource) eventSource.close();
+            resetProcessingState();
           } else if (!isProcessing && eventSource) {
-              eventSource.close();
-              eventSource = null;
+            eventSource.close();
+            eventSource = null;
           }
         };
 
@@ -359,15 +377,16 @@ block scripts
       }
     });
 
+    // Result Buttons Handlers
     viewJsonBtn.addEventListener('click', () => {
       jsonPreview.style.display = jsonPreview.style.display === 'none' ? 'block' : 'none';
-       if (jsonPreview.style.display === 'block') {
-           jsonPreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-       }
+      if (jsonPreview.style.display === 'block') {
+        jsonPreview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
 
     newUploadBtn.addEventListener('click', () => {
-       console.log("New upload requested.");
+      console.log("New upload requested.");
       resetFileSelection();
       resultArea.style.display = 'none';
       jsonPreview.style.display = 'none';
@@ -375,41 +394,33 @@ block scripts
       hideError();
       mindmapData = null;
       visualizationUrl = null;
-       startTime = null;
-       if (eventSource) {
-           eventSource.close();
-           eventSource = null;
-           console.log("Closed existing SSE connection for new upload.");
-       }
-       isProcessing = false;
-       resetSubmitButton();
-       resetResultButtons();
-       window.scrollTo({ top: 0, behavior: 'smooth' });
+      startTime = null;
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        console.log("Closed existing SSE connection for new upload.");
+      }
+      isProcessing = false;
+      resetSubmitButton();
+      resetResultButtons();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
-
-     function resetResultButtons() {
-         createMindmapBtn.disabled = true;
-         createMindmapBtn.innerHTML = '<i class="fas fa-save me-2"></i>Lưu và Tạo Mindmap';
-         createMindmapBtn.onclick = saveMindmap;
-         viewVisualizationBtn.style.display = 'none';
-         viewVisualizationBtn.onclick = null;
-     }
 
     copyJsonBtn.addEventListener('click', async () => {
       if (mindmapData) {
         try {
-            await navigator.clipboard.writeText(mindmapData);
-            copyJsonBtn.innerHTML = '<i class="fas fa-check me-1"></i>Đã sao chép!';
-            copyJsonBtn.classList.remove('btn-outline-success');
-            copyJsonBtn.classList.add('btn-success');
-            setTimeout(() => {
-                 copyJsonBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Sao chép';
-                 copyJsonBtn.classList.remove('btn-success');
-                 copyJsonBtn.classList.add('btn-outline-success');
-            }, 2000);
+          await navigator.clipboard.writeText(mindmapData);
+          copyJsonBtn.innerHTML = '<i class="fas fa-check me-1"></i>Đã sao chép!';
+          copyJsonBtn.classList.remove('btn-outline-success');
+          copyJsonBtn.classList.add('btn-success');
+          setTimeout(() => {
+            copyJsonBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Sao chép';
+            copyJsonBtn.classList.remove('btn-success');
+            copyJsonBtn.classList.add('btn-outline-success');
+          }, 2000);
         } catch (err) {
-             console.error('Failed to copy text: ', err);
-             alert('Không thể sao chép vào clipboard.');
+          console.error('Failed to copy text: ', err);
+          alert('Không thể sao chép vào clipboard.');
         }
       }
     });
@@ -417,43 +428,60 @@ block scripts
     downloadJsonBtn.addEventListener('click', () => {
       if (mindmapData) {
         try {
-            const blob = new Blob([mindmapData], { type: 'text/markdown;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            const safeFilename = (currentFile?.name || 'mindmap').replace(/\.[^/.]+$/, "").replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            a.download = `${safeFilename}-${Date.now()}.md`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+          const blob = new Blob([mindmapData], { type: 'text/markdown;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          const safeFilename = (currentFile?.name || 'mindmap').replace(/\.[^/.]+$/, "").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          a.download = `${safeFilename}-${Date.now()}.md`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
         } catch (e) {
-             console.error("Error creating download link:", e);
-             alert("Không thể tạo file để tải xuống.");
+          console.error("Error creating download link:", e);
+          alert("Không thể tạo file để tải xuống.");
         }
       }
     });
 
+    // Save Mindmap Function - FIXED: Ngăn chặn gọi nhiều lần
     async function saveMindmap() {
-      if (!mindmapData || isProcessing) {
-           alert(isProcessing ? 'Đang có tiến trình khác chạy, vui lòng đợi.' : 'Không có dữ liệu mindmap để lưu.');
-           return;
-       }
+      // Ngăn chặn gọi nhiều lần
+      if (isSaving) {
+        console.log("⏳ Đang lưu, vui lòng đợi...");
+        return;
+      }
+      
+      if (!mindmapData) {
+        alert('Không có dữ liệu mindmap để lưu.');
+        return;
+      }
 
+      if (isProcessing) {
+        alert('Đang có tiến trình khác chạy, vui lòng đợi.');
+        return;
+      }
+
+      console.log("💾 Bắt đầu lưu mindmap...");
+      isSaving = true;
+      
       createMindmapBtn.disabled = true;
       createMindmapBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...';
 
       let title = 'Mindmap không có tiêu đề';
       try {
-           const firstLine = mindmapData.split('\n')[0];
-           if (firstLine && firstLine.startsWith('#')) {
-               title = firstLine.replace(/^#+\s*/, '').trim() || title;
-           }
-      } catch (e) { console.warn("Could not extract title from markdown."); }
-
+        const firstLine = mindmapData.split('\n')[0];
+        if (firstLine && firstLine.startsWith('#')) {
+          title = firstLine.replace(/^#+\s*/, '').trim() || title;
+        }
+      } catch (e) { 
+        console.warn("Không thể trích xuất tiêu đề từ markdown.");
+      }
 
       try {
+        console.log("📤 Gửi request lưu mindmap...");
         const response = await fetch('/mindmaps/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -461,37 +489,58 @@ block scripts
         });
 
         const result = await response.json();
+        console.log("📥 Response từ server:", result);
 
         if (!response.ok) {
           throw new Error(result.error || `Lỗi server ${response.status} khi lưu`);
         }
 
         if (result.redirectUrl) {
-            window.location.href = result.redirectUrl;
+          console.log("🔄 Redirect đến:", result.redirectUrl);
+          window.location.href = result.redirectUrl;
         } else {
-             alert(result.message || 'Lưu thành công!');
+          alert(result.message || 'Lưu thành công!');
+          // Reset trạng thái sau khi lưu thành công
+          isSaving = false;
+          createMindmapBtn.disabled = false;
+          createMindmapBtn.innerHTML = '<i class="fas fa-save me-2"></i>Lưu và Tạo Mindmap';
         }
 
       } catch (error) {
-        console.error("Error saving mindmap:", error);
-        alert('Lỗi khi lưu Mindmap:\n' + error.message);
+        console.error("❌ Lỗi khi lưu mindmap:", error);
+        alert('Lỗi khi lưu Mindmap:\\n' + error.message);
+        
+        // Reset trạng thái khi có lỗi
+        isSaving = false;
         createMindmapBtn.disabled = false;
         createMindmapBtn.innerHTML = '<i class="fas fa-save me-2"></i>Lưu và Tạo Mindmap';
       }
     }
 
-    createMindmapBtn.addEventListener('click', saveMindmap);
+    // CHỈ DÙNG 1 EVENT LISTENER DUY NHẤT cho nút lưu
+    createMindmapBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      saveMindmap();
+    });
+
+    // Utility Functions
+    function resetResultButtons() {
+      createMindmapBtn.disabled = true;
+      createMindmapBtn.innerHTML = '<i class="fas fa-save me-2"></i>Lưu và Tạo Mindmap';
+      viewVisualizationBtn.style.display = 'none';
+      viewVisualizationBtn.onclick = null;
+    }
 
     function showError(message) {
       errorMessage.textContent = message;
       errorArea.style.display = 'block';
-       errorArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      errorArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-     function hideError() {
-         errorArea.style.display = 'none';
-         errorMessage.textContent = '';
-     }
+    function hideError() {
+      errorArea.style.display = 'none';
+      errorMessage.textContent = '';
+    }
 
     function resetSubmitButton() {
       submitBtn.innerHTML = '<i class="fas fa-robot me-2"></i>Bắt đầu phân tích tài liệu';
@@ -501,7 +550,7 @@ block scripts
     function resetProcessingState() {
       console.log("Resetting processing state.");
       isProcessing = false;
-       startTime = null;
+      startTime = null;
       resetSubmitButton();
       progressArea.style.display = 'none';
       updateProgressBar(0, '0%');
@@ -510,25 +559,27 @@ block scripts
         eventSource = null;
         console.log("Closed SSE connection during reset.");
       }
-       resetResultButtons();
+      resetResultButtons();
     }
 
     function updateProgressBar(value, text) {
-       value = Math.max(0, Math.min(100, value));
+      value = Math.max(0, Math.min(100, value));
       progressBar.style.width = `${value}%`;
       progressBar.setAttribute('aria-valuenow', value);
       progressText.textContent = text;
     }
 
+    // Cleanup on page unload
     window.addEventListener('beforeunload', (event) => {
       if (isProcessing && eventSource) {
-           console.log("Closing SSE connection on page unload.");
-           eventSource.close();
-           eventSource = null;
+        console.log("Closing SSE connection on page unload.");
+        eventSource.close();
+        eventSource = null;
       } else if (eventSource) {
-             eventSource.close();
-             eventSource = null;
+        eventSource.close();
+        eventSource = null;
       }
     });
 
+    // Initialize
     submitBtn.disabled = true;
