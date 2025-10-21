@@ -21,6 +21,12 @@ router.post('/register', authMiddleware.bypassLogin, authController.postRegister
 router.get('/login', authMiddleware.bypassLogin, authController.getLoginPage);
 router.post('/login', authController.postLogin);
 
+// === ROUTE QUÊN MẬT KHẨU ===
+router.get('/forgot-password', authMiddleware.bypassLogin, authController.getForgotPasswordPage);
+router.post('/forgot-password', authMiddleware.bypassLogin, authController.postForgotPassword);
+router.get('/reset-password/:token', authMiddleware.bypassLogin, authController.getResetPasswordPage);
+router.post('/reset-password/:token', authMiddleware.bypassLogin, authController.postResetPassword);
+
 // === ROUTE ĐĂNG XUẤT ===
 router.get('/logout', authMiddleware.checkLoggedIn, authController.logout);
 

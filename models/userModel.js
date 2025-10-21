@@ -92,3 +92,15 @@ exports.findUserByUsername = async (db, username) => {
         throw error;
     }
 };
+
+exports.findUserByResetToken = async (db, token) => {
+    try {
+        return await db.collection('users').findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: new Date() } // Chỉ tìm token còn hạn
+        });
+    } catch (error) {
+        console.error('❌ Lỗi findUserByResetToken:', error);
+        throw error;
+    }
+};
