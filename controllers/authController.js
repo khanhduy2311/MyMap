@@ -37,7 +37,7 @@ exports.postRegister = async (req, res) => {
             email: email.toLowerCase().trim(),
             username: username.toLowerCase().trim(),
             password: password, // Nên hash password
-            avatar: null,
+            avatar: "https://mediamart.vn/images/uploads/2022/713193b6-a8b3-471d-ab04-c38dae2c1da4.jpg",
             createdAt: new Date(),
             updatedAt: new Date()
         };
