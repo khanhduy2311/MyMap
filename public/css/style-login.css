@@ -77,6 +77,10 @@ body.login-page {
     cursor: pointer;
 }
 
+.btn-login:hover {
+    background-color: #0053ba;
+}
+
 .forgot-password {
     display: block;
     margin-top: 18px; 
@@ -105,6 +109,9 @@ body.login-page {
     font-weight: bold;
     cursor: pointer;
     text-decoration: none;
+}
+.btn-register:hover {
+    background-color: #1a8c00;
 }
 
 .page-link {

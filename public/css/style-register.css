@@ -72,7 +72,9 @@ body.register-page {
     cursor: pointer;
     margin-top: 15px;
 }
-
+.btn-register:hover {
+    background-color: #1a8c00;
+}   
 .login-link {
     display: block;
     margin-top: 20px;
@@ -86,10 +88,6 @@ body.register-page {
 }
 
 /* === CSS CHO THÔNG BÁO LỖI TRANG ĐĂNG KÝ === */
-
-/*
-  Tìm đến class .alert-danger bên trong .register-container
-*/
 .register-container .alert-danger {
   margin-bottom: 15px; /* Tạo khoảng cách 15px với ô Email bên dưới */
   padding: 10px;       /* Đệm bên trong cho thoáng */
