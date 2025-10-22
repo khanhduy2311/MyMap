@@ -36,7 +36,6 @@ body > header {
     border-bottom: 1px solid #393a3b;
 }
 body {
-    /* Giá trị này cần lớn hơn hoặc bằng chiều cao của header */
     padding-top: 90px; 
 }
 
