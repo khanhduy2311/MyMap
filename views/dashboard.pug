@@ -2,6 +2,81 @@ extends ../views/layouts/default.pug
 
 block styles
   link(rel="stylesheet", href="/css/style-dashboard.css")
+  style.
+    .search-and-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
+    .search-form { display: flex; gap: 0.5rem; flex-grow: 1; }
+    .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2.5rem; }
+    .pagination-controls .btn { font-weight: 500; }
+    .pagination-controls .page-info { font-weight: 500; color: #555; }
+    .pagination-controls .btn[disabled] { background-color: #e9ecef; border-color: #e9ecef; color: #6c757d; pointer-events: none; }
+    
+    /* CSS cho Thư mục */
+    .sidebar-nav-section { margin-top: 20px; }
+    .sidebar-nav-section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6c757d;
+      text-transform: uppercase;
+      padding: 0 10px 10px 10px;
+      letter-spacing: 0.5px;
+    }
+    .folder-list a {
+      font-size: 0.85rem !important; /* Ghi đè chữ nhỏ */
+      height: 50px !important;
+      justify-content: flex-start !important;
+      padding-left: 15px !important;
+    }
+    .folder-list a i {
+      font-size: 1rem !important;
+      margin-bottom: 0 !important;
+      margin-right: 12px;
+      width: 20px; /* Căn chỉnh icon */
+    }
+    .folder-list a.active-folder {
+      background-color: #e0d6ff;
+      color: #5a189a;
+      font-weight: 600;
+    }
+    .create-folder-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+      padding: 1rem;
+      background-color: rgba(255,255,255,0.3);
+      border-radius: 8px;
+    }
+
+    /* === THÊM MỚI: CSS CHO GỢI Ý TÌM KIẾM === */
+    .search-container {
+      position: relative;
+      min-width: 300px;
+      flex-grow: 1; /* Cho phép co giãn */
+      max-width: 500px; /* Giới hạn chiều rộng */
+    }
+    #search-results {
+      position: absolute;
+      top: 100%; /* Nằm ngay dưới ô input */
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      z-index: 100;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none; /* Mặc định ẩn */
+    }
+    #search-results a {
+      display: block;
+      padding: 10px 15px;
+      color: #333;
+      text-decoration: none;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #search-results a:last-child { border-bottom: none; }
+    #search-results a:hover { background-color: #f8f9fa; }
 
 block main
   .dashboard-layout
@@ -9,17 +84,68 @@ block main
       nav.sidebar-nav
         ul
           li
-            a.active(href="/dashboard", title="Danh sách Mindmap")
+            a(
+              href="/dashboard", 
+              title="Danh sách Mindmap",
+              class=currentFolder ? '' : 'active' 
+            )
               i.fas.fa-folder-open
               span Danh sách
           li
             a(href="/dashboard/trash", title="Thùng rác")
               i.fas.fa-trash
               span Thùng rác
+        
+        .sidebar-nav-section
+          .sidebar-nav-section-title Thư mục
+          ul.folder-list
+            if folders
+              each folder in folders
+                li
+                  a(
+                    href=`/dashboard/folders/${folder._id}`,
+                    class=(currentFolder && currentFolder._id.equals(folder._id)) ? 'active-folder' : ''
+                  )
+                    i.fas.fa-folder
+                    span #{folder.name}
 
     main.dashboard-content
+      .search-and-title
+        h2.content-title(style="margin-bottom: 0;") 
+          if currentFolder
+            | #{currentFolder.name}
+          else
+            | Tất cả dự án
+        
+        //- === CHỈNH SỬA: Form Tìm Kiếm được bọc lại ===
+        .search-container
+          form.search-form(
+            method="GET", 
+            action=currentFolder ? `/dashboard/folders/${currentFolder._id}` : "/dashboard"
+          )
+            //- Thêm ID "searchInput" và autocomplete="off"
+            input#searchInput.form-control(
+              type="search", 
+              name="search", 
+              placeholder="Tìm theo tên...", 
+              value=searchQuery || '',
+              autocomplete="off"
+            )
+            button.btn.btn-primary(type="submit")
+              i.fas.fa-search
+          
+          //- Thêm hộp chứa kết quả
+          #search-results
+      
+      if !currentFolder
+        form.create-folder-form(method="POST", action="/dashboard/folders")
+          input.form-control(type="text", name="folderName", placeholder="Tên thư mục mới...", required)
+          button.btn.btn-success(type="submit")
+            i.fas.fa-plus.me-2
+            | Tạo thư mục
+
+      //- Lưới Mindmap
       if mindmaps && mindmaps.length > 0
-        h2.content-title Tất cả dự án
         #mindmapGrid.mindmap-grid
           each mindmap in mindmaps
             .mindmap-card(data-id=`${mindmap._id}`)
@@ -29,20 +155,45 @@ block main
                 form.inline-edit-form
                   input.inline-edit-input(type="text", value=mindmap.title)
               .card-actions
+                button.btn-action.btn-move(type="button", title="Di chuyển tới thư mục"): i.fas.fa-folder-plus
                 button.btn-action.btn-edit(type="button", title="Chỉnh sửa tên"): i.fas.fa-pencil-alt
                 button.btn-action.btn-delete(type="button", data-id=`${mindmap._id}`, title="Xóa mindmap"): i.fas.fa-trash-alt
+
+        //- BỘ ĐIỀU KHIỂN PHÂN TRANG
+        if totalPages > 1
+          nav.pagination-controls(aria-label="Điều hướng trang")
+            a.btn.btn-outline-secondary(
+              href=`?page=${currentPage - 1}&search=${searchQuery || ''}`, 
+              disabled=currentPage <= 1
+            ): i.fas.fa-arrow-left.me-2
+              | Trang trước
+            
+            span.page-info Trang #{currentPage} / #{totalPages}
+
+            a.btn.btn-outline-secondary(
+              href=`?page=${currentPage + 1}&search=${searchQuery || ''}`, 
+              disabled=currentPage >= totalPages
+            ) 
+              | Trang sau
+              i.fas.fa-arrow-right.ms-2
+
+      else if searchQuery
+        .empty-dashboard-container
+          i.bi.bi-search.blank-folder(style="font-size: 8rem; color: #aaa;")
+          h2.empty-title Không tìm thấy kết quả
+          h2.sub-empty-title Không có mindmap nào khớp với từ khóa "#{searchQuery}".
+
       else
         .empty-dashboard-container
           i.bi.bi-folder-x.blank-folder
-          h2.empty-title Chưa có mindmap nào
+          h2.empty-title 
+            if currentFolder
+              | Thư mục này trống
+            else
+              | Chưa có mindmap nào
           h2.sub-empty-title Cùng bắt đầu với mindmap đầu tiên của bạn nhé!
-          .fab-helper-arrow
-            svg.helper-arrow(width="80", height="80", viewbox="0 0 80 80")
-              path(d="M 75 5 C 40 10, 40 60, 5 75", stroke-width="2", fill="none")
-          .fab-helper-text
-            p.helper-text Hãy bắt đầu sáng tạo bằng cách đi vào biểu tượng tạo mindmap mới
 
-  //- Nút tạo mới mindmap
+  //- Nút tạo mới (giữ nguyên)
   .create-new-container
     .fab-options
       svg.fab-lines(width="40" height="60" viewbox="0 0 40 60")
@@ -54,13 +205,34 @@ block main
     
     button.main-fab-btn(type="button"): i.fas.fa-plus
 
-  
+  //- MODAL "DI CHUYỂN TỚI THƯ MỤC"
+  #moveFolderModal.modal.fade(tabindex="-1")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title Di chuyển mindmap
+          button.btn-close(type="button", data-bs-dismiss="modal")
+        .modal-body
+          p Chọn thư mục bạn muốn di chuyển tới:
+          #folderTargetList.list-group
+            if folders && folders.length > 0
+              each folder in folders
+                button.list-group-item.list-group-item-action(
+                  type="button", 
+                  data-folder-id=folder._id
+                ) #{folder.name}
+            else
+              p.text-muted Bạn chưa tạo thư mục nào.
+        .modal-footer
+          button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Hủy
+
 block scripts
+  //- Script cho modal xóa, sửa tên VÀ di chuyển thư mục
   script.
     document.addEventListener('DOMContentLoaded', () => {
       const mindmapGrid = document.getElementById('mindmapGrid');
-
-      //- Hiển thị modal xác nhận 
+      
+      //- Hiển thị modal xác nhận xóa
       function showConfirmModal(title, message) {
         const modal = document.getElementById('confirmModal');
         document.getElementById('modalTitle').textContent = title;
@@ -70,110 +242,174 @@ block scripts
         return new Promise((resolve) => {
           const cancelBtn = document.getElementById('confirmCancelBtn');
           const deleteBtn = document.getElementById('confirmDeleteBtn');
-
-          function handleCancel() {
-            modal.classList.remove('show');
-            resolve(false);
-          }
-          
-          function handleConfirm() {
-            modal.classList.remove('show');
-            resolve(true);
-          }
-
+          function handleCancel() { modal.classList.remove('show'); resolve(false); }
+          function handleConfirm() { modal.classList.remove('show'); resolve(true); }
           cancelBtn.addEventListener('click', handleCancel, { once: true });
           deleteBtn.addEventListener('click', handleConfirm, { once: true });
         });
       }
+      
+      // --- LOGIC CHO MODAL DI CHUYỂN ---
+      const moveModalElement = document.getElementById('moveFolderModal');
+      const moveModal = new bootstrap.Modal(moveModalElement);
+      const folderTargetList = document.getElementById('folderTargetList');
+      let mindmapToMoveId = null;
 
-      mindmapGrid.addEventListener('click', async (event) => { // <-- Thêm "async"
-        const target = event.target;
-        const mindmapCard = target.closest('.mindmap-card');
-        if (!mindmapCard) return;
+      // === Xử lý sự kiện click trên LƯỚI MINDMAP (Xóa, Sửa, Di chuyển) ===
+      if (mindmapGrid) {
+        mindmapGrid.addEventListener('click', async (event) => { 
+          const target = event.target;
+          const mindmapCard = target.closest('.mindmap-card');
+          if (!mindmapCard) return;
 
-        // Xử lý nút xóa
-        if (target.closest('.btn-delete')) {
-          const mindmapId = mindmapCard.dataset.id;
-
-          // === THAY THẾ confirm() BẰNG MODAL MỚI ===
-          const userConfirmed = await showConfirmModal(
-            'Đưa mindmap vào thùng rác?', 
-            'Bạn có thể khôi phục mục này trong vòng 30 ngày.'
-          );
-
-          if (userConfirmed) {
-            fetch(`/mindmaps/${mindmapId}`, { method: 'DELETE' })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                mindmapCard.remove();
-              } else {
-                alert('Lỗi: ' + data.message);
-              }
-            })
-            .catch(err => alert('Lỗi kết nối.'));
+          // --- XỬ LÝ NÚT MOVE ---
+          if (target.closest('.btn-move')) {
+            mindmapToMoveId = mindmapCard.dataset.id;
+            moveModal.show();
           }
-        } 
-        // Xử lý nút edit
-        else if (target.closest('.btn-edit')) {
-          mindmapCard.classList.add('is-editing');
-          const displayView = mindmapCard.querySelector('.card-title-display');
-          const editView = mindmapCard.querySelector('.card-title-edit');
-          const input = editView.querySelector('input');
-
-          displayView.style.display = 'none';
-          editView.style.display = 'block';
-          input.focus();
-          input.select();
-        } 
-        // Xử lý nút hủy (đã được thêm lại)
-        else if (target.closest('.inline-edit-cancel')) {
-          const displayView = mindmapCard.querySelector('.card-title-display');
-          const editView = mindmapCard.querySelector('.card-title-edit');
-          const input = editView.querySelector('input');
-
-          input.value = displayView.querySelector('a').textContent;
-          editView.style.display = 'none';
-          displayView.style.display = 'block';
-          mindmapCard.classList.remove('is-editing');
-        }
-      });
-
-
-      // Xử lý submit form edit (vẫn hoạt động khi nhấn Enter)
-      mindmapGrid.addEventListener('submit', async (event) => {
-        if (!event.target.classList.contains('inline-edit-form')) return;
-        
-        event.preventDefault();
-        const form = event.target;
-        const mindmapCard = form.closest('.mindmap-card');
-        const mindmapId = mindmapCard.dataset.id;
-        const input = form.querySelector('input');
-        const newTitle = input.value.trim();
-
-        try {
-          const res = await fetch(`/mindmaps/${mindmapId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: newTitle })
-          });
-          const data = await res.json();
-          
-          if (data.success) {
+          // --- Xử lý nút xóa
+          else if (target.closest('.btn-delete')) {
+            const mindmapId = mindmapCard.dataset.id;
+            const userConfirmed = await showConfirmModal(
+              'Đưa mindmap vào thùng rác?', 
+              'Bạn có thể khôi phục mục này trong vòng 30 ngày.'
+            );
+            if (userConfirmed) {
+              fetch(`/mindmaps/${mindmapId}`, { method: 'DELETE' })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) { mindmapCard.remove(); } 
+                else { alert('Lỗi: ' + data.message); }
+              })
+              .catch(err => alert('Lỗi kết nối.'));
+            }
+          } 
+          // Xử lý nút edit
+          else if (target.closest('.btn-edit')) {
+            mindmapCard.classList.add('is-editing');
             const displayView = mindmapCard.querySelector('.card-title-display');
             const editView = mindmapCard.querySelector('.card-title-edit');
-            
-            displayView.querySelector('a').textContent = data.newTitle;
-            editView.style.display = 'none';
-            displayView.style.display = 'block';
-            mindmapCard.classList.remove('is-editing');
-          } else {
-            alert('Lỗi: ' + data.message);
-            mindmapCard.classList.remove('is-editing');
+            const input = editView.querySelector('input');
+            displayView.style.display = 'none';
+            editView.style.display = 'block';
+            input.focus();
+            input.select();
           }
-        } catch (err) {
-          alert('Lỗi kết nối.');
-        }
-      });
-    });
+        });
 
+        // Xử lý submit form edit
+        mindmapGrid.addEventListener('submit', async (event) => {
+          if (!event.target.classList.contains('inline-edit-form')) return;
+          event.preventDefault();
+          const form = event.target;
+          const mindmapCard = form.closest('.mindmap-card');
+          const mindmapId = mindmapCard.dataset.id;
+          const input = form.querySelector('input');
+          const newTitle = input.value.trim();
+          try {
+            const res = await fetch(`/mindmaps/${mindmapId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title: newTitle })
+            });
+            const data = await res.json();
+            if (data.success) {
+              const displayView = mindmapCard.querySelector('.card-title-display');
+              const editView = mindmapCard.querySelector('.card-title-edit');
+              displayView.querySelector('a').textContent = data.newTitle;
+              editView.style.display = 'none';
+              displayView.style.display = 'block';
+              mindmapCard.classList.remove('is-editing');
+            } else {
+              alert('Lỗi: ' + data.message);
+              mindmapCard.classList.remove('is-editing');
+            }
+          } catch (err) { alert('Lỗi kết nối.'); }
+        });
+      }
+      
+      // --- XỬ LÝ KHI CLICK CHỌN THƯ MỤC TRONG MODAL ---
+      if (folderTargetList) {
+        folderTargetList.addEventListener('click', (event) => {
+          const targetFolder = event.target.closest('button[data-folder-id]');
+          if (!targetFolder || !mindmapToMoveId) return;
+          const folderId = targetFolder.dataset.folderId;
+          const mindmapCard = mindmapGrid.querySelector(`.mindmap-card[data-id="${mindmapToMoveId}"]`);
+          fetch(`/dashboard/mindmaps/${mindmapToMoveId}/move`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ folderId: folderId })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              mindmapCard.remove();
+              moveModal.hide();
+              alert('Đã di chuyển thành công!');
+            } else { alert('Lỗi: ' + data.message); }
+          })
+          .catch(err => alert('Lỗi kết nối.'));
+        });
+      }
+
+      // === THÊM MỚI: LOGIC GỢI Ý TÌM KIẾM ===
+      const searchInput = document.getElementById('searchInput');
+      const searchResults = document.getElementById('search-results');
+      let debounceTimer;
+
+      if (searchInput && searchResults) {
+        searchInput.addEventListener('input', () => {
+          clearTimeout(debounceTimer); // Xóa bộ đếm cũ
+          const query = searchInput.value.trim();
+
+          if (query.length < 2) {
+            searchResults.style.display = 'none'; // Ẩn nếu query quá ngắn
+            return;
+          }
+
+          // Đặt bộ đếm mới (trì hoãn 300ms)
+          debounceTimer = setTimeout(() => {
+            // Lấy URL của trang hiện tại (xử lý cả thư mục)
+            const currentAction = searchInput.closest('form').getAttribute('action');
+            // Tạo URL API dựa trên trang
+            const apiUrl = (currentAction.includes('/folders/')) 
+              ? `${currentAction}/api/search-suggestions?q=${encodeURIComponent(query)}` // API này chưa tồn tại, tạm thời dùng API chung
+              : `/dashboard/api/search-suggestions?q=${encodeURIComponent(query)}`;
+
+            fetch(apiUrl) // Gọi API
+              .then(res => res.json())
+              .then(suggestions => {
+                searchResults.innerHTML = ''; // Xóa kết quả cũ
+
+                if (suggestions.length === 0) {
+                  searchResults.style.display = 'none';
+                  return;
+                }
+
+                // Tạo link cho từng gợi ý
+                suggestions.forEach(suggestion => {
+                  const a = document.createElement('a');
+                  a.href = `/mindmaps/${suggestion._id}`; // Link tới trang chi tiết mindmap
+                  a.textContent = suggestion.title;
+                  searchResults.appendChild(a);
+                });
+
+                searchResults.style.display = 'block'; // Hiển thị kết quả
+              })
+              .catch(err => {
+                console.error('Lỗi fetch gợi ý:', err);
+                searchResults.style.display = 'none';
+              });
+          }, 300);
+        });
+
+        // Ẩn hộp gợi ý khi bấm ra ngoài
+        document.addEventListener('click', (event) => {
+          if (!searchInput.contains(event.target)) {
+            searchResults.style.display = 'none';
+          }
+        });
+      }
+      // === KẾT THÚC LOGIC GỢI Ý ===
+
+    });
