@@ -15,30 +15,52 @@ html(lang="vi")
       .container
         .d-flex.justify-content-between.align-items-center
           a(href="/", class="h4 text-white text-decoration-none") MINDTREE
-          if user
-            .dropdown
-              button.btn.menu-info.dropdown-toggle.d-flex.align-items-center(type="button", data-bs-toggle="dropdown")
-                img.rounded-circle.me-2(src=user.avatar || '/images/default-avatar.png', alt="avatar", style="width:40px;height:40px;object-fit:cover;border:2px solid #ccc;")
-                span #{user.username}
-              ul.dropdown-menu.dropdown-menu-end
-                li
-                  a.dropdown-item(href="/dashboard")
-                    i.fas.fa-th-large.me-2
-                    | Bảng điều khiển
-                li
-                  a.dropdown-item(href="/profile")
-                    i.fas.fa-user.me-2
+
+          //- === THÊM MỚI: THANH TÌM KIẾM HEADER ===
+          .d-flex.align-items-center.ms-auto
+            if showSearch
+              .search-box-compact
+              form.search-form-header(
+                method="GET", 
+                action=searchActionUrl || '/dashboard' 
+              )
+                input#searchInput.form-control(
+                  type="search", 
+                  name="search", 
+                  placeholder="Tìm kiếm mindmap...", 
+                  value=searchQuery || '', 
+                  autocomplete="off"
+                )
+                button.btn.btn-search-icon(type="submit")
+                  i.fas.fa-search
+              //- #search-results vẫn giữ nguyên nằm trong .search-box-compact
+              #search-results
+          .ms-3
+              
+            if user
+              .dropdown
+                button.btn.menu-info.dropdown-toggle.d-flex.align-items-center(type="button", data-bs-toggle="dropdown")
+                  img.rounded-circle.me-2(src=user.avatar || '/images/default-avatar.png', alt="avatar", style="width:40px;height:40px;object-fit:cover;border:2px solid #ccc;")
+                  span #{user.username}
+                ul.dropdown-menu.dropdown-menu-end
+                  li
+                    a.dropdown-item(href="/dashboard")
+                      i.fas.fa-th-large.me-2
+                      | Bảng điều khiển
+                  li
+                    a.dropdown-item(href="/profile")
+                      i.fas.fa-user.me-2
                     | Hồ sơ của tôi
-                li
-                  hr.dropdown-divider
-                li
-                  a.dropdown-item.text-danger(href="/logout")
-                    i.fas.fa-right-from-bracket.me-2
-                    | Đăng xuất
-          else
-            div
-              a(href="/login", class="btn btn-outline-light me-2") Đăng nhập
-              a(href="/register", class="btn btn-primary") Đăng ký
+                  li
+                    hr.dropdown-divider
+                  li
+                    a.dropdown-item.text-danger(href="/logout")
+                      i.fas.fa-right-from-bracket.me-2
+                      | Đăng xuất
+            else
+              div
+                a(href="/login", class="btn btn-outline-light me-2") Đăng nhập
+                a(href="/register", class="btn btn-primary") Đăng ký
 
     //- MAIN CONTENT
     //- Sửa lại: bỏ thẻ main bọc ngoài, để block main tự quyết định layout
@@ -52,6 +74,30 @@ html(lang="vi")
           button#confirmCancelBtn.btn.btn-secondary Hủy
           button#confirmDeleteBtn.btn.btn-danger Đưa vào thùng rác
     
+    .toast-container.position-fixed.top-0.end-0.p-3(style="z-index: 1100")
+      //- Cấu trúc của toast
+      #appToast.toast(
+        role="alert", 
+        aria-live="assertive", 
+        aria-atomic="true", 
+        data-bs-delay="2000" 
+      )
+        .toast-header
+          //- ID để JS có thể thay đổi icon
+          i#toastIcon.fas.fa-info-circle.me-2
+          //- ID để JS có thể thay đổi tiêu đề
+          strong#toastTitle.me-auto Thông báo
+          button.btn-close(type="button", data-bs-dismiss="toast")
+        .toast-body
+          //- ID để JS có thể thay đổi nội dung
+          span#toastMessage Tin nhắn mẫu.
+      
+        //- Thanh thời gian 2 giây của bạn
+        .toast-progress(style="width: 100%")
+    //- === KẾT THÚC TOAST ===  
+
+
+
     //- thanh footer
     footer.mt-auto.colors-footer.text-white.py-3.shadow-sm
       .container.text-center
@@ -59,15 +105,138 @@ html(lang="vi")
     
 
     //- SCRIPTS
-    block scripts
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
+    block scripts
     script.
-      document.addEventListener('DOMContentLoaded', () => {
+      function showToast(message, title = 'Thông báo', type = 'info') {
+        // Lấy elements bên trong hàm để đảm bảo chúng tồn tại
+        const toastElement = document.getElementById('appToast'); 
+        if (!toastElement) return; // Thoát nếu không tìm thấy toast
+
+        // Dùng getOrCreateInstance để tránh lỗi khởi tạo lại
+        const toastInstance = bootstrap.Toast.getOrCreateInstance(toastElement);
+        
+        const toastIcon = document.getElementById('toastIcon'); 
+        const toastTitle = document.getElementById('toastTitle'); 
+        const toastMessage = document.getElementById('toastMessage'); 
+        const toastProgress = toastElement.querySelector('.toast-progress'); 
+
+        // Kiểm tra an toàn
+        if (!toastIcon || !toastTitle || !toastMessage || !toastProgress) {
+          console.error('Không tìm thấy các thành phần của Toast.');
+          return;
+        }
+
+        // 1. Cập nhật nội dung [cite: 249-250]
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+
+        // 2. Cập nhật style (icon và màu) [cite: 251-254]
+        toastElement.classList.remove('toast-success', 'toast-danger', 'toast-info');
+        toastIcon.classList.remove('fas', 'fa-check-circle', 'fa-exclamation-triangle', 'fa-info-circle', 'text-success', 'text-danger', 'text-info');
+
+        if (type === 'success') {
+          toastElement.classList.add('toast-success');
+          toastIcon.classList.add('fas', 'fa-check-circle', 'text-success');
+        } else if (type === 'error') {
+          toastElement.classList.add('toast-danger');
+          toastIcon.classList.add('fas', 'fa-exclamation-triangle', 'text-danger');
+        } else {
+          toastElement.classList.add('toast-info');
+          toastIcon.classList.add('fas', 'fa-info-circle', 'text-info');
+        }
+
+        // 3. Reset animation của thanh progress [cite: 255]
+        toastProgress.style.animation = 'none';
+        toastProgress.offsetHeight; // Ép trình duyệt "nhìn thấy" thay đổi
+        toastProgress.style.animation = 'runProgress 2s linear forwards';
+
+        // 4. Hiển thị toast [cite: 256]
+        toastInstance.show();
+      }
+      // === KẾT THÚC HÀM TOAST ===
+
+
+      // Listener DOMContentLoaded giờ chỉ chứa logic chạy khi tải trang
+      document.addEventListener('DOMContentLoaded', () => { 
+        
+        // (Logic đóng alert cũ của bạn) [cite: 233]
         const successAlert = document.querySelector('.alert-success');
         if (successAlert) {
           setTimeout(() => {
             const bsAlert = new bootstrap.Alert(successAlert);
             bsAlert.close();
           }, 2000);
+        }
+
+        // (Logic gợi ý tìm kiếm của bạn) [cite: 234-245]
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('search-results');
+        let debounceTimer;
+        if (searchInput && searchResults) {
+          // ... (toàn bộ code gợi ý tìm kiếm giữ nguyên) ...
+          searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer); 
+            const query = searchInput.value.trim();
+
+            if (query.length < 2) { 
+              searchResults.style.display = 'none'; 
+              return;
+            }
+            
+            debounceTimer = setTimeout(() => { 
+              const form = searchInput.closest('form'); 
+              const actionUrl = form ? form.getAttribute('action') : ''; 
+              let apiUrl;
+              if (actionUrl.includes('/dashboard/trash')) { 
+                apiUrl = `/dashboard/trash/api/search-suggestions?q=${encodeURIComponent(query)}`;
+              } else {
+                apiUrl = `/dashboard/api/search-suggestions?q=${encodeURIComponent(query)}`;
+              }
+
+              fetch(apiUrl) 
+                .then(res => res.json())
+                .then(suggestions => {
+                  searchResults.innerHTML = ''; 
+
+                  if (suggestions.length === 0) {
+                    searchResults.style.display = 'none';
+                    return;
+                  }
+                  
+                  suggestions.forEach(suggestion => { 
+                    const a = document.createElement('a');
+                    a.href = `/mindmaps/${suggestion._id}`;
+                    a.textContent = suggestion.title;
+                    searchResults.appendChild(a); 
+                  });
+
+                  searchResults.style.display = 'block';
+                })
+                .catch(err => {
+                  console.error('Lỗi fetch gợi ý:', err);
+                  searchResults.style.display = 'none'; 
+                });
+            }, 300); 
+          });
+          
+          document.addEventListener('click', (event) => {
+            if (!searchInput.contains(event.target)) {
+              searchResults.style.display = 'none';
+            }
+          }); 
+        }
+
+        // === TỰ ĐỘNG HIỂN THỊ TOAST TỪ FLASH MESSAGES ===
+        // (Logic này giữ nguyên, nó vẫn cần chạy sau khi DOM load)
+        const flashSuccess = #{success_msg ? JSON.stringify(success_msg) : 'null'}; 
+        const flashError = #{error_msg ? JSON.stringify(error_msg) : 'null'}; 
+        
+        if (flashSuccess && flashSuccess.length > 0) { 
+          showToast(flashSuccess[0], 'Thành công', 'success'); 
+        }
+        
+        if (flashError && flashError.length > 0) { 
+          showToast(flashError[0], 'Lỗi', 'error');
         }
       });

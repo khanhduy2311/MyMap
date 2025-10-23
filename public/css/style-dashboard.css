@@ -285,6 +285,53 @@
 
 /* --- HIỆU ỨNG HOVER CHO CARD TRONG THÙNG RÁC --- */
 
+/* Căn chỉnh tiêu đề và nút Dọn rác */
+.content-header-trash {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem; 
+    position: relative; 
+    justify-content: center;
+}
+.content-title-trash {
+    margin-bottom: 0; 
+    text-align: center;
+    font-family: 'Poppins', sans-serif; 
+    font-size: 2.25rem;  
+    font-weight: 700;   
+    color: #343a40;    
+    text-transform: none; 
+    letter-spacing: 3px;     
+    margin-bottom: 2rem; 
+}
+
+
+/* Style cho nút Dọn sạch rác */
+#btn-empty-trash {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+
+    position: absolute;
+    right: 0;
+}
+#btn-empty-trash:hover {
+    background-color: #c82333;
+}
+    /* Style cho nút Xóa vĩnh viễn */
+.btn-delete-permanent-trash {
+    color: #dc3545; /* Màu đỏ cảnh báo */
+}
+.btn-delete-permanent-trash:hover {
+    color: #a71d2a;
+}
+
+
+
 /* Khối chứa nút khôi phục (ẩn mặc định) */
 .trash-card-actions {
     position: absolute;
@@ -335,11 +382,6 @@
     z-index: 2; /* Nằm trên ảnh nhưng dưới nút recover */
 }
 
-
-/*------------------------------------------*/
-
-
-
 /* --- STYLE CHO GIAO DIỆN THÙNG RÁC TRỐNG --- */
 .empty-trash-container {
     display: flex;
@@ -367,29 +409,6 @@
 
 .empty-trash-container .empty-text {
     max-width: 400px; /* Giới hạn chiều rộng của dòng chữ phụ */
-}
-
-@keyframes spinAndRainbow {
-  0% {
-    transform: rotate(0deg);
-    color: #8c52ff; /* Màu tím ban đầu */
-  }
-  20% {
-    color: #ff4d4d; /* Đỏ */
-  }
-  40% {
-    color: #ff9a4d; /* Cam */
-  }
-  60% {
-    color: #4dff9a; /* Xanh lá */
-  }
-  80% {
-    color: #4d9aff; /* Xanh dương */
-  }
-  100% {
-    transform: rotate(360deg); /* Hoàn thành 1 vòng quay */
-    color: #8c52ff; /* Quay về màu tím ban đầu */
-  }
 }
 
 
@@ -488,4 +507,106 @@
     stroke: #adb5bd;
     stroke-width: 2;
     fill: none;
+}
+
+.search-and-title { display: flex; justify-content: center; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
+.search-form { display: flex; gap: 0.5rem; flex-grow: 1; }
+.pagination-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2.5rem; }
+.pagination-controls .btn { font-weight: 500; }
+.pagination-controls .page-info { font-weight: 500; color: #555; }
+.pagination-controls .btn[disabled] { background-color: #e9ecef; border-color: #e9ecef; color: #6c757d; pointer-events: none; }
+    
+/* CSS cho Thư mục */
+.sidebar-nav-section { margin-top: 20px; }
+.sidebar-nav-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    padding: 0 10px 10px 10px;
+    letter-spacing: 0.5px;
+}
+.folder-list a {
+    font-size: 0.85rem !important; /* Ghi đè chữ nhỏ */
+    height: 50px !important;
+    justify-content: flex-start !important;
+    padding-left: 15px !important;
+}
+.folder-list a i {
+    font-size: 1rem !important;
+    margin-bottom: 0 !important;
+    margin-right: 12px;
+    width: 20px; /* Căn chỉnh icon */
+}
+.folder-list a.active-folder {
+    background-color: #e0d6ff;
+    color: #5a189a;
+    font-weight: 600;
+}
+.create-folder-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+    padding: 1rem;
+    background-color: rgba(255,255,255,0.3);
+    border-radius: 8px;
+}
+
+
+#search-results a {
+    display: block;
+    padding: 10px 15px;
+    color: #333;
+    text-decoration: none;
+    border-bottom: 1px solid #f0f0f0;
+}
+#search-results a:last-child { border-bottom: none; }
+#search-results a:hover { background-color: #f8f9fa; }
+.sidebar-nav a[data-bs-toggle="modal"] {
+  cursor: pointer;
+}
+
+/* === TÙY CHỈNH MODAL TẠO THƯ MỤC === */
+
+/* 1. Đặt modal-content làm gốc định vị */
+#createFolderModal .modal-content {
+  position: relative;
+  overflow: hidden; 
+}
+
+/* 2. Định vị nút "x" (btn-close) */
+#createFolderModal .btn-close {
+  position: absolute;
+  top: 20px;   
+  right: 20px;  
+  z-index: 10;  
+}
+
+/* 3. Tùy chỉnh Header  */
+#createFolderModal .modal-header {
+  padding: 2rem 2rem 0.5rem 2rem; 
+}
+
+/* 4. Căn giữa tiêu đề "Tạo thư mục mới" */
+#createFolderModal .modal-title {
+  width: 100%;
+  text-align: center;
+  font-weight: 600; 
+}
+
+/* 5. Căn chỉnh Body (chứa label và input) */
+#createFolderModal .modal-body {
+  padding: 1rem 2rem;
+}
+
+/* 6. Đảm bảo label "Tên thư mục:" nằm ở lề trái */
+#createFolderModal .modal-body .form-label {
+  text-align: left; 
+  width: 100%;
+}
+
+/* 7. Tùy chỉnh Footer */
+#createFolderModal .modal-footer {
+  border-top: none;
+  padding: 0.5rem 2rem 0rem 0.5rem; 
 }

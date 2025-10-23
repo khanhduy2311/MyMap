@@ -1,6 +1,6 @@
 const { ObjectId } = require('mongodb');
 const userModel = require('../models/userModel.js');
-
+const moment = require('moment'); 
 // HÀM HIỆN TẠI CỦA BẠN (ĐÃ ĐƯỢC CẬP NHẬT)
 exports.getDashboardPage = async (req, res) => {
     try {
@@ -45,6 +45,10 @@ exports.getDashboardPage = async (req, res) => {
         const totalMindmaps = await collection.countDocuments(filter);
         const totalPages = Math.ceil(totalMindmaps / limit);
         // ------------------------------------
+
+        res.locals.showSearch = true; // Báo cho header hiển thị search
+        res.locals.searchActionUrl = '/dashboard';
+        res.locals.searchQuery = searchQuery; // Truyền query ra header
 
         res.render('dashboard', {
             pageTitle: 'Bảng điều khiển',
@@ -194,38 +198,53 @@ exports.moveMindmap = async (req, res) => {
     }
 };
 
-// ================================================
-// === HÀM CÒN THIẾU ĐÃ ĐƯỢC BỔ SUNG VÀO ĐÂY ===
-// ================================================
+
 exports.getTrashPage = async (req, res) => {
     try {
         const mindmapsDb = req.app.locals.mindmapsDb;
         const collectionName = req.session.user._id.toString();
 
+        const searchQuery = req.query.search || ""; 
+        const filter = {
+            deleted: true
+        };
+        if (searchQuery) {
+            filter.title = { $regex: searchQuery, $options: 'i' };
+        }
+
         const deletedMindmaps = await mindmapsDb.collection(collectionName)
-                                 .find({ deleted: true })
-                                 .sort({ createdAt: -1 })
+                                 .find(filter) 
+                                 .sort({ deletedAt: -1 }) // <-- Sắp xếp theo ngày xóa
                                  .toArray();
         
-        // === THÊM LOGIC TÍNH TOÁN NGÀY CÒN LẠI ===
+        // === SỬA LỖI Ở ĐÂY: Bổ sung logic tính toán ===
         const mindmapsWithRemainingDays = deletedMindmaps.map(mindmap => {
-            const retentionDays = 30; // Thời gian lưu trữ là 30 ngày
-            const deletionDate = new Date(mindmap.deletedAt);
-            const expirationDate = new Date(deletionDate.setDate(deletionDate.getDate() + retentionDays));
-            const today = new Date();
+            if (!mindmap.deletedAt) {
+              // Xử lý dự phòng nếu mindmap không có ngày xóa
+              return { ...mindmap, remainingDays: 0 };
+            }
             
-            const diffTime = expirationDate - today;
-            const remainingDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-
-            // Trả về object mindmap mới có thêm thuộc tính remainingDays
-            return { ...mindmap, remainingDays };
+            // Tính ngày hết hạn (30 ngày sau khi xóa)
+            const deletionDate = moment(mindmap.deletedAt);
+            const expiryDate = deletionDate.add(30, 'days');
+            
+            // Tính số ngày còn lại (làm tròn lên)
+            // Dùng max(0, ...) để đảm bảo không hiển thị số âm
+            const remainingDays = Math.max(0, expiryDate.diff(moment(), 'days') + 1); 
+            
+            return { ...mindmap, remainingDays: remainingDays }; // Trả về object đã tính toán
         });
-        // ===========================================
+        // === KẾT THÚC SỬA LỖI ===
         
+        res.locals.showSearch = true; 
+        res.locals.searchActionUrl = '/dashboard/trash'; 
+        res.locals.searchQuery = searchQuery; 
+
         res.render('dashboard-trash', {
             pageTitle: 'Thùng rác',
             user: req.session.user,
-            mindmaps: mindmapsWithRemainingDays, // Truyền danh sách đã được tính toán
+            mindmaps: mindmapsWithRemainingDays, // <-- Dùng biến đã xử lý
+            searchQuery: searchQuery
         });
     } catch (err) {
         console.error('❌ Lỗi khi tải trang thùng rác:', err);
@@ -339,6 +358,36 @@ exports.getSearchSuggestions = async (req, res) => {
 
     } catch (err) {
         console.error('❌ Lỗi khi lấy gợi ý tìm kiếm:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+exports.getTrashSearchSuggestions = async (req, res) => {
+    try {
+        const query = req.query.q || ""; 
+        if (query.length < 2) { 
+            return res.json([]);
+        }
+
+        const mindmapsDb = req.app.locals.mindmapsDb;
+        const collectionName = req.session.user._id.toString();
+
+        // === THAY ĐỔI: Chỉ tìm mục ĐÃ XÓA ===
+        const filter = {
+            deleted: true, // Chỉ tìm trong thùng rác
+            title: { $regex: query, $options: 'i' }
+        };
+
+        const suggestions = await mindmapsDb.collection(collectionName)
+            .find(filter)
+            .limit(5)
+            .project({ title: 1 })
+            .toArray();
+        
+        res.json(suggestions);
+
+    } catch (err) {
+        console.error('❌ Lỗi khi lấy gợi ý tìm kiếm thùng rác:', err);
         res.status(500).json({ error: 'Lỗi server' });
     }
 };

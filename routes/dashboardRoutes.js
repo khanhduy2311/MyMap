@@ -15,6 +15,7 @@ router.delete('/trash/delete/:id', authMiddleware.checkLoggedIn, dashboardContro
 
 // [DELETE] Xóa vĩnh viễn tất cả (THÊM MỚI)
 router.delete('/trash/empty', authMiddleware.checkLoggedIn, dashboardController.emptyTrash);
+
 // [POST] Tạo một thư mục mới
 router.post('/folders', authMiddleware.checkLoggedIn, dashboardController.createFolder);
 
@@ -23,9 +24,17 @@ router.get('/folders/:id', authMiddleware.checkLoggedIn, noCache, dashboardContr
 
 // [PATCH] Di chuyển một mindmap vào thư mục
 router.patch('/mindmaps/:id/move', authMiddleware.checkLoggedIn, dashboardController.moveMindmap);
+
 // [PATCH] Di chuyển một mindmap vào thư mục
 router.patch('/mindmaps/:id/move', authMiddleware.checkLoggedIn, dashboardController.moveMindmap);
 
 // === THÊM MỚI: API GỢI Ý TÌM KIẾM ===
 router.get('/api/search-suggestions', authMiddleware.checkLoggedIn, dashboardController.getSearchSuggestions);
+
+// === THÊM MỚI: API GỢI Ý TÌM KIẾM TRASH ===
+router.get('/trash/api/search-suggestions', authMiddleware.checkLoggedIn, dashboardController.getTrashSearchSuggestions);
+
+// === API GỢI Ý TÌM KIẾM (CHUNG) ===
+router.get('/api/search-suggestions', authMiddleware.checkLoggedIn, dashboardController.getSearchSuggestions);
+
 module.exports = router;

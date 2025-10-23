@@ -113,3 +113,167 @@ body {
     font-weight: 500;
     border-radius: 8px;
 }
+
+.search-container-header {
+  position: relative;
+  flex-grow: 1; /* Cho phép co giãn */
+  max-width: 500px; /* Giới hạn chiều rộng */
+  margin: 0 2rem; /* Khoảng cách với logo và user */
+}
+
+.search-form-header {
+  display: flex;
+}
+
+/* Chỉnh sửa bo tròn cho input */
+.search-form-header .form-control {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Chỉnh sửa bo tròn cho nút */
+.search-form-header .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  /* Đảm bảo nút đè lên viền input, không bị hở 1px */
+  margin-left: -1px; 
+  z-index: 1; 
+
+  background-color: #0881fb;   /* Màu nền trắng xám (nổi bật) */
+  color: #ffff;             /* Màu icon tím đậm (giống header) */
+}
+
+
+/* === THANH TÌM KIẾM TRÊN HEADER (CẬP NHẬT) === */
+.search-box-compact {
+  position: relative;
+  width: 150px; /* Chiều rộng cố định theo yêu cầu của bạn */
+  transition: width 0.3s ease; /* Hiệu ứng khi hover */
+  margin-right: 15px; /* Khoảng cách với avatar */
+}
+
+/* Hiệu ứng mở rộng khi hover vào ô tìm kiếm */
+
+
+.search-box-compact .search-form-header {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.15); /* Nền hơi trong suốt */
+  border-radius: 20px; /* Bo tròn */
+  overflow: hidden; /* Đảm bảo mọi thứ bên trong bo tròn */
+}
+
+.search-box-compact .form-control {
+  border: none; /* Bỏ viền */
+  background: transparent; /* Nền trong suốt */
+  color: #fff; /* Chữ màu trắng */
+  padding: 0.5rem 1rem;
+  height: 38px; /* Chiều cao cố định như các input khác */
+  flex-grow: 1; /* Cho phép input giãn ra */
+}
+
+/* Đổi màu placeholder */
+.search-box-compact .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Đổi màu chữ khi focus */
+.search-box-compact .form-control:focus {
+  outline: none;
+  box-shadow: none; /* Bỏ box-shadow mặc định của Bootstrap khi focus */
+  background-color: rgba(255, 255, 255, 0.2); /* Nền hơi đậm hơn khi focus */
+}
+
+.search-box-compact .btn-search-icon {
+  background-color: transparent; /* Nút trong suốt */
+  border: none; /* Bỏ viền */
+  color: #fff; /* Icon màu trắng */
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex; /* Dùng flex để căn icon */
+  align-items: center;
+  justify-content: center;
+}
+
+.search-box-compact .btn-search-icon:hover {
+  color: #272abc; /* Sáng hơn khi hover */
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* === GỢI Ý TÌM KIẾM (ĐÃ CHUYỂN TỪ DASHBOARD, ĐIỀU CHỈNH VỊ TRÍ) === */
+.search-box-compact #search-results { /* Đã đổi selector */
+  position: absolute;
+  top: 100%; /* Nằm ngay dưới ô input */
+  left: 0;
+  /* Quan trọng: Chiều rộng hộp gợi ý có thể rộng hơn search-box-compact */
+  width: 250px; /* Chiều rộng cố định hoặc có thể để auto nếu muốn theo text */
+  background: #fff;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  z-index: 1000; 
+  max-height: 300px;
+  overflow-y: auto;
+  display: none; 
+}
+.search-box-compact #search-results a {
+  display: block;
+  padding: 10px 15px;
+  color: #333;
+  text-decoration: none;
+  border-bottom: 1px solid #f0f0f0;
+}
+.search-box-compact #search-results a:last-child { border-bottom: none; }
+.search-box-compact #search-results a:hover { background-color: #f8f9fa; }
+
+/* Điều chỉnh lại khoảng cách của dropdown user để nó không bị dính vào search */
+header .container .dropdown {
+  margin-left: 15px; /* Khoảng cách với thanh tìm kiếm */
+}
+
+/* === TOAST NOTIFICATION & PROGRESS BAR === */
+
+/* Bọc toast để bo tròn cả thanh progress */
+#appToast {
+  overflow: hidden;
+}
+
+/* Tùy chỉnh màu sắc cho các loại thông báo */
+#appToast .toast-header .text-success { color: #198754 !important; }
+#appToast .toast-header .text-danger { color: #dc3545 !important; }
+#appToast .toast-header .text-info { color: #0dcaf0 !important; }
+
+/* Thanh thời gian (progress bar) */
+.toast-progress {
+  height: 4px; /* Độ dày của thanh */
+  background-color: #0d6efd; /* Màu mặc định */
+  width: 0%; /* Bắt đầu từ 0 */
+}
+
+/* Đổi màu thanh progress theo loại thông báo */
+#appToast.toast-success .toast-progress { background-color: #198754; }
+#appToast.toast-danger .toast-progress { background-color: #dc3545; }
+#appToast.toast-info .toast-progress { background-color: #0dcaf0; }
+
+/* Keyframe animation cho thanh chạy */
+@keyframes runProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* Class .show được Bootstrap tự động thêm vào khi toast hiện ra.
+  Chúng ta lợi dụng nó để kích hoạt animation.
+*/
+#appToast.show .toast-progress {
+  /* Chạy animation trong 2 giây (khớp data-bs-delay) */
+  animation: runProgress 2s linear forwards; 
+}
+
+.toast-container {
+  pointer-events: none; /* Cho phép click xuyên qua vùng toast */
+}
+
+.toast {
+  pointer-events: auto; /* Nhưng vẫn cho phép click nút tắt toast */
+}

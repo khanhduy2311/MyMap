@@ -3,37 +3,7 @@ extends ../views/layouts/default.pug
 block styles
   link(rel="stylesheet", href="/css/style-dashboard.css")
   //- CSS cho các nút mới (tùy chọn)
-  style.
-    /* Căn chỉnh tiêu đề và nút Dọn rác */
-    .content-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem; 
-    }
-    .content-title {
-      margin-bottom: 0; 
-    }
-    /* Style cho nút Dọn rác */
-    #btn-empty-trash {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    #btn-empty-trash:hover {
-      background-color: #c82333;
-    }
-    /* Style cho nút Xóa vĩnh viễn */
-    .btn-delete-permanent {
-      color: #dc3545; /* Màu đỏ cảnh báo */
-    }
-    .btn-delete-permanent:hover {
-      color: #a71d2a;
-    }
+    
 
 block main
   .dashboard-layout
@@ -56,8 +26,8 @@ block main
         //- Nếu có mindmap
         
         //- Bọc tiêu đề và nút "Dọn rác"
-        .content-header
-          h2.content-title Thùng rác
+        .content-header-trash
+          h2.content-title-trash Thùng rác
           //- Nút Dọn sạch thùng rác
           button#btn-empty-trash(type="button")
             i.fas.fa-fire.me-2
@@ -80,7 +50,7 @@ block main
                 button.btn-action.btn-recover(type="button", title="Khôi phục")
                   i.fas.fa-undo-alt
                 //- Nút Xóa vĩnh viễn
-                button.btn-action.btn-delete-permanent(type="button", title="Xóa vĩnh viễn")
+                button.btn-action.btn-delete-permanent-trash(type="button", title="Xóa vĩnh viễn")
                   i.fas.fa-trash-alt
 
       else
@@ -94,6 +64,7 @@ block main
 block scripts
   script.
     document.addEventListener('DOMContentLoaded', () => {
+
       const trashGrid = document.getElementById('trashGrid');
 
       //--- Xử lý nút DỌN SẠCH THÙNG RÁC ---
@@ -123,7 +94,7 @@ block scripts
 
       trashGrid.addEventListener('click', (event) => {
         const recoverButton = event.target.closest('.btn-recover');
-        const deleteButton = event.target.closest('.btn-delete-permanent'); // Nút Xóa
+        const deleteButton = event.target.closest('.btn-delete-permanent-trash'); // Nút Xóa
 
         const mindmapCard = event.target.closest('.mindmap-card');
         if (!mindmapCard) return; // Thoát nếu không click vào thẻ nào
