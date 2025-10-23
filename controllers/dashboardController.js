@@ -171,8 +171,8 @@ exports.getFolderPage = async (req, res) => {
 // [PATCH] /dashboard/mindmaps/:id/move
 exports.moveMindmap = async (req, res) => {
     try {
-        const { folderId } = req.body; // ID của thư mục muốn chuyển đến
-        const { id: mindmapId } = req.params; // ID của mindmap
+        const { folderId } = req.body; 
+        const { id: mindmapId } = req.params;
         
         if (!folderId) {
             return res.status(400).json({ success: false, message: 'Thiếu Folder ID.' });
@@ -180,13 +180,25 @@ exports.moveMindmap = async (req, res) => {
 
         const db = req.app.locals.mindmapsDb;
         const collectionName = req.session.user._id.toString();
+        
+        let updateOperation; 
+
+        // === THÊM LOGIC MỚI Ở ĐÂY ===
+        if (folderId === "root") {
+            // Nếu là root, $unset (xóa) trường folderId
+            updateOperation = { $unset: { folderId: "" } };
+        } else {
+            // Nếu là folderId bình thường, $set như cũ
+            updateOperation = { $set: { folderId: new ObjectId(folderId) } };
+        }
+        // === KẾT THÚC LOGIC MỚI ===
 
         const result = await db.collection(collectionName).updateOne(
             { _id: new ObjectId(mindmapId) },
-            { $set: { folderId: new ObjectId(folderId) } }
+            updateOperation 
         );
 
-        if (result.modifiedCount === 0) {
+        if (result.matchedCount === 0) { 
             return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap.' });
         }
         
@@ -194,6 +206,10 @@ exports.moveMindmap = async (req, res) => {
 
     } catch (err) {
         console.error('❌ Lỗi khi di chuyển mindmap:', err);
+        // Bắt lỗi nếu folderId không phải "root" và cũng không phải ObjectId hợp lệ
+        if (err.name === 'BSONTypeError') {
+            return res.status(400).json({ success: false, message: 'Folder ID không hợp lệ.' });
+        }
         res.status(500).json({ success: false, message: 'Lỗi server.' });
     }
 };
@@ -389,5 +405,109 @@ exports.getTrashSearchSuggestions = async (req, res) => {
     } catch (err) {
         console.error('❌ Lỗi khi lấy gợi ý tìm kiếm thùng rác:', err);
         res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+// === THÊM MỚI: [GET] /dashboard/folder ===
+// Hàm này lấy và hiển thị TRANG danh sách các thư mục
+exports.getFoldersPage = async (req, res) => {
+    try {
+        const mindmapsDb = req.app.locals.mindmapsDb;
+        const userId = new ObjectId(req.session.user._id);
+
+        // Lấy tất cả thư mục của user, sắp xếp A-Z
+        const folders = await mindmapsDb.collection('folders')
+            .find({ userId: userId })
+            .sort({ name: 1 })
+            .toArray();
+        
+        // (Nâng cao - Tạm thời bỏ qua): Bạn có thể chạy aggregation
+        // để đếm số lượng mindmap trong mỗi thư mục ở đây
+
+        res.render('dashboard-folders', {
+            pageTitle: 'Thư mục của bạn',
+            folders: folders,
+            // Biến 'currentFolder' không dùng ở đây,
+            // nhưng chúng ta cần nó để sidebar render đúng
+            currentFolder: null 
+        });
+
+    } catch (err) {
+        console.error('❌ Lỗi khi tải trang thư mục:', err);
+        req.flash('error_msg', 'Lỗi khi tải trang thư mục.');
+        res.redirect('/dashboard');
+    }
+};
+
+// === THÊM MỚI: [PATCH] /dashboard/folders/:id/rename ===
+exports.renameFolder = async (req, res) => {
+    try {
+        const folderId = req.params.id;
+        const userId = new ObjectId(req.session.user._id); // <--- SỬA Ở ĐÂY (thành ObjectId)
+        const { name: newName } = req.body;
+
+        if (!ObjectId.isValid(folderId)) {
+            return res.status(400).json({ success: false, message: 'ID thư mục không hợp lệ.' });
+        }
+        if (!newName || typeof newName !== 'string' || newName.trim() === '') {
+            return res.status(400).json({ success: false, message: 'Tên thư mục mới không được để trống.' });
+        }
+        
+        const trimmedName = newName.trim();
+        const folderObjectId = new ObjectId(folderId);
+        const mindmapsDb = req.app.locals.mindmapsDb;
+
+        const result = await mindmapsDb.collection('folders').updateOne(
+            { _id: folderObjectId, userId: userId }, // Đảm bảo đúng user sở hữu
+            { $set: { name: trimmedName } }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy thư mục hoặc bạn không có quyền sửa.' });
+        }
+        
+        // Trả về cả tên mới để frontend cập nhật UI ngay lập tức
+        res.json({ success: true, message: 'Đổi tên thư mục thành công!', newName: trimmedName });
+
+    } catch (err) {
+        console.error('❌ Lỗi Controller renameFolder:', err);
+        res.status(500).json({ success: false, message: 'Lỗi server không xác định khi đổi tên thư mục.' });
+    }
+};
+
+exports.deleteFolder = async (req, res) => {
+    try {
+        const folderId = req.params.id;
+        const userId = new ObjectId(req.session.user._id); // <--- SỬA Ở ĐÂY (thành ObjectId)        
+        const mindmapCollectionName = req.session.user._id.toString();
+
+        if (!ObjectId.isValid(folderId)) {
+            return res.status(400).json({ success: false, message: 'ID thư mục không hợp lệ.' });
+        }
+
+        const folderObjectId = new ObjectId(folderId);
+        const mindmapsDb = req.app.locals.mindmapsDb;
+
+        // BƯỚC 1: Di chuyển tất cả mindmap trong thư mục này ra root
+        // (Chúng ta $unset trường folderId của chúng)
+        await mindmapsDb.collection(mindmapCollectionName).updateMany(
+            { folderId: folderObjectId }, // Tìm tất cả mindmap trong thư mục này
+            { $unset: { folderId: "" } }  // Xóa trường folderId của chúng
+        );
+
+        // BƯỚC 2: Xóa thư mục
+        const result = await mindmapsDb.collection('folders').deleteOne(
+            { _id: folderObjectId, userId: userId } // Đảm bảo đúng user sở hữu
+        );
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy thư mục hoặc bạn không có quyền xóa.' });
+        }
+
+        res.json({ success: true, message: 'Đã xóa thư mục! Các mindmap bên trong đã được chuyển ra trang chính.' });
+
+    } catch (err) {
+        console.error('❌ Lỗi Controller deleteFolder:', err);
+        res.status(500).json({ success: false, message: 'Lỗi server không xác định khi xóa thư mục.' });
     }
 };

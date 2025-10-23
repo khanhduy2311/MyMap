@@ -17,36 +17,18 @@ block main
             )
               i.bi.bi-list-task
               span Danh sách
+
+          li
+            a(href="/dashboard/folder" title="Thư mục")
+              i.fas.fa-folder-open 
+              span Thư mục
+
           li
             a(href="/dashboard/trash" title="Thùng rác")
               i.fas.fa-trash
               span Thùng rác
-          li
-            //- Đây là nút kích hoạt Modal, không phải link
-            a(
-              href="#", 
-              title="Tạo thư mục mới", 
-              role="button", 
-              data-bs-toggle="modal", 
-              data-bs-target="#createFolderModal"
-            )
-              i.fas.fa-folder-plus 
-              span Tạo thư mục     
-          
-
-        .sidebar-nav-section
-          .sidebar-nav-section-title Thư mục
-          ul.folder-list
-            if folders
-              each folder in folders
-                li
-                  a(
-                    href=`/dashboard/folders/${folder._id}`,
-                    class=(currentFolder && currentFolder._id.equals(folder._id)) ? 'active-folder' : ''
-                  )
-                    i.fas.fa-folder
-                    span #{folder.name}
-
+    
+        
     main.dashboard-content
       .search-and-title
         h2.content-title(style="margin-bottom: 0;") 
@@ -130,14 +112,18 @@ block main
         .modal-body
           p Chọn thư mục bạn muốn di chuyển tới:
           #folderTargetList.list-group
+            button.list-group-item.list-group-item-action.list-group-item-primary(
+              type="button", 
+              data-folder-id="root" 
+            )
+              i.fas.fa-home.me-2
+              | TRANG CHỦ 
             if folders && folders.length > 0
               each folder in folders
                 button.list-group-item.list-group-item-action(
                   type="button", 
                   data-folder-id=folder._id
                 ) #{folder.name}
-            else
-              p.text-muted Bạn chưa tạo thư mục nào.
         .modal-footer
           button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Hủy
 

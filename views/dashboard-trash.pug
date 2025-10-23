@@ -15,6 +15,12 @@ block main
             a(href="/dashboard", title="Danh sách Mindmap")
               i.bi.bi-list-task
               span Danh sách
+          
+          li
+            a(href="/dashboard/folder" title="Thư mục")
+              i.fas.fa-folder-open
+              span Thư mục
+        
           li
             a.active(href="/dashboard/trash", title="Thùng rác")
               i.fas.fa-trash
@@ -47,11 +53,9 @@ block main
               //- Khối chứa nút hành động
               .trash-card-actions
                 //- Nút Khôi phục
-                button.btn-action.btn-recover(type="button", title="Khôi phục")
-                  i.fas.fa-undo-alt
+                button.btn-action.btn-recover(type="button", title="Khôi phục"): i.fas.fa-undo-alt
                 //- Nút Xóa vĩnh viễn
-                button.btn-action.btn-delete-permanent-trash(type="button", title="Xóa vĩnh viễn")
-                  i.fas.fa-trash-alt
+                button.btn-action.btn-delete-permanent-trash(type="button", title="Xóa vĩnh viễn"): i.fas.fa-trash-alt
 
       else
         //- Nếu không có mindmap (giữ nguyên)

@@ -1,0 +1,295 @@
+extends ../views/layouts/default.pug
+
+block styles
+  link(rel="stylesheet", href="/css/style-dashboard.css")
+
+block main
+  .dashboard-layout
+    //- Sidebar (đã cập nhật)
+    aside.dashboard-sidebar
+      nav.sidebar-nav
+        ul
+          li
+            a(href="/dashboard", title="Danh sách Mindmap")
+              i.bi.bi-list-task
+              span Danh sách
+              
+          li
+            //- Đặt class 'active' cho link này
+            a.active(href="/dashboard/folder" title="Thư mục")
+              i.fas.fa-folder-open
+              span Thư mục
+
+          li
+            a(href="/dashboard/trash" title="Thùng rác")
+              i.fas.fa-trash
+              span Thùng rác
+          
+    
+
+    //- Nội dung chính (Lưới các thư mục)
+    main.dashboard-content
+      .folder-page-header
+        h2.folder-page-title Tất cả thư mục
+
+        button#btn-create-folder.btn.btn-success( 
+          type="button", 
+          data-bs-toggle="modal", 
+          data-bs-target="#createFolderModal" 
+        )
+          i.fas.fa-plus.me-2
+          | Tạo thư mục mới
+
+
+      //- Lưới Thư mục
+      if folders && folders.length > 0
+        #folderGrid.folder-grid 
+          each folder in folders
+            .folder-card(data-id=`${folder._id}`)
+              //- Link chính chỉ bao icon
+              a.card-link(href=`/dashboard/folders/${folder._id}`): i.fas.fa-folder.folder-icon
+
+              //- Tiêu đề hiển thị (giống mindmap)
+              .card-title.folder-card-title-display: a(href=`/dashboard/folders/${folder._id}`) #{folder.name}
+              
+              //- Form sửa tên ẩn (giống mindmap)
+              .card-title.folder-card-title-edit(style="display: none;")
+                form.inline-edit-folder-form
+                  input.inline-edit-input(type="text", value=folder.name)
+
+              //- === KHỐI NÚT HÀNH ĐỘNG MỚI ===
+              .card-actions-folder
+                button.btn-action.btn-edit-folder(type="button" title="Chỉnh sửa tên"): i.fas.fa-pencil-alt
+                button.btn-action.btn-delete-folder-permanent(type="button", title="Xóa thư mục"): i.fas.fa-trash-alt
+
+      else
+        //- Trạng thái rỗng
+        .empty-dashboard-container
+          i.bi.bi-folder-x.blank-folder
+          h2.empty-title Chưa có thư mục nào
+          h2.sub-empty-title Bạn có thể tạo thư mục đầu tiên bằng icon ở sidebar.
+
+  //- === MODAL TẠO THƯ MỤC (Copy từ dashboard.pug) ===
+  //- Chúng ta cần modal này ở đây để nút "Tạo thư mục" hoạt động
+  #createFolderModal.modal.fade(tabindex="-1")
+    .modal-dialog.modal-dialog-centered
+      .modal-content
+        form#createFolderForm
+          .modal-header
+            h5.modal-title Tạo thư mục mới
+            button.btn-close(type="button", data-bs-dismiss="modal")
+          .modal-body
+            label.form-label(for="newFolderNameInput") Tên thư mục:
+            input#newFolderNameInput.form-control(
+              type="text", 
+              name="folderName", 
+              placeholder="Ví dụ: Đồ án tốt nghiệp...", 
+              required,
+              autocomplete="off"
+            )
+          .modal-footer
+            button.btn.btn-primary(type="submit") Xác nhận
+
+//- === SCRIPT CHO MODAL TẠO THƯ MỤC (Copy từ dashboard.pug) ===
+//- Cần script này để modal hoạt động
+block scripts
+  script.
+    window.addEventListener('load', () => {
+      
+      // === 1. HÀM MODAL XÁC NHẬN (COPY TỪ dashboard.pug) ===
+      function showConfirmModal(title, message, confirmText = 'Xác nhận') {
+        const modal = document.getElementById('confirmModal'); // Cần modal này tồn tại trong default.pug
+        if (!modal) {
+          console.error('Modal #confirmModal not found in default.pug');
+          return Promise.resolve(false); // Trả về false nếu modal không tồn tại
+        }
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalMessage').textContent = message;
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        deleteBtn.textContent = confirmText;
+        modal.classList.add('show');
+
+        return new Promise((resolve) => {
+          const cancelBtn = document.getElementById('confirmCancelBtn');
+          cancelBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+            resolve(false);
+          }, { once: true });
+          deleteBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+            resolve(true);
+          }, { once: true });
+        });
+      }
+
+      // === 2. LOGIC MODAL TẠO THƯ MỤC (GIỮ NGUYÊN NHƯ TRƯỚC) ===
+      const createFolderModalEl = document.getElementById('createFolderModal');
+      const createFolderForm = document.getElementById('createFolderForm');
+      const newFolderNameInput = document.getElementById('newFolderNameInput');
+
+      if (createFolderModalEl && createFolderForm && newFolderNameInput) {
+        const createFolderModal = new bootstrap.Modal(createFolderModalEl);
+        createFolderForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const folderName = newFolderNameInput.value.trim();
+          if (!folderName) {
+            if (typeof showToast === 'function') showToast('Tên thư mục không được để trống.', 'Cảnh báo', 'error');
+            else alert('Tên thư mục không được để trống.');
+            return;
+          }
+          try {
+            const response = await fetch('/dashboard/folders', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ folderName }),
+            });
+            if (response.ok) {
+              createFolderModal.hide();
+              window.location.reload();
+            } else {
+              if (typeof showToast === 'function') showToast('Lỗi khi tạo thư mục.', 'Lỗi', 'error');
+              else alert('Lỗi khi tạo thư mục.');
+            }
+          } catch (err) {
+            if (typeof showToast === 'function') showToast('Lỗi kết nối: ' + err.message, 'Lỗi', 'error');
+            else alert('Lỗi kết nối: ' + err.message);
+          }
+        });
+        createFolderModalEl.addEventListener('hidden.bs.modal', () => {
+          newFolderNameInput.value = '';
+        });
+      }
+
+      // === 3. LOGIC MỚI CHO SỬA TÊN VÀ XÓA THƯ MỤC ===
+      const folderGrid = document.getElementById('folderGrid');
+      if (folderGrid) {
+        // --- Sự kiện click trên lưới ---
+        folderGrid.addEventListener('click', async (event) => {
+          const target = event.target;
+          const folderCard = target.closest('.folder-card');
+          if (!folderCard) return;
+          const folderId = folderCard.dataset.id;
+
+          // --- Nút Sửa tên ---
+          if (target.closest('.btn-edit-folder')) {
+            folderCard.classList.add('is-editing');
+            const displayView = folderCard.querySelector('.folder-card-title-display');
+            const editView = folderCard.querySelector('.folder-card-title-edit');
+            const input = editView.querySelector('input');
+            if (displayView) displayView.style.display = 'none';
+            if (editView) editView.style.display = 'block';
+            if (input) {
+              input.focus();
+              input.select();
+            }
+          }
+
+          // --- Nút Xóa ---
+          else if (target.closest('.btn-delete-folder-permanent')) {
+            const folderNameElement = folderCard.querySelector('.folder-card-title-display a');
+            const folderName = folderNameElement ? folderNameElement.textContent : 'Thư mục này';
+
+            const userConfirmed = await showConfirmModal(
+              `Xóa thư mục "${folderName}"?`,
+              'Thao tác này sẽ xóa vĩnh viễn thư mục. Các mindmap bên trong sẽ được chuyển về Trang chủ.',
+              'Xóa vĩnh viễn'
+            );
+
+            if (userConfirmed) {
+              try {
+                const response = await fetch(`/dashboard/folders/${folderId}`, {
+                  method: 'DELETE',
+                });
+                const data = await response.json();
+                if (data.success) {
+                  folderCard.remove();
+                  if (typeof showToast === 'function') showToast(`Đã xóa thư mục "${folderName}".`, 'Thành công', 'success');
+                  else alert(`Đã xóa thư mục "${folderName}".`);
+                  // Optional: Reload if grid becomes empty
+                  if (folderGrid.children.length === 0) {
+                    // window.location.reload(); // Có thể bỏ nếu không muốn reload
+                  }
+                } else {
+                  if (typeof showToast === 'function') showToast('Lỗi: ' + data.message, 'Lỗi', 'error');
+                  else alert('Lỗi: ' + data.message);
+                }
+              } catch (err) {
+                if (typeof showToast === 'function') showToast('Lỗi kết nối: ' + err.message, 'Lỗi', 'error');
+                else alert('Lỗi kết nối: ' + err.message);
+              }
+            }
+          }
+        });
+
+        // --- Sự kiện submit form sửa tên ---
+        folderGrid.addEventListener('submit', async (event) => {
+          if (!event.target.classList.contains('inline-edit-folder-form')) return;
+          event.preventDefault();
+
+          const form = event.target;
+          const folderCard = form.closest('.folder-card');
+          const folderId = folderCard.dataset.id;
+          const input = form.querySelector('input');
+          const newName = input.value.trim();
+          const displayView = folderCard.querySelector('.folder-card-title-display');
+          const editView = folderCard.querySelector('.folder-card-title-edit');
+
+          if (!newName) {
+            if (typeof showToast === 'function') showToast('Tên thư mục không được để trống.', 'Cảnh báo', 'error');
+            else alert('Tên thư mục không được để trống.');
+            // Reset view without saving
+            if (editView) editView.style.display = 'none';
+            if (displayView) displayView.style.display = 'block';
+            folderCard.classList.remove('is-editing');
+            return;
+          }
+
+          try {
+            const response = await fetch(`/dashboard/folders/${folderId}/rename`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: newName }),
+            });
+            const data = await response.json();
+            if (data.success) {
+              if (displayView) displayView.querySelector('a').textContent = data.newName;
+              if (editView) editView.style.display = 'none';
+              if (displayView) displayView.style.display = 'block';
+              folderCard.classList.remove('is-editing');
+              if (typeof showToast === 'function') showToast('Đổi tên thư mục thành công!', 'Thành công', 'success');
+              else alert('Đổi tên thư mục thành công!');
+            } else {
+              if (typeof showToast === 'function') showToast('Lỗi: ' + data.message, 'Lỗi', 'error');
+              else alert('Lỗi: ' + data.message);
+              // Reset view on error
+              if (editView) editView.style.display = 'none';
+              if (displayView) displayView.style.display = 'block';
+              folderCard.classList.remove('is-editing');
+            }
+          } catch (err) {
+            if (typeof showToast === 'function') showToast('Lỗi kết nối: ' + err.message, 'Lỗi', 'error');
+            else alert('Lỗi kết nối: ' + err.message);
+            // Reset view on error
+            if (editView) editView.style.display = 'none';
+            if (displayView) displayView.style.display = 'block';
+            folderCard.classList.remove('is-editing');
+          }
+        });
+
+        // --- Bỏ chế độ sửa khi click ra ngoài ---
+        document.addEventListener('click', (event) => {
+          const editingCard = folderGrid.querySelector('.folder-card.is-editing');
+          if (editingCard && !editingCard.contains(event.target)) {
+            const displayView = editingCard.querySelector('.folder-card-title-display');
+            const editView = editingCard.querySelector('.folder-card-title-edit');
+            const input = editView.querySelector('input');
+            const originalName = displayView.querySelector('a').textContent; // Get original name
+            
+            if (editView) editView.style.display = 'none';
+            if (displayView) displayView.style.display = 'block';
+            input.value = originalName; // Reset input value
+            editingCard.classList.remove('is-editing');
+          }
+        });
+      }
+    });

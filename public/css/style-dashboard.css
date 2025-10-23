@@ -252,6 +252,10 @@
     background-color: #dc3545;
     color: white;
 }
+.btn-action.btn-move:hover {
+    background-color: #4800fd;
+    color: white;
+}
 
 .card-title-display a {
     text-decoration: none; /* Bỏ gạch chân */
@@ -324,16 +328,21 @@
 }
     /* Style cho nút Xóa vĩnh viễn */
 .btn-delete-permanent-trash {
-    color: #dc3545; /* Màu đỏ cảnh báo */
+    color: #343a40; /* Màu đỏ cảnh báo */
 }
 .btn-delete-permanent-trash:hover {
-    color: #a71d2a;
+    color: #ffffff;
+    background-color: #c82333;
 }
 
 
 
 /* Khối chứa nút khôi phục (ẩn mặc định) */
 .trash-card-actions {
+    display: flex; /* Biến container thành flex container */
+    justify-content: center; /* Căn giữa theo chiều ngang */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    gap: 10px; /* Tạo khoảng cách giữa các icon, bạn có thể điều chỉnh */
     position: absolute;
     /* Căn giữa theo chiều dọc và ngang */
     top: 50%;
@@ -563,50 +572,232 @@
 #search-results a:last-child { border-bottom: none; }
 #search-results a:hover { background-color: #f8f9fa; }
 .sidebar-nav a[data-bs-toggle="modal"] {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 /* === TÙY CHỈNH MODAL TẠO THƯ MỤC === */
 
 /* 1. Đặt modal-content làm gốc định vị */
 #createFolderModal .modal-content {
-  position: relative;
-  overflow: hidden; 
+    position: relative;
+    overflow: hidden; 
 }
 
 /* 2. Định vị nút "x" (btn-close) */
 #createFolderModal .btn-close {
-  position: absolute;
-  top: 20px;   
-  right: 20px;  
-  z-index: 10;  
+    position: absolute;
+    top: 20px;   
+    right: 20px;  
+    z-index: 10;  
 }
 
 /* 3. Tùy chỉnh Header  */
 #createFolderModal .modal-header {
-  padding: 2rem 2rem 0.5rem 2rem; 
+    padding: 2rem 2rem 0.5rem 2rem; 
 }
 
 /* 4. Căn giữa tiêu đề "Tạo thư mục mới" */
 #createFolderModal .modal-title {
-  width: 100%;
-  text-align: center;
-  font-weight: 600; 
+    width: 100%;
+    text-align: center;
+    font-weight: 600; 
 }
 
 /* 5. Căn chỉnh Body (chứa label và input) */
 #createFolderModal .modal-body {
-  padding: 1rem 2rem;
+    padding: 1rem 2rem;
 }
 
 /* 6. Đảm bảo label "Tên thư mục:" nằm ở lề trái */
 #createFolderModal .modal-body .form-label {
-  text-align: left; 
-  width: 100%;
+    text-align: left; 
+    width: 100%;
 }
 
 /* 7. Tùy chỉnh Footer */
 #createFolderModal .modal-footer {
-  border-top: none;
-  padding: 0.5rem 2rem 0rem 0.5rem; 
+    border-top: none;
+    padding: 0.5rem 2rem 0rem 0.5rem; 
+}
+
+/* Sử dụng lại grid của mindmap */
+.folder-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 24px;
+}
+
+.folder-card {
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+    position: relative;
+    /* Đảm bảo chiều cao card đồng đều */
+    display: flex; 
+    flex-direction: column;
+}
+
+.folder-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    border-color: #0d6efd;
+}
+
+/* Link chính của card */
+.folder-card .card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    flex-grow: 1; /* Đảm bảo link chiếm hết không gian */
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Căn giữa nội dung */
+    justify-content: center;
+}
+
+/* Icon thư mục lớn */
+.folder-card .folder-icon {
+    font-size: 4rem; 
+    color: #0d6efd; 
+    opacity: 0.8;
+    margin-bottom: 16px;
+}
+
+.folder-card .card-title {
+    font-weight: 600;
+    text-align: center; /* Tên thư mục căn giữa */
+    color: #343a40;
+}
+
+/* (Tùy chọn) Phần đếm số lượng mindmap */
+.folder-card .card-footer-stats {
+    border-top: 1px solid #e9ecef;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.folder-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* đẩy 2 phần tử ra 2 đầu */
+  margin-bottom: 20px;
+  padding: 0 10px; /* tạo chút khoảng thở 2 bên */
+}
+
+.folder-page-title {
+  flex: 1;
+  text-align: center; /* đảm bảo tiêu đề nằm giữa vùng header */
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #343a40;
+  letter-spacing: 3px;
+}
+
+#btn-create-folder {
+    margin-bottom: 10px; /* bỏ margin cũ */
+    
+}
+
+/* Small adjustment to ensure title centers correctly even with the button */
+/* We give the button a sort of "placeholder" space on the left */
+.folder-page-header::before {
+    content: "";
+    width: auto; /* Match button width or use fixed value */
+    /* Estimate button width or measure it, e.g., 150px */
+    min-width: 150px; 
+    visibility: hidden; /* Make the placeholder invisible */
+    margin-right: 1rem; /* Match button margin */
+}
+
+/* Refine button width for the placeholder */
+#btn-create-folder {
+    min-width: 150px; /* Ensure button occupies the expected space */
+    text-align: center; /* Center text within button */
+}
+
+/* === STYLE CHO SỬA TÊN/XÓA FOLDER CARD === */
+
+/* Bọc link icon riêng */
+.folder-card .card-link {
+  padding: 16px 16px 0 16px; /* Chỉ padding trên */
+  text-align: center;
+}
+
+/* Căn giữa tên thư mục */
+.folder-card .card-title {
+  text-align: center;
+  padding: 8px 16px 16px 16px; /* Padding dưới nhiều hơn */
+  margin: 0;
+}
+
+/* Style cho tiêu đề hiển thị và link */
+.folder-card-title-display a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+.folder-card-title-display a:hover {
+  color: #0d6efd;
+}
+
+/* Style cho khối sửa tên */
+.folder-card-title-edit {
+  padding: 8px 10px 10px 10px; /* Padding nhỏ hơn để input vừa */
+}
+.inline-edit-folder-form input.inline-edit-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-align: center; /* Căn giữa chữ trong input */
+}
+.inline-edit-folder-form input.inline-edit-input:focus {
+  outline: none;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Khối chứa nút hành động */
+.card-actions-folder {
+  position: absolute;
+  top: 8px; /* Đặt ở góc trên bên phải */
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  opacity: 0; /* Mặc định ẩn */
+  transition: opacity 0.2s ease;
+}
+
+/* Hiện nút khi hover vào card */
+.folder-card:not(.is-editing):hover .card-actions-folder {
+  opacity: 1;
+}
+
+/* Style nút (dùng lại .btn-action từ mindmap card) */
+.card-actions-folder .btn-action {
+  width: 32px; /* Nhỏ hơn nút mindmap */
+  height: 32px;
+  font-size: 0.8rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.card-actions-folder .btn-action:hover {
+  background-color: #e9ecef;
+}
+.card-actions-folder .btn-delete-folder-permanent:hover {
+  background-color: #dc3545;
+  color: white;
+}
+.card-actions-folder .btn-edit-folder:hover {
+  background-color: #08aa10;
+  color: white;
 }
