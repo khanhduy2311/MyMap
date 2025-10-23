@@ -17,11 +17,11 @@ const OCRSPACE_API_KEY = process.env.OCRSPACE_API_KEY;
 const GEMINI_KEYS = (process.env.GEMINI_API_KEYS || '').split(',').map(k => k.trim()).filter(Boolean);
 const HUGGINGFACE_TOKEN = process.env.HUGGINGFACE_TOKEN;
 const CHUNK_SIZE = parseInt(process.env.CHUNK_SIZE || '8000', 10);
-
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OCRSPACE_API_KEY) console.warn("⚠️ OCRSPACE_API_KEY not set in .env — OCR.Space calls will fail.");
 if (GEMINI_KEYS.length === 0) console.warn("⚠️ GEMINI_API_KEYS not set.");
 if (!HUGGINGFACE_TOKEN) console.warn("⚠️ HUGGINGFACE_TOKEN not set in .env — Hugging Face calls will fail.");
-
+if (!OPENROUTER_API_KEY) console.warn("⚠️ OPENROUTER_API_KEY not set in .env — OpenRouter calls will fail.");
 // Khởi tạo Hugging Face client
 const hf = HUGGINGFACE_TOKEN ? new HfInference(HUGGINGFACE_TOKEN) : null;
 
@@ -35,35 +35,110 @@ const keyManager = {
     return k;
   }
 };
+// ========== OPENROUTER FREE MODELS - OPTIMIZED ==========
+async function generateWithOpenRouter(prompt) {
+    if (!OPENROUTER_API_KEY) {
+        throw new Error("OPENROUTER_API_KEY not configured");
+    }
 
+    // DANH SÁCH MODEL FREE TỐT NHẤT
+    const models = [
+        "google/gemini-2.0-flash-lite-preview-02-05:free", // Gemini free
+        "anthropic/claude-3-haiku:free", // Claude free - rất ổn định
+        "meta-llama/llama-3-8b-instruct:free", // Llama free
+        "microsoft/wizardlm-2-8x22b:free", // WizardLM free
+        "qwen/qwen-2.5-72b-instruct:free" // Qwen mạnh
+    ];
+
+    for (const model of models) {
+        try {
+            console.log(`🌐 Trying OpenRouter: ${model}`);
+            
+            const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+                model: model,
+                messages: [
+                    {
+                        role: "system", 
+                        content: `TRẢ VỀ DUY NHẤT JSON. KHÔNG text, KHÔNG markdown, KHÔNG giải thích.
+YÊU CẦU: Luôn trả về JSON hợp lệ, bắt đầu bằng { và kết thúc bằng }`
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                max_tokens: 4000,
+                temperature: 0.1,
+                response_format: { type: "json_object" } // QUAN TRỌNG: ép trả về JSON
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'http://localhost:3000', // Required for OpenRouter
+                    'X-Title': 'Mindmap Generator' // Required for OpenRouter
+                },
+                timeout: 45000
+            });
+
+            const content = response.data.choices[0].message.content;
+            console.log(`✓ OpenRouter success with ${model}`);
+            
+            return { 
+                response: {
+                    candidates: [{
+                        content: {
+                            parts: [{ text: content }]
+                        }
+                    }]
+                }
+            };
+
+        } catch (error) {
+            console.warn(`❌ OpenRouter ${model} failed:`, error.response?.data?.error?.message || error.message);
+            continue;
+        }
+    }
+    
+    throw new Error("All OpenRouter models failed");
+}
 // ========== HUGGING FACE FUNCTION - VJP HƠN VỚI INSTRUCTION MODELS ==========
 // SỬA ĐỔI: Sử dụng các model instruction-tuned thay vì model conversational.
+// ========== IMPROVED HUGGING FACE FUNCTION ==========
+// ========== IMPROVED HUGGING FACE FUNCTION ==========
 async function generateWithHuggingFace(prompt, maxRetries = 2) {
     if (!HUGGINGFACE_TOKEN) {
         throw new Error("HUGGINGFACE_TOKEN not configured.");
     }
 
-    // SỬA ĐỔI: Thay thế DialoGPT/gpt2 bằng các model instruction-tuned
-    // Những model này hiểu và tuân theo yêu cầu trả về JSON tốt hơn nhiều.
+    // MODEL TỐT NHẤT CHO JSON GENERATION
     const models = [
-        "mistralai/Mistral-7B-Instruct-v0.2", // Model instruction-tuned rất tốt
-        "google/gemma-2b-it" // Model instruction-tuned nhỏ hơn
+        "mistralai/Mistral-7B-Instruct-v0.2", // Tốt nhất
+        "HuggingFaceH4/zephyr-7b-beta", // Instruction tuned tốt
+        "google/gemma-2b-it", // Nhẹ, nhanh
+        "microsoft/DialoGPT-large" // Fallback cuối
     ];
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         const model = models[attempt] || models[0];
         
         try {
-            console.log(`🤗 Attempt ${attempt + 1} with Hugging Face model: ${model}`);
+            console.log(`🤗 Hugging Face Attempt ${attempt + 1} with: ${model}`);
+            
+            // PROMPT ENGINEERING QUAN TRỌNG
+            const enhancedPrompt = `BẠN PHẢI TRẢ VỀ DUY NHẤT JSON. KHÔNG CÓ BẤT KỲ TEXT NÀO KHÁC.
+
+${prompt}
+
+NHẮC LẠI: CHỈ TRẢ VỀ JSON, KHÔNG GIẢI THÍCH, KHÔNG MARKDOWN.`;
             
             const response = await axios.post(
                 `https://api-inference.huggingface.co/models/${model}`,
                 {
-                    inputs: prompt,
+                    inputs: enhancedPrompt,
                     parameters: {
-                        max_new_tokens: 2048, // Tăng nhẹ
+                        max_new_tokens: 2048,
                         temperature: 0.1,
-                        do_sample: false, // Tắt sample để AI tuân thủ chỉ dẫn
+                        do_sample: false,
                         return_full_text: false
                     }
                 },
@@ -72,7 +147,7 @@ async function generateWithHuggingFace(prompt, maxRetries = 2) {
                         Authorization: `Bearer ${HUGGINGFACE_TOKEN}`,
                         "Content-Type": "application/json",
                     },
-                    timeout: 45000 // Tăng timeout cho các model lớn hơn
+                    timeout: 60000
                 }
             );
 
@@ -80,112 +155,90 @@ async function generateWithHuggingFace(prompt, maxRetries = 2) {
                 throw new Error(response.data.error);
             }
 
-            // Lưu ý: response.data[0]?.generated_text có thể vẫn chứa prompt, 
-            // nhưng logic `extractJson` mới sẽ xử lý
-            console.log(`✓ Hugging Face API call successful with model ${model}`);
+            console.log(`✓ Hugging Face success with ${model}`);
             return { generated_text: response.data[0]?.generated_text || "" };
 
         } catch (error) {
-            console.warn(`❌ Hugging Face attempt ${attempt + 1} failed:`, error.message);
+            console.warn(`❌ Hugging Face ${model} failed:`, error.message);
             
             if (attempt < maxRetries - 1) {
-                console.log(`🔄 Trying next model...`);
+                console.log(`🔄 Trying next Hugging Face model...`);
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } else {
-                throw new Error(`Hugging Face API failed: ${error.message}`);
+                throw new Error(`All Hugging Face models failed: ${error.message}`);
             }
         }
     }
 }
-
-// ========== AI FUNCTION với MULTI-MODEL FALLBACK - OPTIMIZED ==========
+// ========== ULTIMATE MULTI-PROVIDER AI FUNCTION (NO TOGETHER) ==========
 async function generateWithRetry(prompt, maxRetries = 3) {
-  if (!keyManager.keys || keyManager.keys.length === 0) {
-    // Thử Hugging Face nếu không có Gemini keys
-    if (hf) {
-      console.log("🔄 No Gemini keys available, trying Hugging Face...");
-      try {
+    let lastError = null;
+
+    // 1. Ưu tiên Gemini trước (nếu có key)
+    if (keyManager.keys && keyManager.keys.length > 0) {
+        const models = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            const key = keyManager.next();
+            const selectedModel = models[attempt % models.length];
+
+            try {
+                const genAI = new GoogleGenerativeAI(key);
+                const model = genAI.getGenerativeModel({
+                    model: selectedModel,
+                    generationConfig: {
+                        temperature: 0.1,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: 8192,
+                        responseMimeType: "application/json",
+                    }
+                });
+
+                console.log(`🤖 Gemini Attempt ${attempt + 1} with ${selectedModel}`);
+                const result = await model.generateContent(prompt);
+                console.log(`✓ Gemini ${selectedModel} success`);
+                return result;
+
+            } catch (error) {
+                lastError = error;
+                console.warn(`❌ Gemini ${selectedModel} failed:`, error.message);
+                if (attempt < maxRetries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                }
+            }
+        }
+    }
+
+    // 2. Thử OpenRouter (free) - RẤT QUAN TRỌNG
+    try {
+        console.log("🔄 Falling back to OpenRouter free models...");
+        return await generateWithOpenRouter(prompt);
+    } catch (error) {
+        lastError = error;
+        console.warn("OpenRouter fallback failed:", error.message);
+    }
+
+    // 3. Cuối cùng dùng Hugging Face (luôn available)
+    try {
+        console.log("🔄 Falling back to Hugging Face...");
         const hfResult = await generateWithHuggingFace(prompt);
         return { 
-          response: {
-            candidates: [{
-              content: {
-                parts: [{ text: hfResult.generated_text }]
-              }
-            }]
-          }
-        };
-      } catch (hfError) {
-        throw new Error("No AI services available: " + hfError.message);
-      }
-    }
-    throw new Error("No Gemini API keys configured.");
-  }
-
-  // Danh sách model theo thứ tự ưu tiên (Không đổi)
-  const models = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"];
-  let lastError = null;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const key = keyManager.next();
-    const selectedModel = models[attempt % models.length]; // Luân phiên model
-
-    try {
-      const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({
-        model: selectedModel,
-        generationConfig: {
-          temperature: 0.1,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 8192,
-          responseMimeType: "application/json",
-        }
-      });
-
-      console.log(`Attempt ${attempt + 1} with model ${selectedModel} and key ending in ${key.slice(-4)}...`);
-
-      const result = await model.generateContent(prompt);
-      console.log(`✓ Attempt ${attempt + 1} successful with model ${selectedModel}.`);
-      return result;
-
-    } catch (error) {
-      lastError = error;
-      const errorMessage = error?.response?.data?.error?.message || error?.message || String(error);
-      
-      console.warn(`❌ Attempt ${attempt + 1} failed with model ${selectedModel}:`, errorMessage);
-
-      // Giảm delay: chỉ 1-3 giây thay vì 3-7 giây
-      if (attempt < maxRetries - 1) {
-        const delay = Math.min(1000 + (attempt * 500), 3000);
-        console.log(`Waiting ${delay/1000} seconds before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-
-  // Hugging Face fallback với timeout ngắn hơn
-  if (hf) {
-    console.log("🔄 All Gemini attempts failed, trying Hugging Face as fallback...");
-    try {
-      const hfResult = await generateWithHuggingFace(prompt);
-      return { 
-        response: {
-          candidates: [{
-            content: {
-              parts: [{ text: hfResult.generated_text }]
+            response: {
+                candidates: [{
+                    content: {
+                        parts: [{ text: hfResult.generated_text }]
+                    }
+                }]
             }
-          }]
-        }
-      };
-    } catch (hfError) {
-      console.error("Hugging Face fallback also failed:", hfError.message);
+        };
+    } catch (error) {
+        lastError = error;
+        console.warn("Hugging Face fallback failed:", error.message);
     }
-  }
 
-  throw new Error(`AI API call failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown API error'}`);
+    throw new Error(`All AI services failed: ${lastError?.message || 'Unknown error'}`);
 }
-
 // ========== TEXT EXTRACTION ==========
 async function extractTextSmart(buffer, mimeType, sseRes) {
   console.log("🔍 Extracting text from:", mimeType);
@@ -299,25 +352,29 @@ function splitChunksSimple(text, size = CHUNK_SIZE) {
  * @param {string} text - Văn bản thô từ AI.
  * @returns {object|null} - Đối tượng JSON đã parse hoặc null nếu thất bại.
  */
+// ========== IMPROVED JSON EXTRACTION ==========
 function extractJson(text) {
   if (!text || typeof text !== 'string') return null;
 
-  // Tìm dấu { đầu tiên và dấu } cuối cùng
-  const startIndex = text.indexOf('{');
-  const endIndex = text.lastIndexOf('}');
-
-  if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
-    console.warn(`[extractJson] Không tìm thấy cặp dấu {} hợp lệ. Text: ${text.substring(0, 100)}...`);
-    return null; // Không tìm thấy JSON
+  // Tìm JSON object
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.warn('[extractJson] No JSON object found in text');
+    return null;
   }
 
-  const jsonString = text.substring(startIndex, endIndex + 1);
+  const jsonString = jsonMatch[0];
   
   try {
-    // Thử parse chuỗi JSON đã trích xuất
-    return JSON.parse(jsonString);
+    const parsed = JSON.parse(jsonString);
+    
+    // Basic validation
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed;
+    }
+    return null;
   } catch (e) {
-    console.warn(`[extractJson] Lỗi parse JSON: ${e.message}. String: "${jsonString.substring(0, 200)}..."`);
+    console.warn('[extractJson] JSON parse error:', e.message);
     return null;
   }
 }
@@ -348,97 +405,110 @@ function validateJsonStructure(parsedJson) {
 }
 
 // SỬA ĐỔI: Dùng hàm `extractJson`
+// ========== IMPROVED CHUNK ANALYSIS WITH BETTER PROMPT ==========
 async function analyzeChunkSimple(chunk, chunkIndex, totalChunks) {
-   console.log(`Analyzing chunk ${chunkIndex + 1}/${totalChunks}...`);
+  console.log(`Analyzing chunk ${chunkIndex + 1}/${totalChunks}...`);
 
-   const prompt = `Phân tích văn bản sau đây và trích xuất cấu trúc chi tiết để tạo sơ đồ tư duy (mindmap).
-Xác định chủ đề chính, các chủ đề phụ và các điểm chính trong mỗi chủ đề phụ.
+  const prompt = `BẮT BUỘC: Bạn PHẢI trả về DUY NHẤT một JSON object hợp lệ, KHÔNG có bất kỳ text nào khác.
 
-⚠️ YÊU CẦU QUAN TRỌNG:
-- Giữ nguyên hệ thống đánh số, ký hiệu đề mục (Chương, I, 1, a, ...) trong văn bản gốc và đưa vào các trường 'chapterTitle', 'title', 'subtitle' tương ứng.
-- Nếu trong văn bản gốc có thứ tự đánh số, phải giữ lại y nguyên trong phần 'chapterTitle', 'title', 'subtitle'.
-- Chỉ tóm tắt ngắn gọn phần nội dung (points), KHÔNG được lược bỏ hoặc thay đổi cấu trúc đề mục gốc.
-- Đối với MỖI 'subtitle' (hoặc 'title' nếu không có 'subtitle'), BẮT BUỘC phải trích xuất và tóm tắt 1-3 ý chính, định nghĩa, hoặc luận điểm quan trọng nhất từ nội dung văn bản nằm dưới đề mục đó vào mảng "points".
-- Mảng "points" PHẢI chứa nội dung tóm tắt thực tế, KHÔNG được để trống hoặc chỉ ghi mô tả chung chung (ví dụ: KHÔNG ghi "Trình bày về khái niệm" mà phải ghi "Khái niệm X là...") nếu có nội dung trong văn bản gốc.
-- Cấu trúc đầu ra PHẢI là một đối tượng JSON hợp lệ duy nhất. Phản hồi CHỈ được chứa đối tượng JSON, tuyệt đối KHÔNG có bất kỳ ký tự nào trước dấu '{' mở đầu hoặc sau dấu '}' kết thúc.
-Cấu trúc JSON mẫu (phải theo đúng định dạng này):
+YÊU CẦU QUAN TRỌNG:
+1. GIỮ NGUYÊN hệ thống đánh số, ký hiệu đề mục (Chương, Phần, I, 1, a, ...) từ văn bản gốc
+2. Mỗi subsection PHẢI có ít nhất 1 point chứa nội dung thực tế
+3. KHÔNG được bỏ qua bất kỳ đề mục nào trong văn bản
+
+PHÂN TÍCH VĂN BẢN SAU VÀ TRẢ VỀ JSON THEO CẤU TRÚC:
+
 {
-  "mainTopic": "Tên Tài Liệu Hoặc Chủ Đề Chính (của toàn bộ tài liệu)",
+  "mainTopic": "Tên chủ đề chính của phần này",
   "subTopics": [
     {
-      "chapterTitle": "Chương I: Giới thiệu tổng quan",
+      "chapterTitle": "Tên chương/phần (giữ nguyên số và ký hiệu)",
       "mainSections": [
         {
-          "title": "1. Khái niệm cơ bản",
+          "title": "Tiêu đề mục chính (giữ nguyên số)",
           "subsections": [
-            { "subtitle": "1.1. Định nghĩa A", "points": ["Định nghĩa A là một khái niệm quan trọng...", "Nó bao gồm các yếu tố..."] }
+            {
+              "subtitle": "Tiêu đề mục phụ (giữ nguyên số)",
+              "points": ["Nội dung chính 1", "Nội dung chính 2", "Nội dung chính 3"]
+            }
           ]
-        },
-        {
-          "title": "2. Mục không có subsection",
-          "points": ["Vai trò chính của mục 2 là...", "Cần lưu ý điểm..."],
-          "subsections": []
         }
       ]
     }
   ],
-  "summary": "Tóm tắt chung về nội dung chính trong PHẦN VĂN BẢN này."
+  "summary": "Tóm tắt ngắn nội dung phần này"
 }
 
-Văn bản cần phân tích:
+VĂN BẢN CẦN PHÂN TÍCH:
 ---
 ${chunk}
----`;
+---
 
-  try {
-    const result = await generateWithRetry(prompt);
-     const candidate = result?.response?.candidates?.[0];
-     if (candidate?.content?.parts?.[0]?.text) {
+CHÚ Ý: Nếu không tìm thấy cấu trúc rõ ràng, hãy tạo cấu trúc hợp lý từ nội dung. LUÔN trả về JSON hợp lệ.`;
+
+  // Retry logic với nhiều lần thử
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      console.log(`Attempt ${attempt + 1} for chunk ${chunkIndex + 1}`);
+      
+      const result = await generateWithRetry(prompt);
+      const rawText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      if (!rawText) {
+        throw new Error('Empty response from AI');
+      }
+
+      // Sử dụng hàm extractJson cải tiến
+      const parsedJson = extractJson(rawText);
+      
+      if (parsedJson && validateJsonStructure(parsedJson)) {
+        console.log(`✓ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} SUCCESS`);
         
-            // SỬA ĐỔI: Sử dụng hàm extractJson kiên cường hơn
-            const rawText = candidate.content.parts[0].text;
-            const parsedJson = extractJson(rawText);
-
-              if (parsedJson && validateJsonStructure(parsedJson)) {
-                   console.log(`✓ Successfully analyzed and validated chunk ${chunkIndex + 1} JSON structure. Topic: ${parsedJson.mainTopic}`);
-                   // Dọn dẹp mảng points (tốt)
-                    parsedJson.subTopics.forEach(sub => {
-                      sub.mainSections.forEach(main => {
-                          if (main.points) main.points = main.points.map(p => String(p).trim()).filter(Boolean);
-                          main.subsections.forEach(subsec => {
-                              subsec.points = subsec.points.map(p => String(p).trim()).filter(Boolean);
-                          });
-                      });
-                  });
-                 return parsedJson;
-              } else if (parsedJson) {
-                // Đã parse được JSON nhưng không đúng cấu trúc
-                   console.warn(`⚠️ JSON structure validation failed for chunk ${chunkIndex + 1}. Parsed: ${JSON.stringify(parsedJson, null, 2)}`);
-              } else {
-                // Không thể parse JSON từ rawText
-                console.warn(`JSON parse error (expected JSON response) for chunk ${chunkIndex + 1}. Raw Response: "${rawText.substring(0, 300)}..."`);
+        // Clean up data
+        parsedJson.subTopics.forEach(sub => {
+          sub.mainSections.forEach(main => {
+            if (main.points) {
+              main.points = main.points.map(p => String(p).trim()).filter(Boolean);
             }
-     } else {
-         console.warn(`No valid JSON text found in AI response for chunk ${chunkIndex + 1}. Response: ${JSON.stringify(result?.response)}`);
-     }
-
-    console.log(`Falling back for chunk ${chunkIndex + 1}.`);
-    return {
-       mainTopic: `Phần ${chunkIndex + 1} (Fallback)`,
-       subTopics: [],
-       summary: `Không thể phân tích chi tiết cấu trúc JSON cho phần này. Nội dung gốc: ${chunk.substring(0, 200)}...`,
-       fallback: true
-    };
-
-  } catch (error) {
-    console.error(`❌ Analysis API call failed for chunk ${chunkIndex + 1}:`, error.message);
-    return {
-      mainTopic: `Lỗi phân tích phần ${chunkIndex + 1}`,
-       subTopics: [],
-       summary: `Không thể phân tích nội dung do lỗi gọi API: ${error.message.substring(0, 100)}...`,
-      error: true
-    };
+            main.subsections.forEach(subsec => {
+              subsec.points = subsec.points.map(p => String(p).trim()).filter(Boolean);
+            });
+          });
+        });
+        
+        return parsedJson;
+      } else {
+        console.warn(`⚠️ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} JSON validation failed`);
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} error:`, error.message);
+      if (attempt < 2) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+    }
   }
+
+  // Fallback structure nếu tất cả retry đều thất bại
+  console.log(`🔄 Using fallback structure for chunk ${chunkIndex + 1}`);
+  return {
+    mainTopic: `Phần ${chunkIndex + 1}`,
+    subTopics: [{
+      chapterTitle: "Nội dung chính",
+      mainSections: [{
+        title: "Thông tin tổng hợp",
+        subsections: [{
+          subtitle: "Nội dung chi tiết",
+          points: [chunk.substring(0, 500) + "..."]
+        }]
+      }]
+    }],
+    summary: `Nội dung phần ${chunkIndex + 1}: ${chunk.substring(0, 200)}...`
+  };
 }
 
 // ========== OPTIMIZED CHUNK PROCESSING ==========
@@ -1031,32 +1101,35 @@ router.get('/mindmap-visualization/:jobId', authMiddleware.checkLoggedIn, (req, 
 });
 
 // ========== MINDMAP VISUALIZATION HTML GENERATOR ==========
+// ========== FIXED MINDMAP VISUALIZATION HTML ==========
+// ========== SIMPLIFIED MINDMAP VISUALIZATION HTML ==========
+// ========== FIXED MINDMAP VISUALIZATION HTML ==========
 function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
-  // Đảm bảo markdownContent không rỗng và có định dạng cơ bản
-  if (!markdownContent || markdownContent.trim() === '') {
-    markdownContent = "# Lỗi\nNội dung Markdown trống hoặc không hợp lệ.";
-  }
+    if (!markdownContent || markdownContent.trim() === '') {
+        markdownContent = "# Lỗi\nNội dung Markdown trống hoặc không hợp lệ.";
+    }
 
-  // Chuẩn hóa Markdown - đảm bảo có ít nhất một tiêu đề cấp 1
-  if (!markdownContent.includes('# ')) {
-    markdownContent = `# ${title}\n\n${markdownContent}`;
-  }
+    // Chuẩn hóa Markdown
+    if (!markdownContent.startsWith('# ')) {
+        markdownContent = `# ${title}\n\n${markdownContent}`;
+    }
 
-  const escapedMarkdown = markdownContent
-      .replace(/\\/g, '\\\\')
-      .replace(/`/g, '\\`')
-      .replace(/\$\{/g, '\\${');
+    const escapedMarkdown = markdownContent
+        .replace(/\\/g, '\\\\')
+        .replace(/`/g, '\\`')
+        .replace(/\$\{/g, '\\${');
 
-  return `
+    return `
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
-    <script src="https://cdn.jsdelivr.net/npm/d3@6.7.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.2.7"></script>
-    <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.11.6"></script>
+    <!-- Sử dụng CDN chính thức từ markmap -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.4"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; min-height: 100vh; padding: 15px; }
@@ -1065,11 +1138,11 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
         .header h1 { font-size: 2em; margin-bottom: 5px; font-weight: 600; }
         .header p { font-size: 1em; opacity: 0.9; }
         .content { display: flex; flex: 1; min-height: 650px; }
-        .markdown-panel { flex: 1; padding: 20px; background: #ffffff; border-right: 1px solid #e0e0e0; overflow-y: auto; max-height: 700px; display: flex; flex-direction: column; }
+        .markdown-panel { flex: 1; padding: 20px; background: #ffffff; border-right: 1px solid #e0e0e0; overflow-y: auto; max-height: 700px; }
         .visualization-panel { flex: 2; padding: 20px; background: #fafafa; display: flex; flex-direction: column; }
         .panel-header { font-size: 1.1em; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #4a69bd; padding-bottom: 5px; }
         #mindmap { width: 100%; height: 100%; flex: 1; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; min-height: 500px; }
-        .markdown-content { flex: 1; background: #f8f9fa; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; }
+        .markdown-content { background: #f8f9fa; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; }
         .controls { padding: 15px 20px; background: #e9ecef; border-top: 1px solid #d6dbe0; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
         .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
         .btn-primary { background-color: #007bff; color: white; }
@@ -1077,10 +1150,8 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
         .btn-secondary { background-color: #6c757d; color: white; }
         .btn-secondary:hover { background-color: #5a6268; }
         .loading-error { display: flex; justify-content: center; align-items: center; height: 100%; font-size: 16px; color: #6c757d; padding: 20px; text-align: center; }
-          .loading-error strong { color: #dc3545; }
-        svg text { font-size: 14px; }
-        @media (max-width: 992px) { .content { flex-direction: column; min-height: auto; } .markdown-panel { border-right: none; border-bottom: 1px solid #e0e0e0; max-height: 400px; } #mindmap { min-height: 450px; } .container { max-width: 100%; margin: 10px; } .header { padding: 15px 20px; } .header h1 { font-size: 1.8em; } }
-        @media (max-width: 768px) { .controls { flex-direction: column; align-items: stretch; } .btn { width: 100%; justify-content: center; } }
+        .markmap-foreign { width: 100%; height: 100%; }
+        .markmap-svg { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
@@ -1096,13 +1167,9 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
             </div>
             <div class="visualization-panel">
                 <h3 class="panel-header">Sơ đồ tương tác:</h3>
-                <svg id="mindmap">
-                    <foreignObject width="100%" height="100%">
-                        <body xmlns="http://www.w3.org/1999/xhtml">
-                            <div class="loading-error" id="loading-placeholder">Đang tải sơ đồ...</div>
-                        </body>
-                    </foreignObject>
-                </svg>
+                <div id="mindmap">
+                    <div class="loading-error">Đang tải sơ đồ tư duy...</div>
+                </div>
             </div>
         </div>
         <div class="controls">
@@ -1113,202 +1180,126 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
     </div>
     <script>
         const markdownContent = \`${escapedMarkdown}\`;
-        let mm; // Biến Markmap toàn cục
-        let pz; // Biến PanZoom toàn cục
 
         function initializeMarkmap() {
-            const svgElement = document.getElementById('mindmap');
-            const loadingPlaceholder = svgElement ? svgElement.querySelector('#loading-placeholder') : null;
+            const container = document.getElementById('mindmap');
             
-            if (typeof window.markmap === 'undefined' || typeof window.markmap.Markmap === 'undefined' || typeof window.markmap.Transformer === 'undefined' || typeof window.d3 === 'undefined') {
-                console.warn('Markmap/D3 libraries not fully loaded yet, retrying...');
-                if (loadingPlaceholder) loadingPlaceholder.textContent = 'Đang chờ thư viện D3/Markmap...';
-                setTimeout(initializeMarkmap, 150);
-                return;
-            }
-            
-            if (!svgElement) {
-                console.error('SVG element #mindmap not found!');
-                if (loadingPlaceholder) loadingPlaceholder.innerHTML = '<strong>Lỗi: Không tìm thấy khu vực vẽ sơ đồ.</strong>';
+            // Kiểm tra thư viện đã load đầy đủ chưa
+            if (typeof window.markmap === 'undefined' || 
+                typeof window.markmap.lib === 'undefined' ||
+                typeof window.markmap.lib.Transformer === 'undefined') {
+                
+                container.innerHTML = '<div class="loading-error">Đang tải thư viện D3/Markmap... (vui lòng chờ)</div>';
+                setTimeout(initializeMarkmap, 500);
                 return;
             }
 
-            // Dọn dẹp instance cũ
-            if (pz) {
-                pz.destroy();
-                pz = null;
-            }
-            if (mm) {
-                mm.destroy();
-                mm = null;
-            }
-
-            svgElement.innerHTML = ''; // Xóa nội dung cũ
-            console.log('Markmap libraries loaded, attempting to render.');
-            
-            const { Transformer, Markmap, panZoom } = window.markmap;
-            
             try {
+                const { Markmap } = window.markmap;
+                const { Transformer } = window.markmap.lib;
+                
+                console.log('Markmap libraries loaded successfully');
+                
+                // Transform markdown
                 const transformer = new Transformer();
-                console.log('Transforming markdown...');
-                
                 const { root, features } = transformer.transform(markdownContent);
-                console.log('Transformation result:', { root, features });
                 
-                if (!root || !root.content) {
-                    console.error('Invalid root:', root);
-                    throw new Error('Nội dung Markdown không hợp lệ hoặc không thể phân tích thành cấu trúc sơ đồ. (Root node invalid)');
+                if (!root) {
+                    throw new Error('Không thể phân tích cấu trúc markdown');
                 }
+
+                console.log('Markdown transformed successfully');
+
+                // Clear container
+                container.innerHTML = '';
                 
-                const options = { 
-                    autoFit: true,
-                    duration: 500,
-                    nodeMinHeight: 16,
-                    spacingVertical: 5,
-                    spacingHorizontal: 80,
-                    paddingX: 8
-                };
+                // Create SVG element
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('width', '100%');
+                svg.setAttribute('height', '100%');
+                svg.setAttribute('class', 'markmap-svg');
+                container.appendChild(svg);
                 
-                mm = Markmap.create(svgElement, options, root);
-                console.log('Markmap instance created successfully.');
+                // Tạo markmap
+                Markmap.create(svg, null, root);
                 
-                // Áp dụng PanZoom sau khi Markmap đã render
-                if (panZoom) {
-                    const g = svgElement.querySelector('g');
-                    if(g) {
-                        try {
-                            pz = panZoom(g);
-                            console.log('Pan and zoom enabled.');
-                        } catch (panZoomError) {
-                            console.warn('PanZoom failed:', panZoomError);
-                        }
-                    } else {
-                        console.warn('No SVG group (g) element found to attach panZoom.');
-                    }
-                } else {
-                    console.warn('PanZoom function not available.');
-                }
+                console.log('Markmap created successfully');
                 
             } catch (error) {
-                console.error('❌ Error rendering mindmap:', error);
-                
-                let errorMessage = error.message || 'Lỗi không xác định.';
-                if (error.message.includes('Markdown')) {
-                    errorMessage += ' Cấu trúc Markdown có vấn đề.';
-                }
-                
-                svgElement.innerHTML = \`
-                    <foreignObject width="100%" height="100%">
-                         <body xmlns="http://www.w3.org/1999/xhtml">
-                             <div class="loading-error">
-                                 <strong>Lỗi khi vẽ sơ đồ:</strong><br/>
-                                 \${errorMessage}<br/>
-                                 <small style="margin-top: 10px; display: block;">
-                                      <strong>Debug info:</strong><br/>
-                                      Content length: \${markdownContent.length}<br/>
-                                      Check console for details.
-                                 </small>
-                             </div>
-                         </body>
-                    </foreignObject>
+                console.error('Error creating markmap:', error);
+                container.innerHTML = \`
+                    <div class="loading-error">
+                        <strong>Lỗi khi tạo sơ đồ:</strong><br/>
+                        \${error.message}<br/>
+                        <small style="margin-top: 10px; display: block;">
+                            Chi tiết lỗi: \${error.toString()}<br/>
+                            <button onclick="location.reload()" style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Thử lại
+                            </button>
+                        </small>
+                    </div>
                 \`;
             }
         }
 
         function downloadMindmap() {
-            try { 
-                const svg = document.getElementById('mindmap'); 
-                if (!svg) throw new Error('SVG element not found.'); 
-                const g = svg.querySelector('g'); 
-                if (!g) throw new Error('Mindmap group element not found. Sơ đồ có thể trống.'); 
+            alert('Tính năng tải về sẽ được cập nhật trong phiên bản tiếp theo.');
+        }
+
+        // Hàm kiểm tra thư viện đã load xong chưa
+        function waitForLibraries() {
+            const container = document.getElementById('mindmap');
+            let attempts = 0;
+            const maxAttempts = 30; // 15 giây timeout
+            
+            function check() {
+                attempts++;
                 
-                // Lấy kích thước thực tế của sơ đồ
-                const bbox = g.getBBox(); 
-                if (bbox.width === 0 || bbox.height === 0) {
-                    console.warn("SVG BBox is empty, falling back to client dimensions.");
-                    bbox.width = svg.clientWidth || 800;
-                    bbox.height = svg.clientHeight || 600;
-                    bbox.x = 0;
-                    bbox.y = 0;
+                if (typeof window.d3 !== 'undefined' && 
+                    typeof window.markmap !== 'undefined' && 
+                    typeof window.markmap.lib !== 'undefined' &&
+                    typeof window.markmap.lib.Transformer !== 'undefined') {
+                    
+                    console.log('All libraries loaded successfully');
+                    initializeMarkmap();
+                    return;
                 }
-
-                const padding = 40; // Tăng padding
-                const canvas = document.createElement('canvas'); 
-                const scale = 2; // Tăng độ phân giải
                 
-                canvas.width = (bbox.width + padding * 2) * scale;
-                canvas.height = (bbox.height + padding * 2) * scale;
+                if (attempts >= maxAttempts) {
+                    container.innerHTML = \`
+                        <div class="loading-error">
+                            <strong>Lỗi: Không thể tải thư viện</strong><br/>
+                            Thư viện D3 hoặc Markmap không tải được.<br/>
+                            <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Tải lại trang
+                            </button>
+                        </div>
+                    \`;
+                    return;
+                }
                 
-                const ctx = canvas.getContext('2d'); 
-                if (!ctx) throw new Error('Could not get canvas context.'); 
-                
-                ctx.scale(scale, scale); // Áp dụng scale
-                ctx.fillStyle = '#FFFFFF'; // Nền trắng
-                ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale); 
-                
-                // Dịch chuyển canvas để vẽ sơ đồ với padding
-                // (padding - bbox.x) -> căn lề
-                ctx.translate(padding - bbox.x, padding - bbox.y);
-
-                const svgData = new XMLSerializer().serializeToString(svg); 
-                const img = new Image(); 
-                
-                img.onload = function() { 
-                    try {
-                        ctx.drawImage(img, 0, 0); 
-                        const pngFile = canvas.toDataURL('image/png'); 
-                        const downloadLink = document.createElement('a'); 
-                        downloadLink.download = 'mindmap.png'; 
-                        downloadLink.href = pngFile; 
-                        document.body.appendChild(downloadLink); 
-                        downloadLink.click(); 
-                        document.body.removeChild(downloadLink); 
-                    } catch (e) {
-                        console.error("Error drawing image to canvas or downloading PNG:", e); 
-                        alert("Lỗi khi tạo file PNG để tải về."); 
-                    }
-                }; 
-                
-                img.onerror = function(e) { 
-                    console.error("Error loading SVG into Image:", e); 
-                    alert("Lỗi khi tải dữ liệu sơ đồ để chuyển đổi sang ảnh."); 
-                } 
-                
-                const svgBase64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData))); 
-                img.src = svgBase64; 
-                
-            } catch (error) { 
-                console.error('Error in downloadMindmap:', error); 
-                alert('Không thể tải sơ đồ dưới dạng ảnh: ' + error.message); 
+                container.innerHTML = \`<div class="loading-error">Đang tải thư viện... (\${attempts}/\${maxAttempts})</div>\`;
+                setTimeout(check, 500);
             }
+            
+            check();
         }
 
-        if (document.readyState === 'loading') { 
-            document.addEventListener('DOMContentLoaded', initializeMarkmap); 
-        } else { 
-            initializeMarkmap(); 
+        // Bắt đầu khi trang loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', waitForLibraries);
+        } else {
+            waitForLibraries();
         }
-        
-        let resizeTimer; 
-        window.addEventListener('resize', () => { 
-            clearTimeout(resizeTimer); 
-            resizeTimer = setTimeout(() => { 
-                console.log('Window resized, re-rendering mindmap.'); 
-                // Chỉ gọi fit() thay vì render lại toàn bộ
-                if (mm && typeof mm.fit === 'function') {
-                    console.log('Calling mm.fit()');
-                    mm.fit();
-                } else {
-                    // Fallback: render lại nếu mm.fit() không tồn tại
-                    console.log('mm.fit() not available, re-initializing.');
-                    initializeMarkmap(); 
-                }
-            }, 250); 
+
+        // Xử lý resize
+        window.addEventListener('resize', function() {
+            if (typeof window.markmap !== 'undefined') {
+                setTimeout(initializeMarkmap, 300);
+            }
         });
     </script>
 </body>
-</html>
-`;
+</html>`;
 }
-
 module.exports = router;
