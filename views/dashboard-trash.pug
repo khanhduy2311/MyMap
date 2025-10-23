@@ -13,7 +13,7 @@ block main
         ul
           li
             a(href="/dashboard", title="Danh sách Mindmap")
-              i.fas.fa-folder-open
+              i.bi.bi-list-task
               span Danh sách
           li
             a.active(href="/dashboard/trash", title="Thùng rác")
@@ -64,81 +64,111 @@ block main
 block scripts
   script.
     document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
 
-      const trashGrid = document.getElementById('trashGrid');
+        // === MODAL XÁC NHẬN XÓA ===
+        function showConfirmModal(title, message, confirmText = 'Xác nhận') {
+          const modal = document.getElementById('confirmModal');
+          document.getElementById('modalTitle').textContent = title;
+          document.getElementById('modalMessage').textContent = message;
+          modal.classList.add('show');
 
-      //--- Xử lý nút DỌN SẠCH THÙNG RÁC ---
-      const emptyTrashButton = document.getElementById('btn-empty-trash');
-      if (emptyTrashButton) {
-        emptyTrashButton.addEventListener('click', () => {
-          if (confirm('Bạn có chắc muốn DỌN SẠCH thùng rác? Tất cả mindmap sẽ bị xóa vĩnh viễn và không thể khôi phục.')) {
-            fetch('/dashboard/trash/empty', {
-              method: 'DELETE'
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                // Tải lại trang để hiển thị giao diện thùng rác trống
-                window.location.reload(); 
-              } else {
-                alert('Lỗi: ' + data.message);
-              }
-            })
-            .catch(err => alert('Lỗi kết nối khi dọn rác.'));
-          }
-        });
-      }
+          const deleteBtn = document.getElementById('confirmDeleteBtn');
+          deleteBtn.textContent = confirmText;
 
-      //--- Xử lý sự kiện click trên lưới (cho cả 2 nút) ---
-      if (!trashGrid) return; 
+          return new Promise((resolve) => {
+            const cancelBtn = document.getElementById('confirmCancelBtn');
 
-      trashGrid.addEventListener('click', (event) => {
-        const recoverButton = event.target.closest('.btn-recover');
-        const deleteButton = event.target.closest('.btn-delete-permanent-trash'); // Nút Xóa
+            cancelBtn.addEventListener('click', () => {
+              modal.classList.remove('show');
+              resolve(false);
+            }, { once: true });
 
-        const mindmapCard = event.target.closest('.mindmap-card');
-        if (!mindmapCard) return; // Thoát nếu không click vào thẻ nào
-
-        const mindmapId = mindmapCard.dataset.id;
-
-        // Xử lý nút KHÔI PHỤC
-        if (recoverButton) {
-          fetch(`/dashboard/trash/recover/${mindmapId}`, { method: 'PATCH' })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                // Xóa thẻ khỏi giao diện và chuyển hướng
-                mindmapCard.remove();
-                alert('Đã khôi phục thành công! Quay về Dashboard.');
-                window.location.href = '/dashboard';
-              } else {
-                alert('Lỗi: ' + data.message);
-              }   
-            })
-            .catch(err => alert('Lỗi kết nối khi khôi phục.'));
-        } 
-        
-        // Xử lý nút XÓA VĨNH VIỄN
-        else if (deleteButton) {
-          if (confirm('Bạn có chắc muốn XÓA VĨNH VIỄN mindmap này? Hành động này không thể hoàn tác.')) {
-            fetch(`/dashboard/trash/delete/${mindmapId}`, { 
-              method: 'DELETE' 
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                // Xóa thẻ khỏi giao diện
-                mindmapCard.remove();
-                // Kiểm tra xem còn thẻ nào không, nếu không thì tải lại trang
-                if (trashGrid.children.length === 0) {
-                  window.location.reload();
-                }
-              } else {
-                alert('Lỗi: ' + data.message);
-              }
-            })
-            .catch(err => alert('Lỗi kết nối khi xóa.'));
-          }
+            deleteBtn.addEventListener('click', () => {
+              modal.classList.remove('show');
+              resolve(true);
+            }, { once: true });
+          });
         }
-      });
+
+        const trashGrid = document.getElementById('trashGrid');
+
+        // === DỌN SẠCH THÙNG RÁC ===
+        const emptyTrashButton = document.getElementById('btn-empty-trash');
+        if (emptyTrashButton) {
+          emptyTrashButton.addEventListener('click', async () => {
+            const userConfirmed = await showConfirmModal(
+              'Dọn sạch thùng rác?',
+              'Tất cả mindmap sẽ bị xóa vĩnh viễn và không thể khôi phục.',
+              'Dọn sạch thùng rác' // <-- NỘI DUNG NÚT ĐỎ MỚI
+            );
+            if (userConfirmed) {
+              fetch('/dashboard/trash/empty', { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) {
+                    window.location.reload();
+                  } else {
+                    showToast('Lỗi: ' + data.message, 'Lỗi', 'error');
+                  }
+                })
+                .catch(() => showToast('Lỗi kết nối khi dọn rác.', 'Lỗi', 'error'));
+            }
+          });
+        }
+
+        // === CLICK TRÊN LƯỚI ===
+        if (trashGrid) {
+          trashGrid.addEventListener('click', async (event) => {
+            const recoverButton = event.target.closest('.btn-recover');
+            const deleteButton = event.target.closest('.btn-delete-permanent-trash');
+            const mindmapCard = event.target.closest('.mindmap-card');
+            if (!mindmapCard) return;
+            const mindmapId = mindmapCard.dataset.id;
+
+            // --- KHÔI PHỤC ---
+            if (recoverButton) {
+              fetch(`/dashboard/trash/recover/${mindmapId}`, { method: 'PATCH' })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) {
+                    mindmapCard.remove();
+                    showToast('Đã khôi phục! Đang quay về Dashboard...', 'Thành công', 'success');
+                    setTimeout(() => {
+                      window.location.href = '/dashboard';
+                    }, 2000);
+                  } else {
+                    showToast('Lỗi: ' + data.message, 'Lỗi', 'error');
+                  }
+                })
+                .catch(() => showToast('Lỗi kết nối khi khôi phục.', 'Lỗi', 'error'));
+            }
+
+            // --- XÓA VĨNH VIỄN ---
+            else if (deleteButton) {
+              const userConfirmed = await showConfirmModal(
+                'Xóa vĩnh viễn mindmap?',
+                'Hành động này không thể hoàn tác. Mindmap sẽ bị xóa vĩnh viễn.',
+                'Xóa vĩnh viễn'
+              );
+              if (userConfirmed) {
+                fetch(`/dashboard/trash/delete/${mindmapId}`, { method: 'DELETE' })
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.success) {
+                      mindmapCard.remove();
+                      if (trashGrid.children.length === 0) {
+                        window.location.reload();
+                      }
+                      showToast('Đã xóa mindmap vĩnh viễn!', 'Thành công', 'success');
+                    } else {
+                      showToast('Lỗi: ' + data.message, 'Lỗi', 'error');
+                    }
+                  })
+                  .catch(() => showToast('Lỗi kết nối khi xóa.', 'Lỗi', 'error'));
+              }
+            }
+          });
+        }
+      }, 0);
     });

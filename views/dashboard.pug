@@ -15,8 +15,12 @@ block main
               title="Danh sách Mindmap",
               class=currentFolder ? '' : 'active' 
             )
-              i.fas.fa-folder-open
+              i.bi.bi-list-task
               span Danh sách
+          li
+            a(href="/dashboard/trash" title="Thùng rác")
+              i.fas.fa-trash
+              span Thùng rác
           li
             //- Đây là nút kích hoạt Modal, không phải link
             a(
@@ -28,10 +32,7 @@ block main
             )
               i.fas.fa-folder-plus 
               span Tạo thư mục     
-          li
-            a(href="/dashboard/trash" title="Thùng rác")
-              i.fas.fa-trash
-              span Thùng rác
+          
 
         .sidebar-nav-section
           .sidebar-nav-section-title Thư mục
@@ -52,7 +53,7 @@ block main
           if currentFolder
             | #{currentFolder.name}
           else
-            | Tất cả dự án
+            | Danh sách dự án
 
       //- Lưới Mindmap
       if mindmaps && mindmaps.length > 0
@@ -65,8 +66,8 @@ block main
                 form.inline-edit-form
                   input.inline-edit-input(type="text", value=mindmap.title)
               .card-actions
-                button.btn-action.btn-move(type="button" title="Di chuyển tới thư mục"): i.fas.fa-folder-plus
                 button.btn-action.btn-edit(type="button" title="Chỉnh sửa tên"): i.fas.fa-pencil-alt
+                button.btn-action.btn-move(type="button" title="Di chuyển tới thư mục"): i.fas.fa-folder-plus
                 button.btn-action.btn-delete(type="button", data-id=`${mindmap._id}`, title="Xóa mindmap"): i.fas.fa-trash-alt
 
         //- BỘ ĐIỀU KHIỂN PHÂN TRANG
@@ -101,7 +102,11 @@ block main
               | Thư mục này trống
             else
               | Chưa có mindmap nào
-          h2.sub-empty-title Cùng bắt đầu với mindmap đầu tiên của bạn nhé!
+          h2.sub-empty-title
+            if currentFolder
+              | Bạn có thể tạo mindmap mới hoặc di chuyển mindmap có sẵn vào đây.
+            else
+              | Cùng bắt đầu với mindmap đầu tiên của bạn nhé!
 
   //- Nút tạo mới (giữ nguyên)
   .create-new-container
@@ -178,10 +183,13 @@ block scripts
         // =============================
         // 1️⃣ HÀM MODAL XÁC NHẬN XÓA
         // =============================
-        function showConfirmModal(title, message) {
+        function showConfirmModal(title, message, confirmText = 'Đưa vào thùng rác') {
           const modal = document.getElementById('confirmModal');
           document.getElementById('modalTitle').textContent = title;
           document.getElementById('modalMessage').textContent = message;
+          
+          const deleteBtn = document.getElementById('confirmDeleteBtn');
+          deleteBtn.textContent = confirmText;
           modal.classList.add('show');
 
           return new Promise((resolve) => {
@@ -377,9 +385,5 @@ block scripts
             newFolderNameInput.value = '';
           });
         }
-
-        // =============================
-        // ✅ KẾT THÚC LOGIC DASHBOARD
-        // =============================
       }, 0);
     });

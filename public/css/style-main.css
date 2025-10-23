@@ -236,6 +236,7 @@ header .container .dropdown {
 
 /* Bọc toast để bo tròn cả thanh progress */
 #appToast {
+  background-color: #ffffff;
   overflow: hidden;
 }
 
@@ -262,18 +263,8 @@ header .container .dropdown {
   to { width: 0%; }
 }
 
-/* Class .show được Bootstrap tự động thêm vào khi toast hiện ra.
-  Chúng ta lợi dụng nó để kích hoạt animation.
-*/
 #appToast.show .toast-progress {
   /* Chạy animation trong 2 giây (khớp data-bs-delay) */
   animation: runProgress 2s linear forwards; 
 }
 
-.toast-container {
-  pointer-events: none; /* Cho phép click xuyên qua vùng toast */
-}
-
-.toast {
-  pointer-events: auto; /* Nhưng vẫn cho phép click nút tắt toast */
-}
