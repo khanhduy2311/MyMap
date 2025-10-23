@@ -30,8 +30,10 @@ block main
     //- Nội dung chính (Lưới các thư mục)
     main.dashboard-content
       .folder-page-header
-        h2.folder-page-title Tất cả thư mục
-
+        if folders && folders.length > 0
+          h2.folder-page-title Tất cả thư mục
+        else
+          h2.folder-page-title Chưa có thư mục nào
         button#btn-create-folder.btn.btn-success( 
           type="button", 
           data-bs-toggle="modal", 
@@ -66,7 +68,7 @@ block main
         //- Trạng thái rỗng
         .empty-dashboard-container
           i.bi.bi-folder-x.blank-folder
-          h2.empty-title Chưa có thư mục nào
+          h2.empty-title Các thư mục nếu có sẽ ở đây
           h2.sub-empty-title Bạn có thể tạo thư mục đầu tiên bằng ô tạo thư mục mới!
 
   //- === MODAL TẠO THƯ MỤC (Copy từ dashboard.pug) ===
