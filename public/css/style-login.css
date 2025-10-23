@@ -71,10 +71,10 @@ body.login-page {
   align-items: stretch;
 }
 
-/* Left decorative block */
+/* Chỉnh khối chữ trái */
 .left-decor {
   flex: 1.1;
-  padding: 30px 28px;
+  padding: 10px 28px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -82,14 +82,15 @@ body.login-page {
 }
 
 .logo {
-  color: #2ea1ff; /* sáng hơn so với background */
+  color: #2ea1ff; 
   font-size: 48px;
   font-weight: 800;
-  margin-bottom: 12px;
   text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  margin-top: -40px;
 }
 
 .slogan {
+  font-family: 'Poppins', sans-serif; 
   font-size: 18px;
   line-height: 28px;
   color: rgba(255,255,255,0.92);
@@ -161,10 +162,12 @@ body.login-page {
   display: inline-block;
   margin-top: 12px;
   color: rgba(255,255,255,0.85);
-  text-decoration: underline;
   font-size: 14px;
+  text-decoration: underline;
 }
-
+.forgot-password:hover {
+  color: #ffffff;
+}
 .divider {
   height: 1px;
   background: rgba(255,255,255,0.06);
@@ -181,6 +184,10 @@ body.login-page {
   border-radius: 6px;
   text-decoration: none;
   font-weight: 700;
+}
+.btn-register:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.22);
 }
 
 /* Alert */

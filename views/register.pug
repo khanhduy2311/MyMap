@@ -22,7 +22,7 @@ html(lang="en")
         if error_msg && error_msg.length > 0
           .alert.alert-danger= error_msg
 
-        form.register-form(action="/register", method="POST", novalidate)
+        form.register-form(action="/register", method="POST", class="register-form", novalidate)
           input(type="email", name="email", placeholder="Email", required)
           input(type="text", name="username", placeholder="Tên tài khoản", required)
           input(type="password", name="password", placeholder="Mật khẩu mới", required)

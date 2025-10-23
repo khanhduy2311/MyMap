@@ -70,6 +70,7 @@ body.register-page {
 
 /* Card (glass light, G2) */
 .register-card {
+  text-align: center;
   position: relative;
   z-index: 4;
   width: 100%;
@@ -129,7 +130,9 @@ body.register-page {
   cursor: pointer;
   box-shadow: 0 10px 26px rgba(43,159,255,0.22);
 }
-
+.btn-register:hover {
+  box-shadow: 0 14px 32px rgba(5, 84, 148, 0.32);
+}
 /* divider & login link */
 .divider {
   height: 1px;
@@ -142,6 +145,9 @@ body.register-page {
   color: #0a5e82;
   text-decoration: none;
   font-weight: 600;
+}
+.login-link:hover {
+  text-decoration: underline;
 }
 
 /* alert */
@@ -163,4 +169,16 @@ body.register-page {
   .register-wrapper { padding: 18px; margin: 4vh 12px; }
   .register-card { padding: 18px; border-radius: 10px; }
   #bokeh-canvas { filter: blur(5px); }
+}
+
+.register-form input::placeholder {
+  color: rgba(7,32,42,0.5);
+}
+
+
+.register-form input:focus {
+  transform: translateY(-2px);
+  background: rgba(162, 158, 158, 0.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  border-color: rgba(255,255,255,0.22);
 }
