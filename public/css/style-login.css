@@ -1,155 +1,208 @@
+/* Reset cơ bản */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* --- Video nền --- */
+.video-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.video-bg video,
+.video-bg img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  /* D3 brightness (~0.6) + nhẹ blur */
+  filter: brightness(0.6) blur(1.5px);
+  will-change: transform;
+}
+
+/* overlay để tăng độ tương phản chữ */
+.video-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(rgba(6,6,6,0.15), rgba(6,6,6,0.25));
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* --- Wrapper chính (form center) --- */
 body.login-page {
-    background-color: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    height: 100vh;
-    font-family: Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background-color: #111; /* fallback */
 }
 
-.container {
-    display: flex;
-    align-items: flex-start; 
-    justify-content: center;
-    width: 100%;
-    max-width: 980px;
-    padding: 0 20px;
-    margin-top: 20vh; 
+/* login-wrapper đặt trên overlay */
+.login-wrapper {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 980px;
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.left-panel {
-    align-self: flex-start; 
-    padding-top: 25px;      
-    width: 580px;
-    padding-right: 72px;
+/* Card chính: chia 2 phần left text + right form như demo (màu tối) */
+.login-card {
+  width: 100%;
+  display: flex;
+  gap: 36px;
+  background: rgba(0,0,0,0.55); /* khối tối mờ */
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  overflow: hidden;
+  padding: 28px;
+  backdrop-filter: blur(6px) saturate(120%);
+  align-items: stretch;
+}
+
+/* Left decorative block */
+.left-decor {
+  flex: 1.1;
+  padding: 30px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #fff;
 }
 
 .logo {
-    color: #0866ff;
-    font-size: 56px;
-    font-weight: bold;
-    margin-bottom: 12px;
+  color: #2ea1ff; /* sáng hơn so với background */
+  font-size: 48px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
 .slogan {
-    font-size: 20px;
-    line-height: 32px;
-    color: #1c1e21;
+  font-size: 18px;
+  line-height: 28px;
+  color: rgba(255,255,255,0.92);
+  max-width: 480px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
 }
 
-.right-panel {
-    width: 450px;
+/* Form area (bên phải) */
+.form-area {
+  width: 420px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
+/* Inputs */
 .login-form {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
-    padding: 24px; 
-    text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .login-form input {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 16px 18px; 
-    margin-bottom: 16px; 
-    border: 1px solid #dddfe2;
-    border-radius: 6px;
-    font-size: 18px; 
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.login-form input::placeholder {
+  color: rgba(255,255,255,0.7);
 }
 
 .login-form input:focus {
-    outline: none;
-    border-color: #1877f2;
-    box-shadow: 0 0 0 2px #e7f3ff;
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  border-color: rgba(255,255,255,0.22);
 }
 
+/* Button */
 .btn-login {
-    width: 100%;
-    background-color: #0866ff;
-    border: none;
-    border-radius: 6px;
-    font-size: 21px; 
-    line-height: 50px; 
-    padding: 0 16px;
-    color: #fff;
-    font-weight: bold;
-    cursor: pointer;
+  margin-top: 6px;
+  background: #ffffff;
+  color: #111;
+  border: none;
+  padding: 12px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+  transition: transform .12s ease, box-shadow .12s ease;
 }
 
 .btn-login:hover {
-    background-color: #0053ba;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.45);
 }
 
+/* Links and extras */
 .forgot-password {
-    display: block;
-    margin-top: 18px; 
-    color: #0866ff;
-    font-size: 15px; 
-    text-decoration: none;
-}
-
-.forgot-password:hover {
-    text-decoration: underline;
+  display: inline-block;
+  margin-top: 12px;
+  color: rgba(255,255,255,0.85);
+  text-decoration: underline;
+  font-size: 14px;
 }
 
 .divider {
-    border-bottom: 1px solid #dadde1;
-    margin: 22px 16px;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 18px 0;
 }
 
 .btn-register {
-    background-color: #42b72a;
-    border: none;
-    border-radius: 6px;
-    font-size: 18px; 
-    line-height: 50px;
-    padding: 10px 24px; 
-    color: #fff;
-    font-weight: bold;
-    cursor: pointer;
-    text-decoration: none;
-}
-.btn-register:hover {
-    background-color: #1a8c00;
+  display: inline-block;
+  text-align: center;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 700;
 }
 
-.page-link {
-    font-size: 14px;
-    margin-top: 28px;
-    color: #1c1e21;
+/* Alert */
+.alert {
+  margin-bottom: 16px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  text-align: center;
 }
 
-.page-link a {
-    font-weight: 600;
-    color: inherit;
-    text-decoration: none;
+/* Light / dark adjustments for alert */
+.alert-danger {
+  background: rgba(255,50,50,0.12);
+  color: #ffd6d6;
+  border: 1px solid rgba(255,50,50,0.2);
 }
 
-.page-link a:hover {
-    text-decoration: underline;
-}
-
-/* === CSS CHO THÔNG BÁO LỖI TRANG ĐĂNG NHẬP === */
-
-/*
-  Tạo khoảng cách với ô input bên dưới và
-  căn giữa nội dung bên trong.
-*/
-.login-form .alert {
-  margin-bottom: 15px; /* Tạo khoảng cách dưới */
-  padding: 10px;       /* Tăng khoảng đệm bên trong */
-  text-align: center;  /* Căn giữa chữ */
-  border-radius: 6px;  /* Bo tròn góc nhẹ */
-  font-size: 0.9em;    /* Giảm kích thước chữ một chút */
-  border: 1px solid transparent; /* Thêm border mặc định */
-}
-
-/*
-  Thêm màu sắc đặc trưng cho thông báo lỗi.
-*/
-.login-form .alert-danger {
-  background-color: #f8d7da; /* Màu nền đỏ nhạt */
-  border-color: #f5c6cb;     /* Màu viền đỏ nhạt hơn */
-  color: #721c24;            /* Màu chữ đỏ đậm */
+/* Responsive */
+@media (max-width: 900px) {
+  .login-card { flex-direction: column; width: calc(100% - 24px); }
+  .left-decor { text-align: center; padding: 20px; }
+  .form-area { width: 100%; padding: 20px; }
+  .logo { font-size: 40px; }
 }

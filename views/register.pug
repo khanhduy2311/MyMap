@@ -3,34 +3,33 @@ html(lang="en")
   head
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
-    title Tạo tài khoản mới | MindMap
+    title Tạo tài khoản mới | MindTree
     link(rel="stylesheet", href="/css/style-register.css")
-
   body.register-page
-    //- 1. Đưa logo ra ngoài và đặt nó lên trên form
-    h1.logo MindTree
+    .video-bg
+      video#bg-video(autoplay muted loop playsinline)
+        source(src="/videos/galaxy.webm", type="video/webm")
+        source(src="/videos/galaxy.mp4", type="video/mp4")
+        img(src="/images/poster-galaxy.jpg", alt="background")
 
-    //- 2. Form đăng ký nằm trong container riêng
-    .register-container
-      h2 Tạo tài khoản mới
-      p.subtitle Nhanh chóng và dễ dàng.
-      
-      hr.divider
+      .video-overlay
+    .register-wrapper
+      canvas#bokeh-canvas
+      .register-card
+        h1.logo MindTree
+        p.subtitle Tạo tài khoản mới — nhanh chóng và an toàn.
 
-      if error_msg && error_msg.length > 0
-        .alert.alert-danger= error_msg
+        if error_msg && error_msg.length > 0
+          .alert.alert-danger= error_msg
 
-      form.register-form(action="/register", method="POST")
-        div
+        form.register-form(action="/register", method="POST", novalidate)
           input(type="email", name="email", placeholder="Email", required)
-        div
           input(type="text", name="username", placeholder="Tên tài khoản", required)
-        div
           input(type="password", name="password", placeholder="Mật khẩu mới", required)
-        
-        div
           button(type="submit", class="btn-register") Đăng ký
 
-      hr.divider
-
-      a(href="/login", class="login-link") Bạn đã có tài khoản ư?
+        .divider
+        a(href="/login", class="login-link") Bạn đã có tài khoản? Đăng nhập
+    script(src="/js/bokeh-register.js")
+    script.
+      (function(){ var v=document.getElementById('bg-video'); if(v && v.paused){ v.play().catch(function(){}); } })();

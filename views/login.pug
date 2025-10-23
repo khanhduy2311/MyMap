@@ -4,27 +4,44 @@ html(lang="en")
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     title Đăng Nhập | MindTree
-    link(rel="stylesheet", href="/css/style-login.css") 
+    link(rel="stylesheet", href="/css/style-login.css")
 
   body.login-page
-    .container
-      .left-panel
-        h1.logo MindTree
-        h2.slogan Một hình ảnh đáng giá ngàn lời nói, và một sơ đồ tư duy có thể chứa đựng cả một thư viện ý tưởng!
+    //- Video background
+    .video-bg
+      video#bg-video(autoplay muted loop playsinline)
+        source(src="/videos/typing.webm", type="video/webm")
+        source(src="/videos/typing.mp4", type="video/mp4")
+        //- fallback poster
+        img(src="/images/poster.jpg", alt="background")
 
-      .right-panel
-        .login-form
+      //- overlay để điều chỉnh độ tối / màu
+      .video-overlay
+
+    //- centered login wrapper
+    .login-wrapper
+      .login-card
+        .left-decor
+          h1.logo MindTree
+          p.slogan Một hình ảnh đáng giá ngàn lời nói, và một sơ đồ tư duy có thể chứa đựng cả một thư viện ý tưởng!
+        .form-area
           if error_msg && error_msg.length > 0
             .alert.alert-danger= error_msg
-            
-          form(action="/login", method="POST")
-            div
-              input(type="email", name="email", placeholder="Email", required)
-            div
-              input(type="password", name="password", placeholder="Mật khẩu", required)
-            div
-              button(type="submit", class="btn-login") Đăng Nhập
-        
+
+          form(action="/login", method="POST", class="login-form")
+            input(type="email", name="email", placeholder="Email", required)
+            input(type="password", name="password", placeholder="Mật khẩu", required)
+            button(type="submit", class="btn-login") Đăng Nhập
+
           a(href="/forgot-password", class="forgot-password") Quên mật khẩu?
           .divider
           a(href="/register", class="btn-register") Tạo tài khoản mới
+
+    //- small script: ensure video plays on mobile (muted needed)
+    script.
+      (function(){
+        var v = document.getElementById('bg-video');
+        if (v && v.paused) {
+          v.play().catch(function(){/* ignore autoplay block */});
+        }
+      })();
