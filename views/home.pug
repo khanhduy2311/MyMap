@@ -1,35 +1,390 @@
 extends ../views/layouts/defaultHome.pug
 
 block main
+  //- Thêm CSS inline cho hiệu ứng anime
+  style.
+    .mindtree-text {
+      position: relative;
+      display: inline-block;
+      opacity: 1 !important;
+      background: linear-gradient(135deg, #ff6b9d, #4fc3f7, #ff8e53);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(255, 107, 157, 0.5);
+      font-size: 5.5rem;
+      font-weight: 900;
+    }
+    
+    .loading-text {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    /* Hiệu ứng particles container */
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Floating books animation */
+    .floating-books {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .book {
+      position: absolute;
+      border-radius: 8px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+      animation: float 20s infinite ease-in-out;
+      opacity: 0.8;
+    }
+
+    .book:nth-child(1) {
+      background: linear-gradient(135deg, #ff6b9d, #ff8e53);
+      width: 70px;
+      height: 90px;
+      top: 15%;
+      left: 5%;
+      animation-delay: 0s;
+    }
+
+    .book:nth-child(2) {
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      width: 60px;
+      height: 80px;
+      animation-delay: -4s;
+      top: 25%;
+      left: 85%;
+    }
+
+    .book:nth-child(3) {
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+      width: 80px;
+      height: 100px;
+      animation-delay: -8s;
+      top: 65%;
+      left: 10%;
+    }
+
+    .book:nth-child(4) {
+      background: linear-gradient(135deg, #fc466b, #3f5efb);
+      width: 50px;
+      height: 70px;
+      animation-delay: -12s;
+      top: 75%;
+      left: 80%;
+    }
+
+    .book:nth-child(5) {
+      background: linear-gradient(135deg, #fbd786, #f7797d);
+      width: 75px;
+      height: 95px;
+      animation-delay: -16s;
+      top: 40%;
+      left: 70%;
+    }
+
+    .book:nth-child(6) {
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      width: 65px;
+      height: 85px;
+      animation-delay: -2s;
+      top: 55%;
+      left: 15%;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg) scale(1);
+      }
+      25% {
+        transform: translateY(-40px) rotate(8deg) scale(1.05);
+      }
+      50% {
+        transform: translateY(-20px) rotate(-6deg) scale(0.95);
+      }
+      75% {
+        transform: translateY(-30px) rotate(4deg) scale(1.02);
+      }
+    }
+
+    /* Loading Animation */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f1b33;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease;
+      flex-direction: column;
+    }
+
+    .loading-spinner {
+      width: 80px;
+      height: 80px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #ff6b9d;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Content Overlay */
+    .content-overlay {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 100px 0 50px;
+    }
+
+    .hero-text {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 50px;
+      background: rgba(15, 27, 51, 0.85);
+      backdrop-filter: blur(15px);
+      border-radius: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-text h1 {
+      margin-bottom: 2rem;
+    }
+
+    .hero-text .lead {
+      font-size: 1.6rem;
+      margin-bottom: 3rem;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .cta-container {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .register_css {
+      display: inline-block;
+      padding: 18px 50px;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 60px;
+      box-shadow: 0 15px 30px rgba(37, 117, 252, 0.4);
+      transition: all 0.4s ease;
+      border: none;
+    }
+
+    .register_css:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(37, 117, 252, 0.6);
+    }
+
+    .login_css {
+      display: inline-block;
+      padding: 18px 50px;
+      background: transparent;
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 60px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.4s ease;
+    }
+
+    .login_css:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #ff6b9d;
+      transform: translateY(-5px);
+    }
+
+    .learn-more_css {
+      display: inline-block;
+      padding: 15px 40px;
+      background: transparent;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 50px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .learn-more_css:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
   //- Kiểm tra nếu người dùng đã đăng nhập thì chuyển hướng
   if user
     script.
       window.location.href = "/userHome";
 
-  //- Nếu chưa đăng nhập, hiển thị giao diện trang chủ
+  //- Nếu chưa đăng nhập, hiển thị giao diện trang chủ anime cinematic
   else
-    //- Phần 1: Nền trượt ảnh
-    .fullscreen-bg-carousel
-      #imageCarousel.carousel.slide.carousel-fade(data-bs-ride="carousel")
-        .carousel-inner
-          //- QUAN TRỌNG: Chỉ có item đầu tiên được "active" để carousel chạy đúng
-          .carousel-item.active(data-bs-interval="4000")
-            img.d-block.w-100(src="https://media.istockphoto.com/id/2167740181/vi/anh/v%C3%B2ng-tay-l%E1%BA%B7ng-l%E1%BA%BD-c%E1%BB%A7a-th%C6%B0-vi%E1%BB%87n-nh%E1%BB%AFng-d%C3%A3y-s%C3%A1ch-x%E1%BA%BFp-h%C3%A0ng-tr%C3%AAn-k%E1%BB%87-g%E1%BB%97.jpg?s=612x612&w=0&k=20&c=EbJ-6Hd4OJ_rqrv7zl8_i6hd7rEBr1OcM0HzkUXME4E=", alt="Background 1")
-          .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://media.istockphoto.com/id/2217700434/vi/anh/library-of-19th-century.jpg?s=612x612&w=0&k=20&c=w4_6Tj8jJfGy_LYw2sVXi86t4xAfbNWW1q__KxvDmbA=", alt="Background 2")
-          .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://media.istockphoto.com/id/2151138214/vi/anh/magnifying-glass-with-text-search-on-wood-cubes-find-the-answers-search-concept-wooden-cube.jpg?s=612x612&w=0&k=20&c=Pb2TmLv4h-ebu2S96e3nlZ6Un2KZWTgzCNqJTtI3MgQ=", alt="Background 3")
-          .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://media.istockphoto.com/id/869761964/vi/anh/n%E1%BB%81n-t%E1%BA%A3ng-kinh-doanh-v%C3%A0-gi%C3%A1o-d%E1%BB%A5c.jpg?s=612x612&w=0&k=20&c=HuEc7PVrRNueBoAp7ZcKgRZQ4H5ZNZzXp6fCvJGxSMg=", alt="Background 4")
-          .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://media.istockphoto.com/id/1437365584/vi/anh/th%C6%B0-vi%E1%BB%87n-hi%E1%BB%87n-%C4%91%E1%BA%A1i.jpg?s=612x612&w=0&k=20&c=qDhfethd4FloRAX2i4TNADhLySBS8GCezXI8qp3Xy-s=", alt="Background 5")
-          .carousel-item(data-bs-interval="4000")
-            img.d-block.w-100(src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop", alt="Background 6")
+    //- Loading overlay với hiệu ứng anime
+    .loading-overlay
+      .loading-spinner
+      .loading-text Đang tải MindTree...
 
-    //- Phần 2: Nội dung chữ
+    //- Background Particles
+    #particles-js
+
+    //- Fullscreen Carousel với hiệu ứng cinematic
+    .fullscreen-bg-carousel
+      #imageCarousel.carousel.slide.carousel-fade(data-bs-ride="carousel" data-bs-pause="false")
+        .carousel-inner
+          .carousel-item.active(data-bs-interval="5000")
+            img.d-block.w-100(src="https://media.istockphoto.com/id/2167740181/vi/anh/v%C3%B2ng-tay-l%E1%BA%B7ng-l%E1%BA%BD-c%E1%BB%A7a-th%C6%B0-vi%E1%BB%87n-nh%E1%BB%AFng-d%C3%A3y-s%C3%A1ch-x%E1%BA%BFp-h%C3%A0ng-tr%C3%AAn-k%E1%BB%87-g%E1%BB%97.jpg?s=612x612&w=0&k=20&c=EbJ-6Hd4OJ_rqrv7zl8_i6hd7rEBr1OcM0HzkUXME4E=", alt="Thư viện cổ điển")
+          .carousel-item(data-bs-interval="5000")
+            img.d-block.w-100(src="https://media.istockphoto.com/id/2217700434/vi/anh/library-of-19th-century.jpg?s=612x612&w=0&k=20&c=w4_6Tj8jJfGy_LYw2sVXi86t4xAfbNWW1q__KxvDmbA=", alt="Thư viện thế kỷ 19")
+          .carousel-item(data-bs-interval="5000")
+            img.d-block.w-100(src="https://media.istockphoto.com/id/2151138214/vi/anh/magnifying-glass-with-text-search-on-wood-cubes-find-the-answers-search-concept-wooden-cube.jpg?s=612x612&w=0&k=20&c=Pb2TmLv4h-ebu2S96e3nlZ6Un2KZWTgzCNqJTtI3MgQ=", alt="Tìm kiếm thông tin")
+          .carousel-item(data-bs-interval="5000")
+            img.d-block.w-100(src="https://media.istockphoto.com/id/869761964/vi/anh/n%E1%BB%81n-t%E1%BA%A3ng-kinh-doanh-v%C3%A0-gi%C3%A1o-d%E1%BB%A5c.jpg?s=612x612&w=0&k=20&c=HuEc7PVrRNueBoAp7ZcKgRZQ4H5ZNZzXp6fCvJGxSMg=", alt="Nền tảng tri thức")
+
+    //- Floating Books Animation - Sách bay lung linh
+    .floating-books
+      .book
+      .book
+      .book
+      .book
+      .book
+      .book
+
+    //- Content Overlay với hiệu ứng anime cinematic
     .content-overlay
-      .hero-text
-        h1 MindTree
-        p.lead Nơi trực quan hóa mọi tài liệu phức tạp chỉ với một cú nhấp chuột!
-        a.register_css(href="/register")
-          span Bắt đầu ngay
+      .container
+        .row.justify-content-center
+          .col-lg-8.col-md-10
+            .hero-text
+              //- Logo và tiêu đề chính - HIỆN RÕ RÀNG
+              h1.mb-4 
+                span.mindtree-text MindTree
+              
+              //- Mô tả - không có chữ tô đậm
+              p.lead.mb-5 
+                | Nơi trực quan hóa mọi tài liệu phức tạp chỉ với một cú nhấp chuột!
+              
+              //- Container cho các nút hành động
+              .cta-container
+                a.register_css(href="/register")
+                  span Bắt đầu ngay
+                a.login_css(href="/login")
+                  span Đăng nhập
+              
+              //- Nút tìm hiểu thêm
+              a.learn-more_css(href="/about")
+                span Tìm hiểu thêm về MindTree →
+
+    //- Thêm scripts cho particles và hiệu ứng
+    script(src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js")
+    script.
+      document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo particles.js
+        if (typeof particlesJS !== 'undefined') {
+          particlesJS('particles-js', {
+            particles: {
+              number: { 
+                value: 80, 
+                density: { 
+                  enable: true, 
+                  value_area: 800 
+                } 
+              },
+              color: { 
+                value: ["#ff6b9d", "#4fc3f7", "#9c27b0", "#ff8e53"] 
+              },
+              shape: { 
+                type: "circle"
+              },
+              opacity: { 
+                value: 0.7, 
+                random: true
+              },
+              size: { 
+                value: 3, 
+                random: true
+              },
+              line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#ffffff",
+                opacity: 0.3,
+                width: 1
+              },
+              move: {
+                enable: true,
+                speed: 2,
+                direction: "none",
+                random: true,
+                straight: false,
+                out_mode: "out",
+                bounce: false
+              }
+            },
+            interactivity: {
+              detect_on: "canvas",
+              events: {
+                onhover: { 
+                  enable: true, 
+                  mode: "grab" 
+                },
+                onclick: { 
+                  enable: true, 
+                  mode: "push" 
+                },
+                resize: true
+              }
+            }
+          });
+        }
+
+        // Ẩn loading overlay với hiệu ứng
+        setTimeout(() => {
+          const loadingOverlay = document.querySelector('.loading-overlay');
+          if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+              loadingOverlay.style.display = 'none';
+            }, 500);
+          }
+        }, 2000);
+      });

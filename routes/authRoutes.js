@@ -29,4 +29,11 @@ router.post('/reset-password/:token', authMiddleware.bypassLogin, authController
 
 // === ROUTE ĐĂNG XUẤT ===
 router.get('/logout', authMiddleware.checkLoggedIn, authController.logout);
+// Thêm route cho trang about
+router.get('/about', (req, res) => {
+    res.render('about', {
+        pageTitle: 'Về Chúng Tôi',
+        user: req.user
+    });
+});
 module.exports = router;
