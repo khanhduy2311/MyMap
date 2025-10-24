@@ -2,6 +2,9 @@ extends ../views/layouts/default.pug
 
 block styles
   link(rel="stylesheet" href="/css/style-dashboard.css")
+  link(rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=scan_delete")
+
+
 
 
 block main
@@ -35,7 +38,10 @@ block main
           if currentFolder
             | #{currentFolder.name}
           else
-            | Danh sách dự án
+            if mindmaps && mindmaps.length > 0
+              | Danh sách dự án
+            else 
+              | Chưa có mindmap nào
 
       //- Lưới Mindmap
       if mindmaps && mindmaps.length > 0
@@ -58,8 +64,11 @@ block main
             a.btn.btn-outline-secondary(
               href=`?page=${currentPage - 1}&search=${searchQuery || ''}`, 
               disabled=currentPage <= 1
-            ): i.fas.fa-arrow-left.me-2
-              | Trang trước
+            )
+              .edit-font-blah-blah
+                i.fas.fa-arrow-left.ms-2
+                |  Trang trước
+                
 
             span.page-info Trang #{currentPage} / #{totalPages}
 
@@ -67,8 +76,9 @@ block main
               href=`?page=${currentPage + 1}&search=${searchQuery || ''}`, 
               disabled=currentPage >= totalPages
             ) 
-              | Trang sau
-              i.fas.fa-arrow-right.ms-2
+              .edit-font-blah-blah
+                | Trang sau
+                i.fas.fa-arrow-right.ms-2
 
       else if searchQuery
         .empty-dashboard-container
@@ -78,12 +88,15 @@ block main
 
       else
         .empty-dashboard-container
-          i.bi.bi-folder-x.blank-folder
+          if currentFolder
+            i.bi.bi-folder-x.blank-folder
+          else
+            span.material-symbols-outlined.blank_folder scan_delete
           h2.empty-title 
             if currentFolder
               | Thư mục này trống
             else
-              | Chưa có mindmap nào
+              | Trang chủ của bạn hiện tại đang trống
           h2.sub-empty-title
             if currentFolder
               | Bạn có thể tạo mindmap mới hoặc di chuyển mindmap có sẵn vào đây.
@@ -154,8 +167,6 @@ block main
             //- 3. Xóa nút "Hủy bỏ" và chỉ giữ lại nút "Xác nhận"
             button.btn.btn-primary(type="submit") Xác nhận
 
-
-//- đã sủa rồi
 block scripts
   //- Script cho modal xóa, sửa tên VÀ di chuyển thư mục
   script.
@@ -165,9 +176,7 @@ block scripts
         const mindmapGrid = document.getElementById('mindmapGrid');
         if (!mindmapGrid) return;
 
-        // =============================
         // 1️⃣ HÀM MODAL XÁC NHẬN XÓA
-        // =============================
         function showConfirmModal(title, message, confirmText = 'Đưa vào thùng rác') {
           const modal = document.getElementById('confirmModal');
           document.getElementById('modalTitle').textContent = title;
@@ -201,17 +210,13 @@ block scripts
           });
         }
 
-        // =============================
         // 2️⃣ LOGIC CHO MODAL DI CHUYỂN
-        // =============================
         const moveModalElement = document.getElementById('moveFolderModal');
         const moveModal = moveModalElement ? new bootstrap.Modal(moveModalElement) : null;
         const folderTargetList = document.getElementById('folderTargetList');
         let mindmapToMoveId = null;
 
-        // =============================
         // 3️⃣ SỰ KIỆN CLICK TRÊN GRID
-        // =============================
         mindmapGrid.addEventListener('click', async (event) => {
           const target = event.target;
           const mindmapCard = target.closest('.mindmap-card');
@@ -261,9 +266,7 @@ block scripts
           }
         });
 
-        // =============================
         // 4️⃣ SUBMIT FORM EDIT TÊN
-        // =============================
         mindmapGrid.addEventListener('submit', async (event) => {
           if (!event.target.classList.contains('inline-edit-form')) return;
           event.preventDefault();
@@ -298,9 +301,7 @@ block scripts
           }
         });
 
-        // =============================
         // 5️⃣ CLICK CHỌN THƯ MỤC TRONG MODAL
-        // =============================
         if (folderTargetList) {
           folderTargetList.addEventListener('click', (event) => {
             const targetFolder = event.target.closest('button[data-folder-id]');
@@ -330,9 +331,7 @@ block scripts
           });
         }
 
-        // =============================
         // 6️⃣ LOGIC CHO MODAL TẠO THƯ MỤC
-        // =============================
         const createFolderModalEl = document.getElementById('createFolderModal');
         const createFolderForm = document.getElementById('createFolderForm');
         const newFolderNameInput = document.getElementById('newFolderNameInput');
