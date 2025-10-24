@@ -158,8 +158,48 @@ body {
 }
 
 .search-box-compact.active input[type="text"] {
-  width: 360px; /* phình thêm 100px */
+  width: 1000px; /* phình thêm 100px */
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+}
+
+
+/*CSS cho ô tìm kiếm */
+.search-box-compact .search-form-header {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.15); /* Nền hơi trong suốt */
+  border-radius: 20px; /* Bo tròn */
+  overflow: hidden; /* Đảm bảo mọi thứ bên trong bo tròn */
+}
+.search-box-compact .form-control {
+  border: none; /* Bỏ viền */
+  background: transparent; /* Nền trong suốt */
+  color: #fff; /* Chữ màu trắng */
+  padding: 0.5rem 1rem;
+  height: 38px; /* Chiều cao cố định như các input khác */
+  flex-grow: 1; /* Cho phép input giãn ra */
+}
+.search-box-compact .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+.search-box-compact .form-control:focus {
+  outline: none;
+  box-shadow: none; /* Bỏ box-shadow mặc định của Bootstrap khi focus */
+  background-color: rgba(255, 255, 255, 0.2); /* Nền hơi đậm hơn khi focus */
+}
+.search-box-compact .btn-search-icon {
+  background-color: transparent; /* Nút trong suốt */
+  border: none; /* Bỏ viền */
+  color: #fff; /* Icon màu trắng */
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex; /* Dùng flex để căn icon */
+  align-items: center;
+  justify-content: center;
+}
+.search-box-compact .btn-search-icon:hover {
+  color: #272abc; /* Sáng hơn khi hover */
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Gợi ý sổ xuống dưới */
@@ -170,7 +210,7 @@ body {
   width: 100%;
   background: #fff;
   border: 1px solid #ddd;
-  border-top: none;
+  border-top: 1px solid #ddd;
   border-radius: 0 0 8px 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   z-index: 3000;
@@ -188,7 +228,7 @@ body {
   border-bottom: 1px solid #f0f0f0;
 }
 #search-results a:last-child { border-bottom: none; }
-#search-results a:hover { background: #f8f9fa; }
+#search-results a:hover { background: #efd3d3; }
 
 /* Hiệu ứng trượt nhẹ xuống */
 @keyframes fadeDown {
