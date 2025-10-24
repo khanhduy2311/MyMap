@@ -9,6 +9,20 @@ html(lang="vi")
     link(rel="stylesheet", href="/css/style-main.css?v=1.1")
     block styles
     title #{pageTitle} | MindTree
+    //- Trong block head hoặc sau các link CSS
+    style.
+      /* Reset cursor cho toàn bộ ứng dụng */
+      body {
+          cursor: none;
+      }
+      /* Cho phép text selection vẫn có cursor bình thường */
+      ::selection {
+          cursor: text;
+      }
+      /* Đảm bảo các input vẫn hoạt động tốt */
+      input, textarea, select {
+          cursor: none;
+      }
 
   body(class=user ? '' : 'has-fullscreen-bg').d-flex.flex-column.min-vh-100
     header.colors-header.text-white.p-3.shadow-sm

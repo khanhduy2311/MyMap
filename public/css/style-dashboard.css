@@ -811,3 +811,304 @@
   background-color: #08aa10;
   color: white;
 }
+
+/* === CINEMATIC EFFECTS === */
+
+/* Hiệu ứng morphing gradient cho sidebar */
+.dashboard-sidebar {
+    background: linear-gradient(-45deg, #f2f3ff, #ffd6ff, #e0c1f6, #d0e0ff);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Hiệu ứng background động tinh tế */
+.dashboard-content {
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-content::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.05) 0%, transparent 50%);
+    animation: floatBackground 6s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes floatBackground {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-10px) scale(1.02); }
+}
+
+/* Hiệu ứng glass morphism và 3D cho card */
+.mindmap-card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.mindmap-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+}
+
+.mindmap-card:hover::before {
+    left: 100%;
+}
+
+.mindmap-card:hover {
+    transform: 
+        translateY(-10px) 
+        rotateX(5deg) 
+        rotateY(-2deg);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.15),
+        0 0 80px rgba(140, 82, 255, 0.1);
+}
+
+/* Hiệu ứng shimmer cho tiêu đề */
+.content-title {
+    background: linear-gradient(45deg, #8c52ff, #5ce1e6, #ff66c4);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s ease-in-out infinite;
+    position: relative;
+}
+
+.content-title::after {
+    content: '|';
+    animation: blink 1s infinite;
+    margin-left: 5px;
+}
+
+@keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Hiệu ứng floating cho nút tạo mới */
+.create-new-container {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Hiệu ứng fade in khi load trang */
+.dashboard-layout {
+    opacity: 0;
+    animation: fadeInUp 1s ease-out 0.5s forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Đảm bảo cursor không bị ẩn bởi các element khác */
+
+
+/* Hiển thị cursor mặc định trên mobile */
+@media (max-width: 768px) {
+    body {
+        cursor: auto !important;
+    }
+    body * {
+        cursor: auto !important;
+    }
+}
+
+
+
+/* Đảm bảo nội dung nằm trên background */
+.dashboard-content > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ==== CUSTOM CURSOR - GRADIENT ĐỘNG THUẦN CSS (FIXED) ==== */
+
+/* Chỉ áp dụng custom cursor khi SVG hỗ trợ, fallback về auto nếu không */
+body {
+    cursor: url("data:image/svg+xml;utf8,\
+    <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>\
+      <defs>\
+        <linearGradient id='grad1' x1='0%' y1='0%' x2='100%' y2='100%'>\
+          <stop offset='0%' stop-color='%2300d4ff'>\
+            <animate attributeName='stop-color' \
+              values='%2300d4ff;%237b2ff7;%23f236ff;%2300d4ff' \
+              dur='3s' repeatCount='indefinite'/>\
+          </stop>\
+          <stop offset='100%' stop-color='%230087f0'>\
+            <animate attributeName='stop-color' \
+              values='%230087f0;%234a00e0;%238e2de2;%230087f0' \
+              dur='3s' repeatCount='indefinite'/>\
+          </stop>\
+        </linearGradient>\
+        <filter id='glow1' x='-50%' y='-50%' width='200%' height='200%'>\
+          <feGaussianBlur in='SourceGraphic' stdDeviation='1.5'/>\
+          <feComponentTransfer>\
+            <feFuncA type='linear' slope='2'/>\
+          </feComponentTransfer>\
+        </filter>\
+        <filter id='shadow1'>\
+          <feDropShadow dx='0' dy='2' stdDeviation='3' flood-color='%2300d4ff' flood-opacity='0.6'/>\
+        </filter>\
+      </defs>\
+      <g filter='url(%23shadow1)'>\
+        <polygon points='2,2 2,26 10,20 16,30 18,28 12,18 26,18' \
+                 fill='url(%23grad1)' \
+                 stroke='rgba(255,255,255,0.4)' \
+                 stroke-width='0.8'/>\
+      </g>\
+      <polygon points='2,2 2,26 10,20 16,30 18,28 12,18 26,18' \
+               fill='url(%23grad1)' \
+               filter='url(%23glow1)' \
+               opacity='0.3'/>\
+    </svg>") 2 2, auto !important;
+}
+
+/* Đảm bảo tất cả elements kế thừa cursor */
+* {
+    cursor: inherit;
+}
+
+/* XÓA HOẶC COMMENT OUT các dòng này - chúng gây ra vòng tròn tím */
+/* body::before { ... }  */
+/* body::after { ... }   */
+
+/* Thay vào đó, chỉ dùng hiệu ứng glow nhẹ không gây lỗi */
+@keyframes subtleGlow {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+    }
+    50% { 
+        box-shadow: 0 0 40px rgba(123, 47, 247, 0.15);
+    }
+}
+
+/* Áp dụng glow cho các card thay vì body */
+.mindmap-card, .folder-card {
+    animation: subtleGlow 3s ease-in-out infinite;
+}
+
+/* Hiệu ứng cho elements có thể click */
+a, button, .btn, .create-mindmap-btn, .main-fab-btn, .btn-action, 
+input:not([type="text"]):not([type="email"]):not([type="password"]), 
+select, [role="button"], [onclick], .sidebar-nav a {
+    cursor: url("data:image/svg+xml;utf8,\
+    <svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'>\
+      <defs>\
+        <linearGradient id='grad2' x1='0%' y1='0%' x2='100%' y2='100%'>\
+          <stop offset='0%' stop-color='%23f236ff'>\
+            <animate attributeName='stop-color' \
+              values='%23f236ff;%2300d4ff;%237b2ff7;%23f236ff' \
+              dur='2s' repeatCount='indefinite'/>\
+          </stop>\
+          <stop offset='100%' stop-color='%238e2de2'>\
+            <animate attributeName='stop-color' \
+              values='%238e2de2;%230087f0;%234a00e0;%238e2de2' \
+              dur='2s' repeatCount='indefinite'/>\
+          </stop>\
+        </linearGradient>\
+        <filter id='glow2'>\
+          <feGaussianBlur stdDeviation='2'/>\
+          <feComponentTransfer>\
+            <feFuncA type='linear' slope='2.5'/>\
+          </feComponentTransfer>\
+        </filter>\
+      </defs>\
+      <circle cx='20' cy='20' r='10' fill='none' \
+              stroke='url(%23grad2)' stroke-width='3' \
+              filter='url(%23glow2)' opacity='0.8'>\
+        <animate attributeName='r' values='8;12;8' dur='1.5s' repeatCount='indefinite'/>\
+        <animate attributeName='opacity' values='0.6;1;0.6' dur='1.5s' repeatCount='indefinite'/>\
+      </circle>\
+      <polygon points='15,15 15,28 20,24 24,32 26,30 22,22 32,22' \
+               fill='url(%23grad2)' \
+               stroke='white' stroke-width='1'/>\
+    </svg>") 15 15, pointer !important;
+}
+
+/* Cursor cho input text */
+input[type="text"], input[type="email"], input[type="password"], 
+input[type="search"], textarea, [contenteditable="true"] {
+    cursor: url("data:image/svg+xml;utf8,\
+    <svg xmlns='http://www.w3.org/2000/svg' width='24' height='32' viewBox='0 0 24 32'>\
+      <defs>\
+        <linearGradient id='grad3' x1='0%' y1='0%' x2='0%' y2='100%'>\
+          <stop offset='0%' stop-color='%2300d4ff'>\
+            <animate attributeName='stop-color' \
+              values='%2300d4ff;%23f236ff;%2300d4ff' \
+              dur='2s' repeatCount='indefinite'/>\
+          </stop>\
+          <stop offset='100%' stop-color='%238e2de2'>\
+            <animate attributeName='stop-color' \
+              values='%238e2de2;%237b2ff7;%238e2de2' \
+              dur='2s' repeatCount='indefinite'/>\
+          </stop>\
+        </linearGradient>\
+      </defs>\
+      <line x1='12' y1='4' x2='12' y2='28' \
+            stroke='url(%23grad3)' stroke-width='2.5' \
+            stroke-linecap='round'/>\
+      <line x1='6' y1='4' x2='18' y2='4' \
+            stroke='url(%23grad3)' stroke-width='2' \
+            stroke-linecap='round'/>\
+      <line x1='6' y1='28' x2='18' y2='28' \
+            stroke='url(%23grad3)' stroke-width='2' \
+            stroke-linecap='round'/>\
+    </svg>") 12 16, text !important;
+}
+
+/* Ẩn custom cursor trên mobile */
+@media (max-width: 768px) {
+    body, body * {
+        cursor: auto !important;
+    }
+}
+
+/* Thêm hiệu ứng hover nhẹ */
+a:hover, button:hover, .btn:hover {
+    filter: brightness(1.1);
+    transition: filter 0.2s ease;
+}

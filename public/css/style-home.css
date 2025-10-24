@@ -753,7 +753,7 @@ footer p {
     text-decoration: none;
     border-radius: 60px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    transition: all 0.4s ease;
+    transition: none;
 }
 
 .login_css:hover {
@@ -772,7 +772,7 @@ footer p {
     text-decoration: none;
     border-radius: 50px;
     border: 2px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
+    transition: none;
 }
 
 .learn-more_css:hover {

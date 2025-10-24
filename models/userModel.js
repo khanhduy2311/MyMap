@@ -33,7 +33,7 @@ exports.createUser = async (db, user) => {
         user.username = user.username.toLowerCase();
         user.createdAt = new Date();
         user.updatedAt = new Date();
-        
+        user.lastLogin = null;
         return await db.collection('users').insertOne(user);
     } catch (error) {
         console.error('❌ Lỗi createUser:', error);
@@ -103,4 +103,34 @@ exports.findUserByResetToken = async (db, token) => {
         console.error('❌ Lỗi findUserByResetToken:', error);
         throw error;
     }
+};
+// Cập nhật thời gian đăng nhập cuối cùng
+exports.updateLastLogin = async (db, userId) => {
+    try {
+        if (!ObjectId.isValid(userId)) {
+            throw new Error('ID người dùng không hợp lệ');
+        }
+
+        const userObjectId = new ObjectId(userId);
+        
+        const result = await db.collection('users').updateOne(
+            { _id: userObjectId },
+            { 
+                $set: { 
+                    lastLogin: new Date(),
+                    updatedAt: new Date()
+                } 
+            }
+        );
+
+        return result;
+    } catch (error) {
+        console.error('❌ Lỗi updateLastLogin:', error);
+        throw error;
+    }
+};
+
+// Kiểm tra xem user có phải lần đầu đăng nhập không
+exports.isFirstLogin = (user) => {
+    return !user.lastLogin;
 };
