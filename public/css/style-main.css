@@ -206,7 +206,7 @@ body {
   top: 100%; /* Nằm ngay dưới ô input */
   left: 0;
   /* Quan trọng: Chiều rộng hộp gợi ý có thể rộng hơn search-box-compact */
-  width: 250px; /* Chiều rộng cố định hoặc có thể để auto nếu muốn theo text */
+  width: 100px; /* Chiều rộng cố định hoặc có thể để auto nếu muốn theo text */
   background: #fff;
   border: 1px solid #ddd;
   border-top: none;
