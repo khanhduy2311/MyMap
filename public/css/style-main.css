@@ -144,88 +144,58 @@ body {
 }
 
 
-/* === THANH TÌM KIẾM TRÊN HEADER (CẬP NHẬT) === */
+/* ===== THANH TÌM KIẾM ===== */
 .search-box-compact {
   position: relative;
-  width: 150px; /* Chiều rộng cố định theo yêu cầu của bạn */
-  transition: width 0.3s ease; /* Hiệu ứng khi hover */
-  margin-right: 15px; /* Khoảng cách với avatar */
+  z-index: 1500;
+  transition: all 0.3s ease;
 }
 
-/* Hiệu ứng mở rộng khi hover vào ô tìm kiếm */
-
-
-.search-box-compact .search-form-header {
-  display: flex;
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.15); /* Nền hơi trong suốt */
-  border-radius: 20px; /* Bo tròn */
-  overflow: hidden; /* Đảm bảo mọi thứ bên trong bo tròn */
+/* Ô input bình thường */
+.search-box-compact input[type="text"] {
+  width: 260px;
+  transition: width 0.3s ease, box-shadow 0.3s ease;
 }
 
-.search-box-compact .form-control {
-  border: none; /* Bỏ viền */
-  background: transparent; /* Nền trong suốt */
-  color: #fff; /* Chữ màu trắng */
-  padding: 0.5rem 1rem;
-  height: 38px; /* Chiều cao cố định như các input khác */
-  flex-grow: 1; /* Cho phép input giãn ra */
+.search-box-compact.active input[type="text"] {
+  width: 360px; /* phình thêm 100px */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
 }
 
-/* Đổi màu placeholder */
-.search-box-compact .form-control::placeholder {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* Đổi màu chữ khi focus */
-.search-box-compact .form-control:focus {
-  outline: none;
-  box-shadow: none; /* Bỏ box-shadow mặc định của Bootstrap khi focus */
-  background-color: rgba(255, 255, 255, 0.2); /* Nền hơi đậm hơn khi focus */
-}
-
-.search-box-compact .btn-search-icon {
-  background-color: transparent; /* Nút trong suốt */
-  border: none; /* Bỏ viền */
-  color: #fff; /* Icon màu trắng */
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  display: flex; /* Dùng flex để căn icon */
-  align-items: center;
-  justify-content: center;
-}
-
-.search-box-compact .btn-search-icon:hover {
-  color: #272abc; /* Sáng hơn khi hover */
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* === GỢI Ý TÌM KIẾM (ĐÃ CHUYỂN TỪ DASHBOARD, ĐIỀU CHỈNH VỊ TRÍ) === */
-.search-box-compact #search-results { /* Đã đổi selector */
+/* Gợi ý sổ xuống dưới */
+#search-results {
   position: absolute;
-  top: 100%; /* Nằm ngay dưới ô input */
+  top: 100%; /* Ngay dưới input */
   left: 0;
-  /* Quan trọng: Chiều rộng hộp gợi ý có thể rộng hơn search-box-compact */
-  width: 100px; /* Chiều rộng cố định hoặc có thể để auto nếu muốn theo text */
+  width: 100%;
   background: #fff;
   border: 1px solid #ddd;
   border-top: none;
   border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  z-index: 1000; 
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 3000;
+  display: none;
   max-height: 300px;
   overflow-y: auto;
-  display: none; 
+  animation: fadeDown 0.2s ease;
 }
-.search-box-compact #search-results a {
+
+#search-results a {
   display: block;
   padding: 10px 15px;
   color: #333;
   text-decoration: none;
   border-bottom: 1px solid #f0f0f0;
 }
-.search-box-compact #search-results a:last-child { border-bottom: none; }
-.search-box-compact #search-results a:hover { background-color: #f8f9fa; }
+#search-results a:last-child { border-bottom: none; }
+#search-results a:hover { background: #f8f9fa; }
+
+/* Hiệu ứng trượt nhẹ xuống */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 
 /* Điều chỉnh lại khoảng cách của dropdown user để nó không bị dính vào search */
 header .container .dropdown {

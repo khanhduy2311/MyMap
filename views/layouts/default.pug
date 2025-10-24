@@ -6,7 +6,7 @@ html(lang="vi")
     link(href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css", rel="stylesheet")
     link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css")
     link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css")
-    link(rel="stylesheet", href="/css/style-main.css")
+    link(rel="stylesheet", href="/css/style-main.css?v=1.1")
     block styles
     title #{pageTitle} | MindTree
 
@@ -20,19 +20,19 @@ html(lang="vi")
           .d-flex.align-items-center.ms-auto
             if showSearch
               .search-box-compact
-              form.search-form-header(
-                method="GET", 
-                action=searchActionUrl || '/dashboard' 
-              )
-                input#searchInput.form-control(
-                  type="search", 
-                  name="search", 
-                  placeholder="Tìm kiếm mindmap...", 
-                  value=searchQuery || '', 
-                  autocomplete="off"
+                form.search-form-header(
+                  method="GET", 
+                  action=searchActionUrl || '/dashboard' 
                 )
-                button.btn.btn-search-icon(type="submit")
-                  i.fas.fa-search
+                  input#searchInput.form-control(
+                    type="search", 
+                    name="search", 
+                    placeholder="Tìm kiếm mindmap...", 
+                    value=searchQuery || '', 
+                    autocomplete="off"
+                  )
+                  button.btn.btn-search-icon(type="submit")
+                    i.fas.fa-search
               //- #search-results vẫn giữ nguyên nằm trong .search-box-compact
               #search-results
           .ms-3
@@ -212,10 +212,14 @@ html(lang="vi")
                   });
 
                   searchResults.style.display = 'block';
+                  searchInput.closest('.search-box-compact').classList.add('active');
+
                 })
                 .catch(err => {
                   console.error('Lỗi fetch gợi ý:', err);
                   searchResults.style.display = 'none'; 
+                  searchInput.closest('.search-box-compact').classList.remove('active');
+
                 });
             }, 300); 
           });
@@ -238,5 +242,11 @@ html(lang="vi")
         
         if (flashError && flashError.length > 0) { 
           showToast(flashError[0], 'Lỗi', 'error');
-        }
+        } 
       });
+      document.addEventListener('click', (event) => {
+        if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+          searchResults.style.display = 'none';
+          searchInput.closest('.search-box-compact').classList.remove('active');
+        }
+      }); 
