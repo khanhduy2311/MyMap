@@ -70,32 +70,19 @@ block main
     //- Thêm scripts cho particles và hiệu ứng
     script(src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js")
     script.
-      document.addEventListener('DOMContentLoaded', function() {
+      window.addEventListener('load', function() {
         // Khởi tạo particles.js
         if (typeof particlesJS !== 'undefined') {
           particlesJS('particles-js', {
             particles: {
               number: { 
                 value: 80, 
-                density: { 
-                  enable: true, 
-                  value_area: 800 
-                } 
+                density: { enable: true, value_area: 800 } 
               },
-              color: { 
-                value: ["#ff6b9d", "#4fc3f7", "#9c27b0", "#ff8e53"] 
-              },
-              shape: { 
-                type: "circle"
-              },
-              opacity: { 
-                value: 0.7, 
-                random: true
-              },
-              size: { 
-                value: 3, 
-                random: true
-              },
+              color: { value: ["#ff6b9d", "#4fc3f7", "#9c27b0", "#ff8e53"] },
+              shape: { type: "circle" },
+              opacity: { value: 0.7, random: true },
+              size: { value: 3, random: true },
               line_linked: {
                 enable: true,
                 distance: 150,
@@ -106,38 +93,28 @@ block main
               move: {
                 enable: true,
                 speed: 2,
-                direction: "none",
                 random: true,
-                straight: false,
-                out_mode: "out",
-                bounce: false
+                out_mode: "out"
               }
             },
             interactivity: {
               detect_on: "canvas",
               events: {
-                onhover: { 
-                  enable: true, 
-                  mode: "grab" 
-                },
-                onclick: { 
-                  enable: true, 
-                  mode: "push" 
-                },
+                onhover: { enable: true, mode: "grab" },
+                onclick: { enable: true, mode: "push" },
                 resize: true
               }
             }
           });
         }
 
-        // Ẩn loading overlay với hiệu ứng
-        setTimeout(() => {
-          const loadingOverlay = document.querySelector('.loading-overlay');
-          if (loadingOverlay) {
-            loadingOverlay.style.opacity = '0';
-            setTimeout(() => {
-              loadingOverlay.style.display = 'none';
-            }, 500);
-          }
-        }, 2000);
+        // Ẩn loading overlay sau khi trang tải xong
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        if (loadingOverlay) {
+          loadingOverlay.style.opacity = '0';
+          setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+          }, 500);
+        }
       });
+

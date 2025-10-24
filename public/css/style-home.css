@@ -779,3 +779,56 @@ footer p {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.4);
 }
+/* Nút Đăng nhập màu hồng anime */
+.login_css {
+  display: inline-block;
+  padding: 18px 50px;
+  background: linear-gradient(135deg, #ff6b9d, #ff8e53);
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 60px;
+  border: none;
+  box-shadow: 0 15px 30px rgba(255, 107, 157, 0.4);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.login_css:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 25px 50px rgba(255, 107, 157, 0.6);
+  background: linear-gradient(135deg, #ff8e53, #ff6b9d);
+}
+
+/* Nút Tìm hiểu thêm - màu xanh tím nhẹ */
+.learn-more_css {
+  display: inline-block;
+  padding: 15px 40px;
+  background: linear-gradient(135deg, rgba(106,17,203,0.2), rgba(37,117,252,0.3));
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.learn-more_css:hover {
+  background: linear-gradient(135deg, rgba(255,107,157,0.3), rgba(79,195,247,0.4));
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(79,195,247,0.4);
+}
+
+/* Ngăn các lớp hiệu ứng đè chuột lên nút */
+.loading-overlay,
+#particles-js,
+.floating-books {
+  pointer-events: none;
+}
+
+.content-overlay {
+  pointer-events: auto;
+  position: relative;
+  z-index: 3; /* đảm bảo nằm trên tất cả hiệu ứng */
+}
