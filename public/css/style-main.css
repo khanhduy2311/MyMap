@@ -277,4 +277,3 @@ header .container .dropdown {
   /* Chạy animation trong 2 giây (khớp data-bs-delay) */
   animation: runProgress 2s linear forwards; 
 }
-
