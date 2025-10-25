@@ -1,11 +1,21 @@
 extends ./layouts/default.pug
 
 block styles
+  //- Dùng chung CSS của dashboard
   link(rel="stylesheet" href="/css/style-dashboard.css")
+  //- File CSS tùy chỉnh cho riêng trang này
   link(rel="stylesheet" href="/css/style-friends.css")
 
+  //- Thêm style nội tuyến để ẩn footer CHỈ TRÊN TRANG NÀY
+  style.
+    footer {
+      display: none !important;
+    }
+
 block main
+  //- Sử dụng lại layout dashboard quen thuộc
   .dashboard-layout
+    //- === SIDEBAR CHÍNH (Từ bản vẽ "sidebar có sẵn") ===
     aside.dashboard-sidebar
       nav.sidebar-nav
         ul
@@ -15,7 +25,7 @@ block main
               span Danh sách
           li
             a(href="/dashboard/folder" title="Thư mục")
-              i.fas.fa-folder-open 
+              i.fas.fa-folder-open
               span Thư mục
           li
             a(href="/dashboard/trash" title="Thùng rác")
@@ -26,148 +36,267 @@ block main
               i.fas.fa-users
               span Bạn bè
 
+    //- === NỘI DUNG CHÍNH (Phần 2 cột) ===
     main.dashboard-content
-      .dashboard-header
-        h2.content-title
-          i.fas.fa-users.me-3
-          | Bạn bè & Tin nhắn
+      //- Container chính cho bố cục 2 cột
+      .friends-chat-container
 
-      .friends-container
-        //- PHẦN KẾT BẠN
-        .friends-section.mb-4
-          .card
-            .card-header
-              h5.card-title.mb-0
-                i.fas.fa-user-plus.me-2
-                | Kết bạn
-            .card-body
-              form(action="/friends/send-request", method="POST")
-                .input-group
-                  input.form-control(
-                    type="text", 
-                    name="username", 
-                    placeholder="Nhập username để kết bạn", 
-                    required
-                  )
-                  button.btn.btn-primary(type="submit") 
-                    i.fas.fa-paper-plane.me-1
-                    | Gửi lời mời
+        //- --- CỘT TRÁI: DANH SÁCH BẠN BÈ VÀ NÚT CHỨC NĂNG ---
+        .friends-list-panel
+          //- Header chứa 2 nút chức năng (mở pop-up)
+          .panel-header
+            button.btn.btn-outline-primary.w-100(type="button" data-bs-toggle="modal" data-bs-target="#addFriendModal")
+              i.fas.fa-user-plus.me-2
+              | Thêm bạn
+            button.btn.btn-outline-secondary.w-100.position-relative(type="button" data-bs-toggle="modal" data-bs-target="#friendRequestsModal")
+              i.fas.fa-bell.me-2
+              | Lời mời
+              //- Hiển thị badge nếu có lời mời
+              span#friendRequestBadge.position-absolute.top-0.start-100.translate-middle.badge.rounded-pill.bg-danger(style= friendRequests && friendRequests.length > 0 ? '' : 'display: none;')
+                | #{friendRequests ? friendRequests.length : 0}
 
-        //- PHẦN LỜI MỜI KẾT BẠN
-        .friends-section.mb-4
-          .card
-            .card-header
-              h5.card-title.mb-0
-                i.fas.fa-bell.me-2
-                | Lời mời kết bạn
-                if friendRequests && friendRequests.length > 0
-                  span.badge.bg-danger.ms-2 #{friendRequests.length}
-            .card-body
-              if friendRequests && friendRequests.length > 0
-                each request in friendRequests
-                  .friend-request-item.d-flex.justify-content-between.align-items-center.mb-3.p-3.border.rounded
-                    .request-info
-                      .d-flex.align-items-center
-                        .avatar-placeholder.me-3
-                          i.fas.fa-user-circle.fa-2x.text-primary
-                        .request-details
-                          strong #{request.senderUsername}
-                          br
-                          small.text-muted Gửi lúc: #{request.createdAt.toLocaleDateString('vi-VN')}
-                    .request-actions
-                      form.d-inline(action="/friends/accept-request", method="POST")
-                        input(type="hidden", name="requestId", value=request._id.toString())
-                        button.btn.btn-success.btn-sm(type="submit" title="Chấp nhận")
-                          i.fas.fa-check.me-1
-                          | Chấp nhận
-                      form.d-inline.ms-2(action="/friends/reject-request", method="POST")
-                        input(type="hidden", name="requestId", value=request._id.toString())
-                        button.btn.btn-danger.btn-sm(type="submit" title="Từ chối")
-                          i.fas.fa-times.me-1
-                          | Từ chối
-              else
-                .text-center.text-muted.py-4
-                  i.fas.fa-inbox.fa-3x.mb-3.opacity-50
-                  p.mb-0 Không có lời mời kết bạn nào
 
-        //- PHẦN DANH SÁCH BẠN BÈ
-        .friends-section.mb-4
-          .card
-            .card-header
-              h5.card-title.mb-0
-                i.fas.fa-users.me-2
-                | Danh sách bạn bè
-                if friends && friends.length > 0
-                  span.badge.bg-primary.ms-2 #{friends.length}
-            .card-body
-              if friends && friends.length > 0
-                .friends-list
-                  each friend in friends
-                    .friend-item.d-flex.justify-content-between.align-items-center.mb-3.p-3.border.rounded
-                      .friend-info
-                        .d-flex.align-items-center
-                          .avatar-placeholder.me-3
-                            i.fas.fa-user-circle.fa-2x.text-primary
-                          .friend-details
-                            strong #{friend.username}
-                            br
-                            small.text-muted #{friend.displayName || 'Chưa có tên hiển thị'}
-                      .friend-actions
-                        button.btn.btn-outline-primary.btn-sm.me-2(type="button" onclick=`startChat('${friend._id}')`)
-                          i.fas.fa-comment.me-1
-                          | Nhắn tin
-                        form.d-inline(action="/friends/remove", method="POST")
-                          input(type="hidden", name="friendId", value=friend._id.toString())
-                          button.btn.btn-outline-danger.btn-sm(type="submit" title="Xóa bạn")
-                            i.fas.fa-user-times.me-1
-                            | Xóa
-              else
-                .text-center.text-muted.py-4
-                  i.fas.fa-user-friends.fa-3x.mb-3.opacity-50
-                  p.mb-0 Bạn chưa có bạn bè nào
-                  p.small Hãy kết bạn để bắt đầu trò chuyện!
+          //- Danh sách bạn bè (có thể cuộn)
+          .friends-list-scrollable
+            //- Kiểm tra friends tồn tại và là array
+            if friends && Array.isArray(friends) && friends.length > 0
+              each friend in friends
+                .friend-item(
+                  data-user-id=friend._id
+                  data-username=friend.username
+                  onclick=`selectFriend('${friend._id}', '${friend.username}')`
+                )
+                  .d-flex.align-items-center
+                    //- Avatar
+                    img.rounded-circle.me-3.friend-avatar(
+                      src=friend.avatar || '/images/default-avatar.png',
+                      alt=`Avatar của ${friend.username}`,
+                      width="40",
+                      height="40",
+                      style="object-fit: cover;",
+                      onerror="this.onerror=null; this.src='/images/default-avatar.png';"
+                    )
+                    .friend-details
+                      .fw-bold #{friend.username}
+                      //- Kiểm tra displayName trước khi hiển thị
+                      if friend.displayName
+                        small.text-muted #{friend.displayName}
+                      else
+                        small.text-muted ...
 
-        //- PHẦN CHAT (TÙY CHỌN - CÓ THỂ ẨN NẾU KHÔNG CẦN)
-        .friends-section
-          .card
-            .card-header
-              h5.card-title.mb-0
-                i.fas.fa-comments.me-2
-                | Nhắn tin với bạn bè
-            .card-body
-              .chat-layout
-                .chat-sidebar
-                  #userList.chat-user-list
-                    if friends && friends.length > 0
-                      each friend in friends
-                        .chat-user-item(
-                          data-user-id=friend._id
-                          data-username=friend.username
-                          onclick=`selectFriend('${friend._id}', '${friend.username}')`
-                        )
-                          i.fas.fa-user-circle.me-2
-                          | #{friend.username}
-                    else
-                      .text-center.text-muted.p-3
-                        i.fas.fa-user-friends.me-2
-                        | Chưa có bạn bè để nhắn tin
-                .chat-main
-                  .chat-header
-                    h6#chatWithHeader.mb-0 Chọn một người bạn để bắt đầu trò chuyện
-                  .chat-messages#messages
-                    .text-center.text-muted.p-4
-                      i.fas.fa-comments.fa-2x.mb-3.opacity-50
-                      p.mb-0 Chưa có tin nhắn nào
-                  .chat-input
-                    form#chatForm
-                      .input-group
-                        input#messageInput.form-control(
-                          type="text", 
-                          placeholder="Nhập tin nhắn...", 
-                          disabled
-                        )
-                        button.btn.btn-primary(type="submit" disabled)
-                          i.fas.fa-paper-plane
+            else
+              //- Trạng thái rỗng khi chưa có bạn
+              .empty-list-state
+                i.fas.fa-user-friends.fa-3x
+                p Bạn chưa có bạn bè
+
+        //- --- CỘT PHẢI: CỬA SỔ CHAT ---
+        .chat-window-panel
+          //- Header của cửa sổ chat
+          .chat-header
+            h5#chatWithHeader.mb-0 Chọn bạn bè để trò chuyện
+
+          //- Nơi chứa các tin nhắn
+          .messages#messages
+            //- Trạng thái rỗng (theo bản vẽ)
+            .empty-chat-state
+              i.fas.fa-comments.fa-4x
+              p Chọn một người bạn để bắt đầu trò chuyện
+
+          //- Khu vực nhập tin nhắn
+          .message-input-area
+            form#chatForm
+              input#messageInput.form-control(
+                type="text",
+                placeholder="Nhập tin nhắn...",
+                disabled,
+                autocomplete="off"
+              )
+              button.btn.btn-primary.ms-2(type="submit" disabled)
+                i.fas.fa-paper-plane
+
+  //- === CÁC MODAL (POP-UP) ===
+
+  //- Modal 1: Pop-up "Thêm bạn"
+  #addFriendModal.modal.fade(tabindex="-1")
+    .modal-dialog.modal-dialog-centered
+      .modal-content
+        .modal-header
+          h5.modal-title
+            i.fas.fa-user-plus.me-2
+            | Gửi lời mời kết bạn
+          button.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          form#sendRequestForm(action="/friends/send-request", method="POST")
+            p Nhập username của người bạn muốn kết nối:
+            .input-group
+              input#addFriendUsername.form-control(
+                type="text",
+                name="username",
+                placeholder="Ví dụ: mindtree_user",
+                required
+              )
+              button.btn.btn-primary(type="submit") Gửi lời mời
+            #addFriendError.text-danger.mt-2(style="display: none;")
+
+  //- Modal 2: Pop-up "Lời mời kết bạn"
+  #friendRequestsModal.modal.fade(tabindex="-1")
+    .modal-dialog.modal-dialog-centered.modal-lg 
+      .modal-content
+        .modal-header
+          h5.modal-title
+            i.fas.fa-bell.me-2
+            | Lời mời đang chờ
+          button.btn-close(type="button" data-bs-dismiss="modal")
+        //- Kiểm tra có lời mời hay không
+        //- Kiểm tra friendRequests tồn tại và là array
+        if friendRequests && Array.isArray(friendRequests) && friendRequests.length > 0
+          //- Nếu có: Hiển thị danh sách
+          .modal-body
+            ul.list-group#requestListGroup
+              //- === THAY THẾ PHẦN LẶP NÀY ===
+              each request in friendRequests
+                li.list-group-item.d-flex.justify-content-between.align-items-center(data-request-id=request._id.toString())
+                  div
+                    //- Kiểm tra senderUsername trước khi hiển thị
+                    strong #{request.senderUsername || 'Người dùng ẩn danh'}
+                    br
+                    //- Kiểm tra và định dạng ngày tháng an toàn hơn
+                    - let requestDate = 'Thời gian không xác định';
+                    - if (request.createdAt) {
+                    -   const dateObj = new Date(request.createdAt);
+                    -   if (!isNaN(dateObj.getTime())) {
+                    -     requestDate = `Gửi lúc: ${dateObj.toLocaleDateString('vi-VN')}`;
+                    -   }
+                    - }
+                    small.text-muted #{requestDate}
+                  .request-actions
+                    //- Các nút giữ nguyên
+                    button.btn.btn-success.btn-sm.btn-accept-request(type="button", data-request-id=request._id.toString()) Chấp nhận
+                    button.btn.btn-danger.btn-sm.ms-2.btn-reject-request(type="button", data-request-id=request._id.toString()) Từ chối
+              //- === KẾT THÚC THAY THẾ ===
+        else
+          //- Nếu không: Hiển thị trạng thái rỗng
+          .modal-body(style="min-height: 200px;")
+            .d-flex.flex-column.justify-content-center.align-items-center.text-center.text-muted.h-100
+              i.fas.fa-inbox.fa-3x.mb-3.opacity-50
+              p Không có lời mời kết bạn nào
 
 block scripts
   script(src="/js/friends-chat.js")
+  script.
+    // Xử lý form gửi lời mời kết bạn bằng AJAX
+    const sendRequestForm = document.getElementById('sendRequestForm');
+    const addFriendUsernameInput = document.getElementById('addFriendUsername');
+    const addFriendError = document.getElementById('addFriendError');
+
+    if (sendRequestForm) {
+      sendRequestForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = addFriendUsernameInput.value.trim();
+        addFriendError.style.display = 'none'; // Ẩn lỗi cũ
+
+        if (!username) return;
+
+        try {
+          const response = await fetch('/friends/send-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username })
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showToast(data.message || 'Đã gửi lời mời!', 'Thành công', 'success');
+            const addFriendModal = bootstrap.Modal.getInstance(document.getElementById('addFriendModal'));
+            if (addFriendModal) addFriendModal.hide();
+            addFriendUsernameInput.value = ''; // Xóa input
+          } else {
+            addFriendError.textContent = data.message || 'Có lỗi xảy ra.';
+            addFriendError.style.display = 'block'; // Hiển thị lỗi
+          }
+        } catch (err) {
+          console.error("Lỗi gửi lời mời:", err);
+          addFriendError.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
+          addFriendError.style.display = 'block';
+        }
+      });
+    }
+
+    // Xử lý nút Chấp nhận/Từ chối lời mời bằng AJAX
+    const friendRequestsModalBody = document.querySelector('#friendRequestsModal .modal-body');
+    if (friendRequestsModalBody) {
+      friendRequestsModalBody.addEventListener('click', async (e) => {
+        const acceptButton = e.target.closest('.btn-accept-request');
+        const rejectButton = e.target.closest('.btn-reject-request');
+        let actionUrl = '';
+        let requestId = '';
+
+        if (acceptButton) {
+          actionUrl = '/friends/accept-request';
+          requestId = acceptButton.dataset.requestId;
+        } else if (rejectButton) {
+          actionUrl = '/friends/reject-request';
+          requestId = rejectButton.dataset.requestId;
+        } else {
+          return; // Không phải nút cần xử lý
+        }
+
+        if (!requestId || !actionUrl) return;
+
+        try {
+          const response = await fetch(actionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestId: requestId })
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showToast(data.message || 'Thao tác thành công!', 'Thông báo', 'success');
+            // Xóa item khỏi danh sách trong modal
+            const requestItem = friendRequestsModalBody.querySelector(`li[data-request-id="${requestId}"]`);
+            if (requestItem) {
+              requestItem.remove();
+            }
+            // Kiểm tra xem còn lời mời nào không
+            const listGroup = document.getElementById('requestListGroup');
+            if (listGroup && listGroup.children.length === 0) {
+              // Hiển thị lại trạng thái rỗng ĐÚNG CẤU TRÚC
+              friendRequestsModalBody.innerHTML = `
+                <div class="d-flex flex-column justify-content-center align-items-center text-center text-muted h-100">
+                  <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                  <p>Không có lời mời kết bạn nào</p>
+                </div>`;
+               // Đảm bảo modal-body vẫn có min-height
+               friendRequestsModalBody.style.minHeight = '200px';
+
+              // Ẩn badge đỏ
+              const badge = document.getElementById('friendRequestBadge');
+              if (badge) badge.style.display = 'none';
+            }
+
+
+            // Reload lại danh sách bạn bè nếu chấp nhận
+            if (actionUrl.includes('accept')) {
+              setTimeout(() => window.location.reload(), 1500);
+            }
+          } else {
+            showToast(data.message || 'Có lỗi xảy ra.', 'Lỗi', 'error');
+          }
+        } catch (err) {
+          console.error("Lỗi xử lý lời mời:", err);
+          showToast('Lỗi kết nối. Vui lòng thử lại.', 'Lỗi', 'error');
+        }
+      });
+    }
+
+    // Xóa lỗi khi modal Thêm bạn ẩn đi
+    const addFriendModalEl = document.getElementById('addFriendModal');
+    if (addFriendModalEl) {
+        addFriendModalEl.addEventListener('hidden.bs.modal', () => {
+            if (addFriendError) addFriendError.style.display = 'none';
+            if (addFriendUsernameInput) addFriendUsernameInput.value = '';
+        });
+    }
+
