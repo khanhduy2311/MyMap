@@ -1,0 +1,173 @@
+extends ./layouts/default.pug
+
+block styles
+  link(rel="stylesheet" href="/css/style-dashboard.css")
+  link(rel="stylesheet" href="/css/style-friends.css")
+
+block main
+  .dashboard-layout
+    aside.dashboard-sidebar
+      nav.sidebar-nav
+        ul
+          li
+            a(href="/dashboard" title="Danh sách Mindmap")
+              i.bi.bi-list-task
+              span Danh sách
+          li
+            a(href="/dashboard/folder" title="Thư mục")
+              i.fas.fa-folder-open 
+              span Thư mục
+          li
+            a(href="/dashboard/trash" title="Thùng rác")
+              i.fas.fa-trash
+              span Thùng rác
+          li
+            a(href="/friends" title="Bạn bè" class="active")
+              i.fas.fa-users
+              span Bạn bè
+
+    main.dashboard-content
+      .dashboard-header
+        h2.content-title
+          i.fas.fa-users.me-3
+          | Bạn bè & Tin nhắn
+
+      .friends-container
+        //- PHẦN KẾT BẠN
+        .friends-section.mb-4
+          .card
+            .card-header
+              h5.card-title.mb-0
+                i.fas.fa-user-plus.me-2
+                | Kết bạn
+            .card-body
+              form(action="/friends/send-request", method="POST")
+                .input-group
+                  input.form-control(
+                    type="text", 
+                    name="username", 
+                    placeholder="Nhập username để kết bạn", 
+                    required
+                  )
+                  button.btn.btn-primary(type="submit") 
+                    i.fas.fa-paper-plane.me-1
+                    | Gửi lời mời
+
+        //- PHẦN LỜI MỜI KẾT BẠN
+        .friends-section.mb-4
+          .card
+            .card-header
+              h5.card-title.mb-0
+                i.fas.fa-bell.me-2
+                | Lời mời kết bạn
+                if friendRequests && friendRequests.length > 0
+                  span.badge.bg-danger.ms-2 #{friendRequests.length}
+            .card-body
+              if friendRequests && friendRequests.length > 0
+                each request in friendRequests
+                  .friend-request-item.d-flex.justify-content-between.align-items-center.mb-3.p-3.border.rounded
+                    .request-info
+                      .d-flex.align-items-center
+                        .avatar-placeholder.me-3
+                          i.fas.fa-user-circle.fa-2x.text-primary
+                        .request-details
+                          strong #{request.senderUsername}
+                          br
+                          small.text-muted Gửi lúc: #{request.createdAt.toLocaleDateString('vi-VN')}
+                    .request-actions
+                      form.d-inline(action="/friends/accept-request", method="POST")
+                        input(type="hidden", name="requestId", value=request._id.toString())
+                        button.btn.btn-success.btn-sm(type="submit" title="Chấp nhận")
+                          i.fas.fa-check.me-1
+                          | Chấp nhận
+                      form.d-inline.ms-2(action="/friends/reject-request", method="POST")
+                        input(type="hidden", name="requestId", value=request._id.toString())
+                        button.btn.btn-danger.btn-sm(type="submit" title="Từ chối")
+                          i.fas.fa-times.me-1
+                          | Từ chối
+              else
+                .text-center.text-muted.py-4
+                  i.fas.fa-inbox.fa-3x.mb-3.opacity-50
+                  p.mb-0 Không có lời mời kết bạn nào
+
+        //- PHẦN DANH SÁCH BẠN BÈ
+        .friends-section.mb-4
+          .card
+            .card-header
+              h5.card-title.mb-0
+                i.fas.fa-users.me-2
+                | Danh sách bạn bè
+                if friends && friends.length > 0
+                  span.badge.bg-primary.ms-2 #{friends.length}
+            .card-body
+              if friends && friends.length > 0
+                .friends-list
+                  each friend in friends
+                    .friend-item.d-flex.justify-content-between.align-items-center.mb-3.p-3.border.rounded
+                      .friend-info
+                        .d-flex.align-items-center
+                          .avatar-placeholder.me-3
+                            i.fas.fa-user-circle.fa-2x.text-primary
+                          .friend-details
+                            strong #{friend.username}
+                            br
+                            small.text-muted #{friend.displayName || 'Chưa có tên hiển thị'}
+                      .friend-actions
+                        button.btn.btn-outline-primary.btn-sm.me-2(type="button" onclick=`startChat('${friend._id}')`)
+                          i.fas.fa-comment.me-1
+                          | Nhắn tin
+                        form.d-inline(action="/friends/remove", method="POST")
+                          input(type="hidden", name="friendId", value=friend._id.toString())
+                          button.btn.btn-outline-danger.btn-sm(type="submit" title="Xóa bạn")
+                            i.fas.fa-user-times.me-1
+                            | Xóa
+              else
+                .text-center.text-muted.py-4
+                  i.fas.fa-user-friends.fa-3x.mb-3.opacity-50
+                  p.mb-0 Bạn chưa có bạn bè nào
+                  p.small Hãy kết bạn để bắt đầu trò chuyện!
+
+        //- PHẦN CHAT (TÙY CHỌN - CÓ THỂ ẨN NẾU KHÔNG CẦN)
+        .friends-section
+          .card
+            .card-header
+              h5.card-title.mb-0
+                i.fas.fa-comments.me-2
+                | Nhắn tin với bạn bè
+            .card-body
+              .chat-layout
+                .chat-sidebar
+                  #userList.chat-user-list
+                    if friends && friends.length > 0
+                      each friend in friends
+                        .chat-user-item(
+                          data-user-id=friend._id
+                          data-username=friend.username
+                          onclick=`selectFriend('${friend._id}', '${friend.username}')`
+                        )
+                          i.fas.fa-user-circle.me-2
+                          | #{friend.username}
+                    else
+                      .text-center.text-muted.p-3
+                        i.fas.fa-user-friends.me-2
+                        | Chưa có bạn bè để nhắn tin
+                .chat-main
+                  .chat-header
+                    h6#chatWithHeader.mb-0 Chọn một người bạn để bắt đầu trò chuyện
+                  .chat-messages#messages
+                    .text-center.text-muted.p-4
+                      i.fas.fa-comments.fa-2x.mb-3.opacity-50
+                      p.mb-0 Chưa có tin nhắn nào
+                  .chat-input
+                    form#chatForm
+                      .input-group
+                        input#messageInput.form-control(
+                          type="text", 
+                          placeholder="Nhập tin nhắn...", 
+                          disabled
+                        )
+                        button.btn.btn-primary(type="submit" disabled)
+                          i.fas.fa-paper-plane
+
+block scripts
+  script(src="/js/friends-chat.js")

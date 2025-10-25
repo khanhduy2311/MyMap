@@ -7,6 +7,7 @@ html(lang="vi")
     link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css")
     link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css")
     link(rel="stylesheet", href="/css/style-main.css?v=1.1")
+    link(rel="stylesheet", href="/css/style-global-cursor.css")
     block styles
     title #{pageTitle} | MindTree
     //- Trong block head hoặc sau các link CSS
@@ -118,6 +119,7 @@ html(lang="vi")
     
 
     //- SCRIPTS
+    script(src="/socket.io/socket.io.js")
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js")
     block scripts
     script.
@@ -168,12 +170,14 @@ html(lang="vi")
         toastInstance.show();
       }
       // === KẾT THÚC HÀM TOAST ===
-
+      let searchInput = null;
+      let searchResults = null;
+      let debounceTimer;
 
       // Listener DOMContentLoaded giờ chỉ chứa logic chạy khi tải trang
       document.addEventListener('DOMContentLoaded', () => { 
         
-        // (Logic đóng alert cũ của bạn) [cite: 233]
+        // (Logic đóng alert cũ)
         const successAlert = document.querySelector('.alert-success');
         if (successAlert) {
           setTimeout(() => {
@@ -182,18 +186,18 @@ html(lang="vi")
           }, 2000);
         }
 
-        // (Logic gợi ý tìm kiếm của bạn) [cite: 234-245]
-        const searchInput = document.getElementById('searchInput');
-        const searchResults = document.getElementById('search-results');
-        let debounceTimer;
+        // (Logic gợi ý tìm kiếm)
+        // 2. Gán giá trị cho biến, không dùng const
+        searchInput = document.getElementById('searchInput');
+        searchResults = document.getElementById('search-results');
+        
         if (searchInput && searchResults) {
-          // ... (toàn bộ code gợi ý tìm kiếm giữ nguyên) ...
           searchInput.addEventListener('input', () => {
             clearTimeout(debounceTimer); 
             const query = searchInput.value.trim();
 
             if (query.length < 2) { 
-              searchResults.style.display = 'none'; 
+              searchResults.style.display = 'none';
               return;
             }
             
@@ -211,7 +215,6 @@ html(lang="vi")
                 .then(res => res.json())
                 .then(suggestions => {
                   searchResults.innerHTML = ''; 
-
                   if (suggestions.length === 0) {
                     searchResults.style.display = 'none';
                     return;
@@ -226,40 +229,34 @@ html(lang="vi")
 
                   searchResults.style.display = 'block';
                   searchInput.closest('.search-box-compact').classList.add('active');
-
                 })
                 .catch(err => {
                   console.error('Lỗi fetch gợi ý:', err);
                   searchResults.style.display = 'none'; 
                   searchInput.closest('.search-box-compact').classList.remove('active');
-
                 });
             }, 300); 
           });
-          
-          document.addEventListener('click', (event) => {
-            if (!searchInput.contains(event.target)) {
-              searchResults.style.display = 'none';
-            }
-          }); 
-        }
+          // (Không cần listener click ở đây nữa)
+        } // kết thúc if (searchInput && searchResults)
 
         // === TỰ ĐỘNG HIỂN THỊ TOAST TỪ FLASH MESSAGES ===
-        // (Logic này giữ nguyên, nó vẫn cần chạy sau khi DOM load)
         const flashSuccess = #{success_msg ? JSON.stringify(success_msg) : 'null'}; 
-        const flashError = #{error_msg ? JSON.stringify(error_msg) : 'null'}; 
-        
+        const flashError = #{error_msg ? JSON.stringify(error_msg) : 'null'};
         if (flashSuccess && flashSuccess.length > 0) { 
-          showToast(flashSuccess[0], 'Thành công', 'success'); 
+          showToast(flashSuccess[0], 'Thành công', 'success');
         }
         
         if (flashError && flashError.length > 0) { 
           showToast(flashError[0], 'Lỗi', 'error');
         } 
-      });
+      }); // kết thúc DOMContentLoaded
+
+      // 3. Thêm kiểm tra IF ở đây cho listener 'click' toàn trang
       document.addEventListener('click', (event) => {
-        if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+        // Chỉ chạy nếu searchInput và searchResults TỒN TẠI
+        if (searchInput && searchResults && !searchInput.contains(event.target) && !searchResults.contains(event.target)) {
           searchResults.style.display = 'none';
           searchInput.closest('.search-box-compact').classList.remove('active');
         }
-      }); 
+      });

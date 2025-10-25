@@ -36,4 +36,25 @@ router.get('/about', (req, res) => {
         user: req.user
     });
 });
+router.get('/chat', authMiddleware.checkLoggedIn, async (req, res) => {
+  try {
+    const usersDb = req.app.locals.usersDb;
+    const { ObjectId } = require('mongodb'); // Đảm bảo bạn đã require ObjectId
+
+    // Lấy tất cả user khác trừ bản thân
+    const users = await usersDb.collection('users').find({
+      _id: { $ne: new ObjectId(req.session.user._id) }
+    }).project({ username: 1, avatar: 1 }).toArray(); // Chỉ lấy thông tin cần thiết
+
+    res.render('chat', { 
+      pageTitle: 'Trò chuyện',
+      allUsers: users,
+      showSearch: false // Ẩn thanh tìm kiếm trên header
+    });
+  } catch (error) {
+    console.error("Lỗi khi tải trang chat:", error);
+    req.flash('error_msg', 'Không thể tải danh sách người dùng.');
+    res.redirect('/dashboard');
+  }
+});
 module.exports = router;

@@ -25,8 +25,6 @@ block main
           "isFirstLogin": #{user.isFirstLogin || false}
         }
 
-  //- Custom cursor elements - ĐẶT Ở ĐẦU ĐỂ ĐẢM BẢO HIỆN THỊ
-  
   //- NỘI DUNG DASHBOARD (ban đầu ẩn nếu có màn hình chào mừng)
   .dashboard-layout(class=!currentFolder && !searchQuery && user.isFirstLogin ? 'initially-hidden' : '')
     aside.dashboard-sidebar
@@ -50,6 +48,12 @@ block main
             a(href="/dashboard/trash" title="Thùng rác")
               i.fas.fa-trash
               span Thùng rác
+
+          //- Thêm menu bạn bè
+          li
+            a(href="/friends" title="Bạn bè")
+              i.fas.fa-users
+              span Bạn bè
     
         
     main.dashboard-content
