@@ -380,73 +380,169 @@ function extractJson(text) {
 }
 
 // ========== JSON VALIDATION FUNCTION ==========
+// VALIDATION ĐÃ SỬA - ĐƠN GIẢN VÀ RÕ RÀNG:
 function validateJsonStructure(parsedJson) {
-  return parsedJson && // Thêm kiểm tra null/undefined
-         typeof parsedJson === 'object' && // Đảm bảo là object
-         parsedJson.mainTopic && typeof parsedJson.mainTopic === 'string' &&
-         Array.isArray(parsedJson.subTopics) &&
-         parsedJson.summary && typeof parsedJson.summary === 'string' &&
-         parsedJson.subTopics.every(sub =>
-             sub && typeof sub.chapterTitle === 'string' && // Thêm kiểm tra sub
-             Array.isArray(sub.mainSections) &&
-             sub.mainSections.every(main =>
-                 main && typeof main.title === 'string' && // Thêm kiểm tra main
-                 Array.isArray(main.subsections) &&
-                 (main.subsections.length > 0 ?
-                     main.subsections.every(subsec =>
-                         subsec && typeof subsec.subtitle === 'string' && // Thêm kiểm tra subsec
-                         Array.isArray(subsec.points) &&
-                         subsec.points.length > 0 &&
-                         subsec.points.every(p => typeof p === 'string' && p.trim() !== '')
-                     ) :
-                     (Array.isArray(main.points) && main.points.length > 0 && main.points.every(p => typeof p === 'string' && p.trim() !== '')))
-         )
-     );
-}
+  if (!parsedJson || typeof parsedJson !== 'object') {
+    return false;
+  }
 
+  // Kiểm tra các trường bắt buộc
+  if (typeof parsedJson.mainTopic !== 'string' || !parsedJson.mainTopic.trim()) {
+    return false;
+  }
+
+  if (!Array.isArray(parsedJson.subTopics)) {
+    return false;
+  }
+
+  // Kiểm tra từng subTopic
+  for (const subTopic of parsedJson.subTopics) {
+    if (!subTopic || typeof subTopic.chapterTitle !== 'string') {
+      return false;
+    }
+
+    if (!Array.isArray(subTopic.mainSections)) {
+      return false;
+    }
+
+    // Kiểm tra từng mainSection
+    for (const mainSection of subTopic.mainSections) {
+      if (!mainSection || typeof mainSection.title !== 'string') {
+        return false;
+      }
+
+      if (!Array.isArray(mainSection.subsections)) {
+        return false;
+      }
+
+      // Kiểm tra từng subsection
+      for (const subsection of mainSection.subsections) {
+        if (!subsection || typeof subsection.subtitle !== 'string') {
+          return false;
+        }
+
+        if (!Array.isArray(subsection.points) || subsection.points.length === 0) {
+          return false;
+        }
+
+        // Kiểm tra từng point
+        for (const point of subsection.points) {
+          if (typeof point !== 'string' || !point.trim()) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+  if (typeof parsedJson.summary !== 'string') {
+    return false;
+  }
+
+  return true;
+}
+// FALLBACK ĐÃ CẢI THIỆN:
+function createSimpleFallback(chunk, chunkIndex) {
+  // Trích xuất các dòng có số/chữ cái làm đề mục
+  const lines = chunk.split('\n').filter(line => line.trim());
+  const mainTopic = lines[0]?.replace(/^#+\s*/, '') || `Phần ${chunkIndex + 1}`;
+  
+  const subTopics = [];
+  let currentChapter = null;
+  
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    
+    // Phát hiện chương/mục chính (có số La Mã, số, chữ cái)
+    if (trimmed.match(/^(Chương|Phần|CHƯƠNG|PHẦN)\s+[0-9IVXLC]/i) || 
+        trimmed.match(/^[IVXLC]+\./) ||
+        trimmed.match(/^[0-9]+\./)) {
+      
+      if (currentChapter) {
+        subTopics.push(currentChapter);
+      }
+      
+      currentChapter = {
+        chapterTitle: trimmed,
+        mainSections: []
+      };
+    }
+    // Phát hiện mục con
+    else if (trimmed.match(/^[0-9]+\.[0-9]+/) || trimmed.match(/^[a-z]\)/i)) {
+      if (currentChapter) {
+        currentChapter.mainSections.push({
+          title: trimmed,
+          subsections: [{
+            subtitle: "Nội dung chi tiết",
+            points: [trimmed + " - chi tiết đang được phân tích..."]
+          }]
+        });
+      }
+    }
+  });
+  
+  if (currentChapter) {
+    subTopics.push(currentChapter);
+  }
+  
+  // Nếu không tìm thấy cấu trúc, tạo fallback đơn giản
+  if (subTopics.length === 0) {
+    subTopics.push({
+      chapterTitle: "Nội dung chính",
+      mainSections: [{
+        title: "Thông tin tổng hợp",
+        subsections: [{
+          subtitle: "Chi tiết",
+          points: [chunk.substring(0, 300) + "..."]
+        }]
+      }]
+    });
+  }
+  
+  return {
+    mainTopic: mainTopic,
+    subTopics: subTopics,
+    summary: `Tóm tắt phần ${chunkIndex + 1}: ${chunk.substring(0, 150)}...`
+  };
+}
 // SỬA ĐỔI: Dùng hàm `extractJson`
 // ========== IMPROVED CHUNK ANALYSIS WITH BETTER PROMPT ==========
 async function analyzeChunkSimple(chunk, chunkIndex, totalChunks) {
   console.log(`Analyzing chunk ${chunkIndex + 1}/${totalChunks}...`);
 
-  const prompt = `BẮT BUỘC: Bạn PHẢI trả về DUY NHẤT một JSON object hợp lệ, KHÔNG có bất kỳ text nào khác.
-
-YÊU CẦU QUAN TRỌNG:
-1. GIỮ NGUYÊN hệ thống đánh số, ký hiệu đề mục (Chương, Phần, I, 1, a, ...) từ văn bản gốc
-2. Mỗi subsection PHẢI có ít nhất 1 point chứa nội dung thực tế
-3. KHÔNG được bỏ qua bất kỳ đề mục nào trong văn bản
-
-PHÂN TÍCH VĂN BẢN SAU VÀ TRẢ VỀ JSON THEO CẤU TRÚC:
+  // PROMPT ĐƠN GIẢN VÀ RÕ RÀNG HƠN
+  const prompt = `PHÂN TÍCH VĂN BẢN VÀ TRẢ VỀ JSON THEO ĐÚNG CẤU TRÚC SAU:
 
 {
-  "mainTopic": "Tên chủ đề chính của phần này",
+  "mainTopic": "chủ đề chính",
   "subTopics": [
     {
-      "chapterTitle": "Tên chương/phần (giữ nguyên số và ký hiệu)",
+      "chapterTitle": "tên chương",
       "mainSections": [
         {
-          "title": "Tiêu đề mục chính (giữ nguyên số)",
+          "title": "tiêu đề mục",
           "subsections": [
             {
-              "subtitle": "Tiêu đề mục phụ (giữ nguyên số)",
-              "points": ["Nội dung chính 1", "Nội dung chính 2", "Nội dung chính 3"]
+              "subtitle": "tiêu đề mục con", 
+              "points": ["nội dung 1", "nội dung 2"]
             }
           ]
         }
       ]
     }
   ],
-  "summary": "Tóm tắt ngắn nội dung phần này"
+  "summary": "tóm tắt ngắn"
 }
 
-VĂN BẢN CẦN PHÂN TÍCH:
----
+VĂN BẢN:
 ${chunk}
----
 
-CHÚ Ý: Nếu không tìm thấy cấu trúc rõ ràng, hãy tạo cấu trúc hợp lý từ nội dung. LUÔN trả về JSON hợp lệ.`;
+QUY TẮC:
+- GIỮ NGUYÊN số và ký hiệu đề mục (Chương 1, 1.1, a, ...)
+- Mỗi subsection phải có ít nhất 1 point
+- CHỈ TRẢ VỀ JSON, KHÔNG TEXT NÀO KHÁC`;
 
-  // Retry logic với nhiều lần thử
+  // Retry logic
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       console.log(`Attempt ${attempt + 1} for chunk ${chunkIndex + 1}`);
@@ -458,27 +554,20 @@ CHÚ Ý: Nếu không tìm thấy cấu trúc rõ ràng, hãy tạo cấu trúc 
         throw new Error('Empty response from AI');
       }
 
-      // Sử dụng hàm extractJson cải tiến
+      console.log(`Raw AI response for chunk ${chunkIndex + 1}:`, rawText.substring(0, 200) + '...');
+
+      // Sử dụng hàm extractJson
       const parsedJson = extractJson(rawText);
       
       if (parsedJson && validateJsonStructure(parsedJson)) {
         console.log(`✓ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} SUCCESS`);
         
-        // Clean up data
-        parsedJson.subTopics.forEach(sub => {
-          sub.mainSections.forEach(main => {
-            if (main.points) {
-              main.points = main.points.map(p => String(p).trim()).filter(Boolean);
-            }
-            main.subsections.forEach(subsec => {
-              subsec.points = subsec.points.map(p => String(p).trim()).filter(Boolean);
-            });
-          });
-        });
-        
-        return parsedJson;
+        // Clean up và validate data
+        return cleanAndValidateJson(parsedJson);
       } else {
         console.warn(`⚠️ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} JSON validation failed`);
+        console.log('Parsed JSON:', parsedJson);
+        
         if (attempt < 2) {
           await new Promise(resolve => setTimeout(resolve, 1000));
           continue;
@@ -493,24 +582,204 @@ CHÚ Ý: Nếu không tìm thấy cấu trúc rõ ràng, hãy tạo cấu trúc 
     }
   }
 
-  // Fallback structure nếu tất cả retry đều thất bại
-  console.log(`🔄 Using fallback structure for chunk ${chunkIndex + 1}`);
-  return {
-    mainTopic: `Phần ${chunkIndex + 1}`,
-    subTopics: [{
+  // Fallback thông minh
+  console.log(`🔄 Using intelligent fallback for chunk ${chunkIndex + 1}`);
+  return createSimpleFallback(chunk, chunkIndex);
+}
+
+// Hàm làm sạch và validate JSON
+function cleanAndValidateJson(parsedJson) {
+  // Đảm bảo mainTopic có giá trị
+  if (!parsedJson.mainTopic || parsedJson.mainTopic.trim() === '') {
+    parsedJson.mainTopic = "Chủ đề chính";
+  }
+
+  // Đảm bảo subTopics là array
+  if (!Array.isArray(parsedJson.subTopics)) {
+    parsedJson.subTopics = [];
+  }
+
+  // Làm sạch từng subTopic
+  parsedJson.subTopics = parsedJson.subTopics.map(subTopic => {
+    if (!subTopic || typeof subTopic !== 'object') {
+      return {
+        chapterTitle: "Chương không xác định",
+        mainSections: []
+      };
+    }
+
+    // Đảm bảo chapterTitle có giá trị
+    if (!subTopic.chapterTitle || subTopic.chapterTitle.trim() === '') {
+      subTopic.chapterTitle = "Chương không có tiêu đề";
+    }
+
+    // Đảm bảo mainSections là array
+    if (!Array.isArray(subTopic.mainSections)) {
+      subTopic.mainSections = [];
+    }
+
+    // Làm sạch từng mainSection
+    subTopic.mainSections = subTopic.mainSections.map(mainSection => {
+      if (!mainSection || typeof mainSection !== 'object') {
+        return {
+          title: "Mục không xác định",
+          subsections: []
+        };
+      }
+
+      // Đảm bảo title có giá trị
+      if (!mainSection.title || mainSection.title.trim() === '') {
+        mainSection.title = "Mục không có tiêu đề";
+      }
+
+      // Đảm bảo subsections là array
+      if (!Array.isArray(mainSection.subsections)) {
+        mainSection.subsections = [];
+      }
+
+      // Làm sạch từng subsection
+      mainSection.subsections = mainSection.subsections.map(subsection => {
+        if (!subsection || typeof subsection !== 'object') {
+          return {
+            subtitle: "Mục con không xác định",
+            points: ["Nội dung không xác định"]
+          };
+        }
+
+        // Đảm bảo subtitle có giá trị
+        if (!subsection.subtitle || subsection.subtitle.trim() === '') {
+          subsection.subtitle = "Mục con không có tiêu đề";
+        }
+
+        // Đảm bảo points là array và có ít nhất 1 point
+        if (!Array.isArray(subsection.points) || subsection.points.length === 0) {
+          subsection.points = ["Nội dung đang được cập nhật"];
+        }
+
+        // Làm sạch từng point
+        subsection.points = subsection.points
+          .map(point => String(point).trim())
+          .filter(point => point !== '');
+
+        // Nếu sau khi filter không còn point nào, thêm point mặc định
+        if (subsection.points.length === 0) {
+          subsection.points = ["Thông tin chi tiết"];
+        }
+
+        return subsection;
+      });
+
+      return mainSection;
+    });
+
+    return subTopic;
+  });
+
+  // Đảm bảo summary có giá trị
+  if (!parsedJson.summary || parsedJson.summary.trim() === '') {
+    parsedJson.summary = "Tóm tắt nội dung";
+  }
+
+  return parsedJson;
+}
+
+// Hàm fallback thông minh
+function createSimpleFallback(chunk, chunkIndex) {
+  const lines = chunk.split('\n').filter(line => line.trim());
+  
+  // Tìm main topic từ dòng đầu tiên có # hoặc dòng đầu tiên
+  let mainTopic = "Nội dung chính";
+  for (const line of lines) {
+    if (line.trim().startsWith('# ')) {
+      mainTopic = line.replace(/^#+\s*/, '').trim();
+      break;
+    }
+    if (line.trim().length > 10) {
+      mainTopic = line.trim().substring(0, 50) + '...';
+      break;
+    }
+  }
+
+  const subTopics = [];
+  let currentChapter = null;
+  
+  // Phân tích cấu trúc văn bản
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    
+    // Phát hiện chương (có số, chữ số La Mã, etc.)
+    if (trimmed.match(/^(Chương|Phần|Chapter|Part)\s*[0-9IVXLC]/i) || 
+        trimmed.match(/^[IVXLC]+\./) ||
+        trimmed.match(/^[0-9]+\.\s/)) {
+      
+      if (currentChapter) {
+        subTopics.push(currentChapter);
+      }
+      
+      currentChapter = {
+        chapterTitle: trimmed,
+        mainSections: []
+      };
+    }
+    // Phát hiện mục chính (1.1, 2.3, etc.)
+    else if (trimmed.match(/^[0-9]+\.[0-9]+/)) {
+      if (currentChapter) {
+        currentChapter.mainSections.push({
+          title: trimmed,
+          subsections: [{
+            subtitle: "Chi tiết",
+            points: [trimmed + " - nội dung đang được phân tích"]
+          }]
+        });
+      }
+    }
+    // Phát hiện mục con (a, b, c hoặc - *)
+    else if (trimmed.match(/^[a-z]\)/i) || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+      if (currentChapter && currentChapter.mainSections.length > 0) {
+        const lastSection = currentChapter.mainSections[currentChapter.mainSections.length - 1];
+        lastSection.subsections.push({
+          subtitle: "Mục con",
+          points: [trimmed.replace(/^[-*]\s*/, '')]
+        });
+      }
+    }
+  });
+  
+  // Thêm chapter cuối cùng
+  if (currentChapter) {
+    subTopics.push(currentChapter);
+  }
+  
+  // Nếu không tìm thấy cấu trúc, tạo fallback cơ bản
+  if (subTopics.length === 0) {
+    const points = lines
+      .slice(0, 5)
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith('#') && line.length > 5)
+      .slice(0, 3);
+    
+    if (points.length === 0) {
+      points.push(chunk.substring(0, 100) + '...');
+    }
+    
+    subTopics.push({
       chapterTitle: "Nội dung chính",
       mainSections: [{
         title: "Thông tin tổng hợp",
         subsections: [{
-          subtitle: "Nội dung chi tiết",
-          points: [chunk.substring(0, 500) + "..."]
+          subtitle: "Chi tiết",
+          points: points
         }]
       }]
-    }],
-    summary: `Nội dung phần ${chunkIndex + 1}: ${chunk.substring(0, 200)}...`
+    });
+  }
+  
+  return {
+    mainTopic: mainTopic,
+    subTopics: subTopics,
+    summary: `Phần ${chunkIndex + 1}: ${chunk.substring(0, 100)}...`
   };
 }
-
 // ========== OPTIMIZED CHUNK PROCESSING ==========
 async function processSingleChunk(chunk, chunkIndex, totalChunks, sse) {
   const progressData = {

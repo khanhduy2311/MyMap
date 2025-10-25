@@ -7,7 +7,7 @@ const { MongoClient } = require('mongodb');
 const MongoStore = require('connect-mongo');
 const http = require('http');
 const { Server } = require("socket.io");
-
+const cors = require('cors');
 // ====== Routes ======
 const authRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document');
@@ -35,6 +35,12 @@ async function startServer() {
     const chatDb = client.db('chat_storage');
 
     const app = express();
+     app.use(cors({
+      origin: 'http://localhost:3001',  // ✅ địa chỉ frontend React
+      credentials: true,                // ✅ cho phép gửi cookie/session
+      methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    }));
     const PORT = process.env.PORT || 3000;
     const server = http.createServer(app);
     
@@ -71,7 +77,8 @@ async function startServer() {
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         secure: process.env.NODE_ENV === 'production', // HTTPS trong production
-        httpOnly: true
+        httpOnly: true,
+        sameSite: 'none' 
       }
     });
 
@@ -104,8 +111,7 @@ async function startServer() {
     app.use('/upload', documentRoutes);
     app.use('/mindmaps', mindmapRoutes);
     app.use('/', authRoutes);
-
-    // === ROUTE CHÍNH ===
+        // === ROUTE CHÍNH ===
     app.get('/', (req, res) => {
       if (req.session.user) {
         res.redirect('/dashboard');

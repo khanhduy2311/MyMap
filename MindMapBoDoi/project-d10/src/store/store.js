@@ -6,11 +6,9 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
-  // ✨ 1. Import thêm `getConnectedEdges`
   getConnectedEdges,
 } from '@xyflow/react'
 
-// --- (Default Styles, Initial State, ID Generation, Layout... giữ nguyên) ---
 // --- Default Styles ---
 const defaultNodeStyle = {
   backgroundColor: '#fff',
@@ -35,7 +33,7 @@ const initialNodes = [
     type: 'custom',
     position: { x: 0, y: 0 },
     draggable: true,
-    selectable: true, // ✨ THÊM: Mặc định
+    selectable: true,
     data: {
       label: 'Node Đầu Tiên',
       style: { ...defaultNodeStyle, backgroundColor: '#a2e9ff' },
@@ -52,7 +50,56 @@ const getNextId = (nodes) => {
   return (maxId + 1).toString()
 }
 
-// --- HÀM LAYOUT (Phiên bản LR đơn giản, hoạt động 100%) ---
+// --- HÀM VALIDATE DATA QUAN TRỌNG ---
+const validateAndFixNodes = (nodes) => {
+  if (!Array.isArray(nodes)) return initialNodes;
+  
+  return nodes.map((node, index) => {
+    // Đảm bảo node có ID hợp lệ
+    const validId = node.id && typeof node.id === 'string' ? node.id : `node-${index}`;
+    
+    // Đảm bảo position có giá trị số hợp lệ, không phải NaN
+    const validPosition = {
+      x: Number.isFinite(node.position?.x) ? node.position.x : index * 200,
+      y: Number.isFinite(node.position?.y) ? node.position.y : index * 100
+    };
+
+    // Đảm bảo data có cấu trúc hợp lệ
+    const validData = {
+      label: node.data?.label || `Node ${validId}`,
+      style: { ...defaultNodeStyle, ...node.data?.style },
+      ...node.data
+    };
+
+    return {
+      id: validId,
+      type: node.type || 'custom',
+      position: validPosition,
+      draggable: node.draggable !== undefined ? node.draggable : true,
+      selectable: node.selectable !== undefined ? node.selectable : true,
+      data: validData,
+      ...node
+    };
+  });
+};
+
+const validateAndFixEdges = (edges) => {
+  if (!Array.isArray(edges)) return [];
+  
+  return edges.map((edge, index) => ({
+    id: edge.id || `edge-${index}`,
+    source: edge.source || '',
+    target: edge.target || '',
+    type: edge.type || 'default',
+    style: { strokeWidth: 2, stroke: '#888', ...edge.style },
+    label: edge.label || '',
+    labelBgStyle: { fill: '#fff', fillOpacity: 0.7, ...edge.labelBgStyle },
+    labelStyle: { fontSize: 12, fontWeight: 500, ...edge.labelStyle },
+    ...edge
+  })).filter(edge => edge.source && edge.target);
+};
+
+// --- HÀM LAYOUT ---
 const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
@@ -60,7 +107,6 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   dagreGraph.setGraph({ rankdir: direction, nodesep: 100, ranksep: 150 })
 
   nodes.forEach((node) => {
-    // ✨ SỬA: Đọc width/height từ data.style HOẶC data
     const w = node.data.style?.width || node.data.width || 180;
     const h = node.data.style?.height || node.data.height || 50;
     const nodeWidth = parseInt(w, 10);
@@ -76,7 +122,6 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 
   const layoutedNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id)
-    // ✨ SỬA: Đọc width/height từ data.style HOẶC data
     const w = node.data.style?.width || node.data.width || 180;
     const h = node.data.style?.height || node.data.height || 50;
     const nodeWidth = parseInt(w, 10);
@@ -91,7 +136,7 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
         y: nodeWithPosition.y - nodeHeight / 2,
       },
       draggable: true, 
-      selectable: true, // ✨ THÊM: Đảm bảo layout xong vẫn chọn được
+      selectable: true,
     }
   })
 
@@ -119,7 +164,38 @@ const storeCreator = (set, get) => ({
   activeDrawAreaId: null,
   currentDrawTool: { mode: 'cursor' }, 
 
-  // --- (Các hàm handler cũ: onNodesChange, onEdgesChange... giữ nguyên) ---
+  // --- QUAN TRỌNG: Sửa hàm loadState ---
+  loadState: (newState) => {
+    if (newState && Array.isArray(newState.nodes) && Array.isArray(newState.edges)) {
+      // VALIDATE và FIX data trước khi load
+      const validatedNodes = validateAndFixNodes(newState.nodes);
+      const validatedEdges = validateAndFixEdges(newState.edges);
+      
+      console.log('Loading validated nodes:', validatedNodes);
+      console.log('Loading validated edges:', validatedEdges);
+
+      set({
+        nodes: validatedNodes,
+        edges: validatedEdges,
+        selectedNodeId: null,
+        selectedEdgeId: null,
+        selectedNodeIds: [], 
+        needsFitView: true,
+      })
+    } else {
+      console.error('Failed to load invalid state:', newState)
+      // Fallback đơn giản - dùng initialNodes
+      set({
+        nodes: initialNodes,
+        edges: [],
+        selectedNodeId: null,
+        selectedEdgeId: null,
+        selectedNodeIds: [], 
+        needsFitView: true,
+      });
+    }
+  },
+
   onNodesChange: (changes) => {
     const { nodes } = get()
     let nextNodes = applyNodeChanges(changes, nodes)
@@ -134,7 +210,8 @@ const storeCreator = (set, get) => ({
     
     set({ nodes: nextNodes })
   },
-onEdgesChange: (changes) => {
+
+  onEdgesChange: (changes) => {
     const nextEdges = applyEdgeChanges(changes, get().edges);
     
     const selectionChange = changes.find(c => c.type === 'select' && c.selected === false);
@@ -142,7 +219,9 @@ onEdgesChange: (changes) => {
       set({ selectedEdgeId: null, edgeToolbarPosition: null });
     }
     set({ edges: nextEdges });
-  },  onConnect: (connection) => {
+  },
+
+  onConnect: (connection) => {
     const newEdge = {
       ...connection,
       type: 'default', 
@@ -155,27 +234,12 @@ onEdgesChange: (changes) => {
     set({ edges: addEdge(newEdge, get().edges) })
   },
 
-  // --- (Các hàm UI control cũ: loadState, setSelectedNodeId... giữ nguyên) ---
-  loadState: (newState) => {
-    if (newState && Array.isArray(newState.nodes) && Array.isArray(newState.edges)) {
-      set({
-        nodes: newState.nodes,
-        edges: newState.edges,
-        selectedNodeId: null,
-        selectedEdgeId: null,
-        selectedNodeIds: [], 
-        needsFitView: true,
-      })
-    } else {
-      console.error('Failed to load invalid state:', newState)
-      alert('Không thể tải file: Dữ liệu không hợp lệ.')
-    }
-  },
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }), 
   toggleMiniMap: () => set((state) => ({ isMiniMapVisible: !state.isMiniMapVisible })),
   setNeedsFitView: (value) => set({ needsFitView: value }),
   toggleSearchVisible: () => set((state) => ({ isSearchVisible: !state.isSearchVisible })),
-setSelectedEdgeId: (edgeId, position = null) => {
+  
+  setSelectedEdgeId: (edgeId, position = null) => {
     set({
       selectedEdgeId: edgeId,
       edgeToolbarPosition: position,
@@ -185,7 +249,8 @@ setSelectedEdgeId: (edgeId, position = null) => {
       }))
     });
   },  
-setSelectedNodeIds: (ids) => {
+  
+  setSelectedNodeIds: (ids) => {
     set({
       selectedNodeIds: ids,
       nodes: get().nodes.map(node => ({
@@ -194,11 +259,11 @@ setSelectedNodeIds: (ids) => {
       }))
     });
   },  
+  
   toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
   setBackgroundVariant: (variant) => set({ backgroundVariant: variant }),
   setPatternColor: (color) => set({ patternColor: color }),
  
-  // ✨ SỬA: Cập nhật `draggable` VÀ `selectable` của node khi đổi mode
   setAppMode: (mode) => {
       let nextTool = { mode: 'cursor' }; 
       let nextActiveId = null; 
@@ -208,20 +273,18 @@ setSelectedNodeIds: (ids) => {
       }
       
       const nextNodes = get().nodes.map(n => {
-        // Cập nhật 'custom' nodes
         if (n.type === 'custom') {
           return { 
             ...n, 
-            draggable: mode === 'normal', // Chỉ kéo được ở 'normal'
-            selectable: mode === 'normal' // ✨ Chỉ chọn được ở 'normal'
+            draggable: mode === 'normal',
+            selectable: mode === 'normal'
           };
         }
-        // Cập nhật 'drawArea' nodes
         if (n.type === 'drawArea') {
            return { 
              ...n, 
-             draggable: mode === 'canvasMode', // (sẽ bị useEffect ghi đè)
-             selectable: mode === 'canvasMode' // ✨ Chỉ chọn được ở 'canvasMode'
+             draggable: mode === 'canvasMode',
+             selectable: mode === 'canvasMode'
            };
         }
         return n;
@@ -231,20 +294,22 @@ setSelectedNodeIds: (ids) => {
           appMode: mode,
           currentDrawTool: nextTool,
           activeDrawAreaId: nextActiveId,
-          nodes: nextNodes, // ✨ Áp dụng node mới
+          nodes: nextNodes,
       });
    },
-   // (Các hàm khác giữ nguyên)
-  setCurrentDrawTool: (tool) => {
+
+   setCurrentDrawTool: (tool) => {
      const nextActiveId = (tool.mode === 'cursor') ? null : get().activeDrawAreaId;
      set({ 
        currentDrawTool: tool,
        activeDrawAreaId: nextActiveId 
      });
    },
+
    setActiveDrawArea: (id) => {
      set({ activeDrawAreaId: id });
    },
+
   setNodeDraggable: (nodeId, draggable) => {
     set({
       nodes: get().nodes.map((node) =>
@@ -260,8 +325,8 @@ setSelectedNodeIds: (ids) => {
       id: newNodeId,
       type: 'custom',
       position: { x: Math.random() * 400, y: Math.random() * 400 },
-      draggable: true, // Mặc định là true (vì đang ở 'normal' mode)
-      selectable: true, // Mặc định là true
+      draggable: true,
+      selectable: true,
       data: {
         label: `Node ${newNodeId}`,
         style: { ...defaultNodeStyle, backgroundColor: '#ffc9c9', ...customStyle },
@@ -274,10 +339,10 @@ setSelectedNodeIds: (ids) => {
     const newNodeId = getNextId(get().nodes)
     const newNode = {
       id: newNodeId,
-      type: 'drawArea', // Type mới
+      type: 'drawArea',
       position,
-      draggable: false, // Mới tạo, ở 'normal' mode -> không kéo được
-      selectable: false, // Mới tạo, ở 'normal' mode -> không chọn được
+      draggable: false,
+      selectable: false,
       data: {
         style: { 
           width: size.width, 
@@ -288,9 +353,8 @@ setSelectedNodeIds: (ids) => {
     }
     set({ nodes: [...get().nodes, newNode] })
   },
-  // --- (Hàm addMindMapNode giữ nguyên) ---
+
   addMindMapNode: (sourceNode, direction) => {
-    // ... (logic giữ nguyên)
     const { nodes, edges } = get() 
     const newNodeId = getNextId(nodes)
     const nodeWidth = parseInt(sourceNode.data.style.width, 10) || 180;
@@ -305,7 +369,7 @@ setSelectedNodeIds: (ids) => {
         y: sourceNode.position.y,
       },
       draggable: true, 
-      selectable: true, // ✨ THÊM
+      selectable: true,
       data: {
         label: `Node ${newNodeId}`,
         style: { ...defaultNodeStyle, backgroundColor: '#f1f1f1' },
@@ -329,7 +393,6 @@ setSelectedNodeIds: (ids) => {
     })
   },
 
-  // (Các hàm còn lại: updateNodeSize, updateNodeData, deleteElements... giữ nguyên)
   updateNodeSize: (nodeId, size) => {
     set({
       nodes: get().nodes.map((node) =>
@@ -345,6 +408,7 @@ setSelectedNodeIds: (ids) => {
       ),
     })
   },
+
   updateNodeData: (nodeId, newData) => {
     set({
       nodes: get().nodes.map((node) => {
@@ -360,6 +424,7 @@ setSelectedNodeIds: (ids) => {
       }),
     })
   },
+
   toggleNodeStyle: (nodeId, styleKey) => {
     const node = get().nodes.find((n) => n.id === nodeId)
     if (!node) return
@@ -371,6 +436,7 @@ setSelectedNodeIds: (ids) => {
     }
     get().updateNodeData(nodeId, { style: { [styleKey]: newValue } })
   },
+
   updateEdgeLabel: (edgeId, label) => {
     set({
       edges: get().edges.map((edge) =>
@@ -378,6 +444,7 @@ setSelectedNodeIds: (ids) => {
       ),
     })
   },
+
   updateEdgeData: (edgeId, data) => {
     const { style, ...restData } = data; 
     set({
@@ -392,6 +459,7 @@ setSelectedNodeIds: (ids) => {
       ),
     })
   },
+
   updateOutgoingEdges: (nodeId, data) => {
     const { style, ...restData } = data;
     set({
@@ -402,6 +470,7 @@ setSelectedNodeIds: (ids) => {
       ),
     })
   },
+
   updateIncomingEdge: (nodeId, data) => {
     const { style, ...restData } = data;
     set({
@@ -412,6 +481,7 @@ setSelectedNodeIds: (ids) => {
       ),
     })
   },
+
   runAutoLayout: () => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       get().nodes,
@@ -424,12 +494,14 @@ setSelectedNodeIds: (ids) => {
       needsFitView: true, 
     })
   },
+
   copyNodes: () => {
     const { nodes, selectedNodeIds } = get();
     const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
     clipboard = selectedNodes.map(n => ({ ...n, selected: false }));
     console.log('Copied nodes:', clipboard);
   },
+
   pasteNodes: () => {
     const { nodes } = get();
     if (clipboard.length === 0) return;
@@ -456,10 +528,10 @@ setSelectedNodeIds: (ids) => {
       selectedEdgeId: null, 
     });
   },
+
   deleteElements: () => {
     const { nodes, edges, selectedNodeIds, selectedEdgeId, appMode } = get();
     
-    // Khi ở canvasMode, chỉ xóa các DrawAreaNode được chọn
     if (appMode === 'canvasMode') {
         const nodeIdsToDelete = new Set(selectedNodeIds.filter(id => {
             const node = nodes.find(n => n.id === id);
@@ -473,10 +545,9 @@ setSelectedNodeIds: (ids) => {
             nodes: nextNodes,
             selectedNodeIds: [],
         });
-        return; // Dừng lại
+        return;
     }
 
-    // Logic xóa bình thường (chỉ chạy ở normal mode)
     const nodeIdsToDelete = new Set(selectedNodeIds);
     const edgeIdsToDelete = selectedEdgeId ? new Set([selectedEdgeId]) : new Set();
     const connectedEdges = getConnectedEdges(nodes.filter(n => nodeIdsToDelete.has(n.id)), edges);
@@ -491,6 +562,7 @@ setSelectedNodeIds: (ids) => {
       selectedEdgeId: null, 
     });
    },
+
   updateNodesStyle: (nodeIds, styleObject) => {
     set({
       nodes: get().nodes.map(node => {
@@ -507,6 +579,7 @@ setSelectedNodeIds: (ids) => {
       })
     });
   },
+
   updateNodesData: (nodeIds, newData) => {
     set({
       nodes: get().nodes.map(node => {
@@ -520,6 +593,7 @@ setSelectedNodeIds: (ids) => {
       })
     });
   },
+
   toggleNodesStyle: (nodeIds, styleKey) => {
     set({
       nodes: get().nodes.map(node => {
@@ -542,6 +616,7 @@ setSelectedNodeIds: (ids) => {
       })
     });
   },
+
   updateEdgesStyleByNodeIds: (nodeIds, styleObject) => {
     const nodeIdSet = new Set(nodeIds); 
     set({
@@ -556,6 +631,7 @@ setSelectedNodeIds: (ids) => {
       })
     });
   },
+
   updateEdgesTypeByNodeIds: (nodeIds, type) => {
     const nodeIdSet = new Set(nodeIds);
     set({
@@ -569,9 +645,9 @@ setSelectedNodeIds: (ids) => {
   },
 })
 
-// --- Final Store (Zundo wrapper) ---
+// --- Final Store ---
 export const useStore = create(
-  devtools( // Bọc temporal bằng devtools
+  devtools(
     temporal(storeCreator, {
       partialize: (state) => ({
         nodes: state.nodes,

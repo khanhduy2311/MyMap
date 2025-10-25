@@ -83,7 +83,26 @@ block main
                   i.fas.fa-pencil-alt
                 button.btn-action.btn-move(type="button" title="Di chuyển tới thư mục")
                   i.fas.fa-folder-plus
-                button.btn-action.btn-delete(type="button", data-id=`${mindmap._id}`, title="Xóa mindmap")
+              .card-actions
+                button.btn-action.btn-edit(type="button" title="Chỉnh sửa tên")
+                  i.fas.fa-pencil-alt
+
+                button.btn-action.btn-move(type="button" title="Di chuyển tới thư mục")
+                  i.fas.fa-folder-plus
+
+                // ✨ Nút Vẽ Mindmap (trỏ sang React App)
+                a.btn-action.btn-draw(
+                  href=`http://localhost:3001/import/${mindmap._id}`
+                  target="_blank"
+                  title="Vẽ mindmap tương tác"
+                )
+                  i.fas.fa-project-diagram
+
+                button.btn-action.btn-delete(
+                  type="button"
+                  data-id=`${mindmap._id}`
+                  title="Xóa mindmap"
+                )
                   i.fas.fa-trash-alt
 
         //- BỘ ĐIỀU KHIỂN PHÂN TRANG
