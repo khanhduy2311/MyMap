@@ -1,0 +1,1038 @@
+/* --- CSS NỀN TẢNG & CURSOR --- */
+:root {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #fff;
+  --text-primary: #333;
+  --text-secondary: #888;
+  --border-color: #e2e8f0;
+  --toolbar-shadow: rgba(0, 0, 0, 0.1);
+  --minimap-bg: #f8f9fa;
+  --minimap-border: #dee2e6;
+  transition: all 0.3s ease;
+}
+
+.app-container.dark-mode {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #aaa;
+  --border-color: #404040;
+  --toolbar-shadow: rgba(0, 0, 0, 0.5);
+  --minimap-bg: #2d2d2d;
+  --minimap-border: #404040;
+}
+
+body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  display: flex;
+  background-color: var(--bg-primary);
+}
+
+.app-container {
+  position: relative;
+  display: flex;
+  flex-grow: 1;
+  background-color: var(--bg-primary);
+}
+
+.reactflow-wrapper {
+  flex-grow: 1;
+  height: 100%;
+}
+
+.react-flow__pane:not(.dragging) {
+  cursor: default;
+}
+
+.react-flow__pane.dragging {
+  cursor: grabbing;
+}
+
+.react-flow__node:not(.dragging) {
+  cursor: pointer;
+}
+
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+/* --- CUSTOM NODE & HANDLE --- */
+.custom-node-wrapper {
+  position: relative;
+  overflow: visible;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, outline-color 0.2s ease;
+
+  &.selected {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+    box-shadow: 0 4px 15px var(--toolbar-shadow);
+  }
+
+  /* Handle sẽ hiện ra (opacity) khi hover hoặc đang nối */
+  &:hover .react-flow__handle,
+  .react-flow__pane.connecting & .react-flow__handle {
+    opacity: 1;
+    pointer-events: all;
+  }
+  
+  /* Handle sẽ được 'fill' màu khi node được chọn */
+  &.selected .react-flow__handle {
+     background: #4f46e5;
+  }
+}
+
+.custom-node {
+  box-sizing: border-box;
+  display: flex;
+  text-align: center;
+  justify-content: center;
+  min-width: 150px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 10px 20px;
+  width: 100%;
+  height: 100%;
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  .node-label {
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 1.2em;
+    transition: color 0.1s ease;
+  }
+
+  .node-label-input {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    width: calc(100% - 40px);
+    height: calc(100% - 20px);
+    padding: 0;
+    margin: 0;
+    border: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: transparent;
+    text-align: center;
+    outline: none;
+    resize: none;
+    overflow: hidden; 
+    box-sizing: border-box;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    color: var(--text-primary); 
+  }
+
+  .custom-node-wrapper.editing & {
+    .node-label {
+      color: transparent !important;
+    }
+    .node-label-input {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: all;
+    }
+  }
+}
+
+.react-flow__handle {
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0; 
+  pointer-events: none;
+  
+  width: 12px;
+  height: 12px;
+  background: var(--bg-secondary); 
+  border: 2px solid #4f46e5;
+  border-radius: 50%;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+
+  &[data-position="left"] {
+    left: -8px; 
+  }
+  &[data-position="right"] {
+    right: -8px; 
+  }
+}
+
+/* --- ICON TRONG NODE --- */
+.node-icon {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  &.emoji {
+    font-size: 18px;
+    line-height: 1;
+  }
+  &.image {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+  }
+}
+
+.text-sizer {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  visibility: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  pointer-events: none;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* --- NÚT ADD NODE --- */
+.add-node-button {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px var(--toolbar-shadow);
+  padding: 0;
+  line-height: 1;
+
+  &:hover {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+    box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);
+  }
+
+  &.left {
+    left: 8px; 
+    transform: translate(calc(-100% - 8px), -50%); 
+    
+    &:hover {
+      transform: translate(calc(-100% - 8px), -50%) scale(1.1);
+    }
+  }
+  &.right {
+    right: 8px; 
+    transform: translate(calc(100% + 8px), -50%);
+    
+     &:hover {
+      transform: translate(calc(100% + 8px), -50%) scale(1.1);
+    }
+  }
+}
+
+/* --- THANH CÔNG CỤ (Toolbars) --- */
+.vertical-toolbar, .main-toolbar, .zoom-toolbar {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--toolbar-shadow);
+  display: flex;
+  position: relative; 
+  transition: all 0.3s ease;
+
+  button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    color: var(--text-primary);
+
+    &:hover {
+      background: var(--bg-primary);
+    }
+
+    &.active {
+      background: #e0e7ff;
+      color: #4f46e5;
+    }
+  }
+}
+
+/* --- Vertical Toolbar --- */
+.vertical-toolbar {
+  position: absolute; left: 15px; top: 15px; z-index: 10;
+  padding: 8px;
+  flex-direction: column;
+  gap: 4px;
+  
+  button {
+    padding: 8px;
+    border-radius: 6px;
+    svg { width: 20px; height: 20px; color: var(--text-primary); }
+    
+    &:disabled {
+      color: #aaa;
+      background: transparent;
+      cursor: not-allowed;
+      opacity: 0.5;
+      
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+
+.add-node-wrapper {
+  position: relative;
+  display: flex; 
+}
+
+.shape-picker {
+  position: absolute; left: 100%; top: 0; margin-left: 8px;
+  display: flex; background: var(--bg-secondary); padding: 5px; border-radius: 8px;
+  box-shadow: 0 2px 10px var(--toolbar-shadow); gap: 5px;
+  button {
+    padding: 5px;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    svg { width: 24px; height: 24px; color: var(--text-secondary); }
+  }
+}
+
+/* --- Search Toolbar --- */
+.search-toolbar {
+  position: absolute;
+  left: 100%;
+  top: 205px; 
+  margin-left: 8px;
+  z-index: 10;
+  
+  background: var(--bg-secondary); 
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--toolbar-shadow);
+  padding: 5px;
+  transition: all 0.3s ease;
+  
+  .ant-select {
+    width: 180px;
+  }
+  
+  .ant-select-selector {
+    border-radius: 6px !important;
+    box-shadow: none !important; 
+    border: 1px solid var(--border-color) !important; 
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .ant-select-focused .ant-select-selector {
+      border-color: #4f46e5 !important;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1) !important;
+  }
+}
+
+/* --- Edge Toolbar --- */
+.edge-toolbar {
+  position: absolute; /* Đã có: giữ nguyên */
+  z-index: 10;        /* Đã có: giữ nguyên */
+  
+  
+  /* Thêm transform để căn giữa toolbar vào con trỏ */
+  transform: translate(-50%, calc(-100% - 20px));
+  
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--toolbar-shadow);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 250px;
+  transition: all 0.3s ease;
+
+  .setting-row { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    width: 100%; 
+    font-size: 13px; 
+    color: var(--text-primary); 
+  }
+  .divider.full-width { 
+    width: 100%; 
+    height: 1px; 
+    margin: 0; 
+    background: var(--border-color); 
+  }
+  .border-style-selector {
+    display: flex; 
+    gap: 5px;
+    button {
+      padding: 5px; 
+      width: 30px; 
+      height: 30px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      svg { width: 20px; height: 20px; color: var(--text-secondary); }
+      .line {
+        width: 100%;
+        height: 0;
+        border-top-width: 2px;
+        border-top-color: var(--text-primary);
+        &.solid { border-top-style: solid; }
+        &.dashed { border-top-style: dashed; }
+        &.dotted { border-top-style: dotted; }
+      }
+    }
+  }
+  /* ✨ Style cho input range (Độ dày) ✨ */
+  input[type="range"] {
+     width: 100px; 
+  }
+  
+  .edge-toolbar-close {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none !important;
+    border: none;
+    box-shadow: none;
+    padding: 4px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--text-secondary);
+    &:hover {
+      background: var(--bg-primary) !important;
+      color: var(--text-primary);
+    }
+  }
+}
+
+
+/* --- Main Toolbar (trên Node) --- */
+.main-toolbar {
+  align-items: center; gap: 8px; padding: 8px;
+  box-shadow: 0 4px 12px var(--toolbar-shadow);
+
+  button, .icon-button {
+    padding: 5px 8px;
+    border-radius: 4px;
+  }
+  .divider { width: 1px; height: 20px; background: var(--border-color); margin: 0 2px; }
+  input[type="color"] { width: 25px; height: 25px; border: none; background: none; padding: 0; cursor: pointer; border-radius: 4px; }
+  .font-size-input { width: 50px; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 4px; text-align: center; background: var(--bg-secondary); color: var(--text-primary); }
+  .color-palette {
+    justify-content: flex-end; /* Căn phải các nút màu */
+    
+    /* Đảm bảo các nút mini luôn tròn (giống .edge-toolbar) */
+    &.mini .color-button { 
+        border-radius: 50%;
+    }
+  }
+}
+
+.toolbar-icon-wrapper { position: relative; display: flex; }
+.icon-button { padding: 5px !important; font-size: 16px; display: flex; align-items: center; }
+
+/* --- Các Panel (trên Toolbar) --- */
+.edge-settings, .border-settings {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 20;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) translateX(-50%);
+  transition: all 0.2s ease-out;
+
+  display: flex; flex-direction: column; gap: 10px;
+  width: 220px; background: var(--bg-secondary); padding: 12px; border-radius: 8px;
+  box-shadow: 0 4px 12px var(--toolbar-shadow);
+  color: var(--text-primary);
+  
+  .ant-input {
+    font-size: 13px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) translateX(-50%);
+  }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 13px; color: var(--text-primary); }
+  .divider.full-width { width: 100%; height: 1px; margin: 0; background: var(--border-color); }
+  
+  .border-style-selector {
+    display: flex; gap: 5px;
+    button {
+      padding: 5px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      .line {
+        width: 100%; height: 0; border-top-width: 2px; border-top-color: var(--text-primary);
+        &.solid { border-top-style: solid; }
+        &.dashed { border-top-style: dashed; }
+        &.dotted { border-top-style: dotted; }
+      }
+    }
+  }
+  
+  .shape-selector {
+    display: flex; gap: 5px;
+    button {
+      padding: 5px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      svg { width: 20px; height: 20px; color: var(--text-secondary); }
+    }
+  }
+
+  input[type="range"] { width: 100px; }
+}
+
+/* --- Zoom Toolbar --- */
+.zoom-toolbar {
+  position: absolute; right: 15px; bottom: 15px; z-index: 10;
+  align-items: center; padding: 5px;
+  button {
+    padding: 8px;
+    border-radius: 6px; font-size: 16px; line-height: 1;
+  }
+  .zoom-level { padding: 0 10px; font-size: 14px; min-width: 40px; text-align: center; color: var(--text-primary); }
+}
+
+/* --- MINIMAP --- */
+.react-flow__minimap {
+  margin-bottom: 60px;
+  background-color: var(--minimap-bg);
+  border-radius: 8px;
+  border: 1px solid var(--minimap-border);
+  box-shadow: 0 2px 10px var(--toolbar-shadow);
+  overflow: hidden;
+}
+.react-flow__minimap-mask { fill: rgba(79, 70, 229, 0.08); stroke: #4f46e5; stroke-width: 1.5px; }
+.react-flow__minimap-node {
+  fill: #adb5bd; stroke: none; transition: fill 0.2s ease;
+  &:hover { fill: #5c6770; }
+}
+
+/* --- RESIZER --- */
+.node-resizer-handle {
+  z-index: 15;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border: 1px solid #4f46e5;
+  border-radius: 2px;
+  transform: translate(50%, -50%);
+  &.left {
+    transform: translate(-50%, -50%);
+  }
+}
+
+.node-resizer-line {
+  z-index: 15;
+  border-style: dashed;
+  border-color: #4f46e5;
+}
+/* --- DARK MODE TOGGLE --- */
+.dark-mode-toggle {
+  /* Kế thừa style từ button trong toolbar chung */
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--toolbar-shadow);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+  
+  /* Định vị */
+  position: absolute;
+  top: 15px;
+  right: 15px; /* Đặt ở góc trên bên phải */
+  z-index: 10;
+  
+  /* Kích thước & Padding (Giống các nút trên VerticalToolbar) */
+  padding: 8px;
+  width: 40px; 
+  height: 40px;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+  }
+  
+  &:hover {
+    background: var(--bg-primary);
+  }
+}
+/* --- MULTI NODE TOOLBAR --- */
+.multi-node-toolbar {
+  
+  /* 'left' và 'top' được cung cấp qua style={} */
+  /* 'top' là Y của node cao nhất (y nhỏ nhất) */
+  /* Di chuyển nó LÊN TRÊN node đó và VÀO GIỮA trục X. */
+  transform: translate(-50%, calc(-100% - 10px));
+  
+  /* Bọc .main-toolbar để nó có style nền/shadow */
+  .main-toolbar {
+    position: relative; /* Đảm bảo các panel con (border, v.v.) định vị đúng */
+  }
+}
+@keyframes dashdraw {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  /* Dùng !important để ghi đè style inline (nếu có) */
+  stroke: #4f46e5 !important; 
+  stroke-width: 3px;
+  stroke-dasharray: 5 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+/* ✨ THÊM MỚI: Ẩn outline khi focus vào wrapper để bắt phím tắt */
+.reactflow-wrapper:focus-visible {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+/* --- COLOR SETTINGS PANEL & PALETTE --- */
+.color-settings {
+  /* Inherit general panel styles */
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 20;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) translateX(-50%);
+  transition: all 0.2s ease-out;
+
+  display: flex; flex-direction: column; gap: 10px;
+  /* Adjust width as needed */
+  width: 200px;
+  background: var(--bg-secondary); padding: 12px; border-radius: 8px;
+  box-shadow: 0 4px 12px var(--toolbar-shadow);
+  color: var(--text-primary);
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) translateX(-50%);
+  }
+
+  /* Style for opacity slider row */
+   .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; font-size: 13px; color: var(--text-primary);
+     input[type="range"] { width: 100px; }
+  }
+   .divider.full-width {
+    width: calc(100% + 24px); // Span padding
+    margin-left: -12px;
+    margin-right: -12px;
+    height: 1px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    background: var(--border-color);
+  }
+
+  /* Push color palette to bottom */
+  .color-palette {
+    margin-top: auto; /* Push palette to the bottom */
+    order: 10;      /* Ensure it's visually last */
+  }
+}
+
+
+/* --- ADJUST BORDER & EDGE PANELS FOR COLOR PALETTE --- */
+.border-settings, .edge-settings {
+  /* Ensure flex column layout */
+  display: flex;
+  flex-direction: column;
+
+  /* Push color palette to bottom */
+  .color-palette {
+    margin-top: auto; /* Push palette to the bottom */
+    order: 10; /* Ensure it's visually last */
+  }
+}
+
+
+/* --- COLOR PALETTE GRID --- */
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(28px, 1fr)); // Responsive columns
+  gap: 6px;
+  width: 100%; /* Fill available width */
+  margin-top: 5px; // Add some space above
+  justify-content: flex-end; /* ✨ Căn phải (đã thêm) ✨ */
+
+  /* Mini palette for border/edge */
+  &.mini {
+     grid-template-columns: repeat(auto-fit, minmax(22px, 1fr));
+     gap: 4px;
+     margin-top: 8px; // Adjust spacing
+    .color-button { // Smaller buttons
+       width: 22px;
+       height: 22px;
+       /* border-width: 2px; // Đã gỡ bỏ */
+    }
+  }
+}
+
+
+/* --- COLOR BUTTON STYLING --- */
+.color-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%; /* ✨ Circular ✨ */
+  
+  /* === ✨ ĐÃ SỬA LỖI VIỀN (border) ✨ === */
+  border-width: 2px;
+  border-style: solid;
+  /* (Màu viền sẽ được lấy 100% từ style inline do JS cung cấp) */
+  /* === HẾT SỬA LỖI === */
+
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-clip: padding-box; /* Ensures border doesn't overlap background */
+
+  &:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    z-index: 1;
+  }
+
+  /* --- ADD COLOR BUTTON (+) --- */
+  &.add-color-button {
+    background-color: var(--bg-primary);
+    border: 2px dashed var(--text-secondary);
+    color: var(--text-secondary);
+    font-size: 14px;
+    box-shadow: none;
+
+    &:hover {
+      background-color: var(--border-color);
+      color: var(--text-primary);
+      border-style: solid;
+    }
+  }
+}
+
+/* --- EDGE TOOLBAR IMPROVEMENTS --- */
+.edge-toolbar {
+  // Keep position and transform
+  position: absolute;
+  z-index: 10;
+  transform: translate(-50%, calc(-100% - 20px)); // Keep offset
+
+  // General styling
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--toolbar-shadow); // Slightly larger shadow
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; // Increase gap for better spacing
+  width: 260px; // Slightly wider
+  transition: all 0.3s ease;
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 13px;
+    color: var(--text-primary);
+    gap: 15px; // Increase gap within rows
+
+    // Ensure range input fits well
+    input[type="range"] {
+       flex-grow: 1;
+       max-width: 120px;
+       cursor: pointer; // Add cursor pointer
+    }
+    // Style Antd Input
+    .ant-input {
+      background: var(--bg-primary);
+      border-color: var(--border-color);
+      color: var(--text-primary);
+      border-radius: 4px;
+      font-size: 13px;
+    }
+  }
+  .divider.full-width {
+    width: calc(100% + 24px); // Span padding
+    margin-left: -12px;
+    margin-right: -12px;
+    height: 1px;
+    margin-top: 0px; // Remove vertical margin
+    margin-bottom: 0px;
+    background: var(--border-color);
+  }
+  .border-style-selector {
+    display: flex;
+    gap: 8px; // Increase gap between buttons
+    // Style buttons inside selector
+    button {
+      padding: 5px;
+      width: 32px; // Slightly larger buttons
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border-color); // Visible border
+      border-radius: 6px; // More rounded
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+      color: var(--text-secondary); // Icon color
+
+      &:hover {
+        background: var(--bg-primary);
+        border-color: var(--text-secondary); // Highlight border on hover
+      }
+      &.active {
+        background: #e0e7ff; // Active color from NodeToolbar
+        border-color: #a5b4fc;
+        color: #4f46e5; // Active icon color
+        svg { color: #4f46e5; }
+        .line { border-top-color: #4f46e5; }
+      }
+
+      svg { width: 20px; height: 20px; transition: color 0.2s ease; }
+      .line {
+         width: 100%; height: 0; border-top-width: 2px;
+         transition: border-color 0.2s ease;
+         border-top-color: var(--text-primary); // Line color
+         &.solid { border-top-style: solid; }
+         &.dashed { border-top-style: dashed; }
+         &.dotted { border-top-style: dotted; }
+       }
+    }
+  }
+
+  .color-palette {
+      margin-top: 5px;
+      justify-content: flex-end; // Align buttons to the right
+      &.mini .color-button { // Ensure mini buttons are circular
+          border-radius: 50%;
+      }
+  }
+
+  .edge-toolbar-close {
+      position: absolute;
+      top: 8px; // Adjust position
+      right: 8px;
+      background: none !important;
+      border: none;
+      box-shadow: none;
+      padding: 4px;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: background-color 0.2s ease, color 0.2s ease;
+      &:hover {
+          background: var(--bg-primary) !important;
+          color: var(--text-primary);
+      }
+  }
+}
+
+
+/* (Các style import) */
+@import '@xyflow/react/dist/style.css';
+@import 'antd/dist/reset.css';
+
+/* ✨ --- SỬA LỖI VÙNG VẼ --- ✨ */
+
+/* Wrapper cho Node Vùng Vẽ */
+.draw-area-node-wrapper {
+  position: relative;
+  /* Kích thước được set inline từ style */
+  
+  /* ✨ SỬA LỖI 1: Thay đổi background */
+  background: transparent;
+  
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  overflow: hidden; /* Đảm bảo canvas không tràn */
+  transition: all 0.2s ease;
+  
+  /* Style khi được chọn */
+  &.selected {
+    border: 2px solid #4f46e5;
+    box-shadow: 0 4px 15px var(--toolbar-shadow);
+  }
+  
+  /* Ẩn Handle mặc định */
+  .react-flow__handle {
+    opacity: 0;
+  }
+  
+  /* Hiện Handle khi hover */
+  &:hover .react-flow__handle {
+    opacity: 1;
+  }
+}
+
+/* Canvas bên trong */
+.preview-rect {
+  /* position: absolute đã được set inline */
+  border: 1px dashed #4f46e5; /* Viền xanh dương nét đứt */
+  background-color: rgba(79, 70, 229, 0.05); /* Nền xanh dương rất nhạt */
+  pointer-events: none; /* Quan trọng: Để không chặn các sự kiện chuột khác */
+  z-index: 20; /* Đảm bảo nó nằm trên background nhưng dưới node/toolbar */
+}
+
+
+/* --- (Giữ nguyên các style VÙNG VẼ, RESIZER, TOOLBAR...) --- */
+.draw-area-node-wrapper {
+  position: relative;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #4f46e5;
+  }
+  &.selected {
+    border: 2px solid #4f46e5;
+    box-shadow: 0 4px 15px var(--toolbar-shadow);
+  }
+  .react-flow__handle {
+    opacity: 0;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+/* ... (Tất cả CSS cũ giữ nguyên) ... */
+
+/* ✨ THÊM: Thanh công cụ Canvas Toàn cục (nằm cạnh VerticalToolbar) */
+.draw-toolbar-global {
+  position: absolute;
+  left: calc(100% + 8px); /* Nằm bên phải VerticalToolbar */
+  top: 0;
+  
+  /* Style giống .main-toolbar */
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--toolbar-shadow);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  transition: all 0.3s ease;
+  z-index: 10;
+  
+  button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    color: var(--text-primary);
+    padding: 5px 8px;
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--bg-primary);
+    }
+
+    &.active {
+      background: #e0e7ff;
+      color: #4f46e5;
+    }
+  }
+  
+  .divider { 
+    width: 1px; 
+    height: 20px; 
+    background: var(--border-color); 
+    margin: 0 2px; 
+  }
+  
+  .preset-button {
+    padding: 5px;
+    width: 30px;
+    height: 30px;
+    
+    .preset-swatch {
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--border-color);
+      border-radius: 50%; // Nút tròn
+      transition: transform 0.1s ease;
+    }
+    
+    &:hover .preset-swatch {
+      transform: scale(1.1);
+    }
+    
+    &.active .preset-swatch {
+      outline: 2px solid #4f46e5;
+      outline-offset: 1px;
+    }
+  }
+}
+
+/* ✨ SỬA: CSS cho Vùng Vẽ */
+.draw-area-node-wrapper {
+  // ... (style cũ)
+  
+  /* Hiệu ứng hover theo yêu cầu */
+  &.hoverable {
+    border-color: #4f46e5;
+  }
+  
+  /* Con trỏ đã được set bằng style inline */
+  /* Bỏ cursor: crosshair ở đây */
+}
+.draw-area-canvas {
+  /* ... */
+  /* Bỏ cursor: crosshair ở đây */
+  cursor: inherit; /* ✨ THÊM: Kế thừa con trỏ từ wrapper */
+}
+
+/* ✨ SỬA: CSS cho Vùng Xem Trước (Dùng SVG) */
+.preview-rect {
+  /* DIV cũ - không còn dùng */
+  display: none;
+}
+
+.preview-rect-svg {
+  fill: rgba(79, 70, 229, 0.05);
+  stroke: #4f46e5;
+  stroke-width: 1px;
+  stroke-dasharray: 4 4;
+}
+
+/* ✨ XÓA: .draw-toolbar (vì đã chuyển vào VerticalToolbar) */
+/* .draw-toolbar { ... } */
