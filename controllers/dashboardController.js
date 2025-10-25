@@ -1,79 +1,103 @@
 const { ObjectId } = require('mongodb');
 const userModel = require('../models/userModel.js');
-const moment = require('moment'); 
-// HÀM HIỆN TẠI CỦA BẠN (ĐÃ ĐƯỢC CẬP NHẬT)
+const moment = require('moment');
+
+function isSameDay(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
+
+// === GET /dashboard ===
 exports.getDashboardPage = async (req, res) => {
-    try {
-        const usersDb = req.app.locals.usersDb;
-        const mindmapsDb = req.app.locals.mindmapsDb;
-        const userId = new ObjectId(req.session.user._id);
-        const user = await userModel.findUserById(usersDb, userId);
+  try {
+    const usersDb = req.app.locals.usersDb;
+    const mindmapsDb = req.app.locals.mindmapsDb;
+    const userId = new ObjectId(req.session.user._id);
 
-        if (!user) {
-            req.flash('error_msg', 'Không tìm thấy người dùng.');
-            return res.redirect('/login');
-        }
-        
-        // Lấy danh sách thư mục ĐỂ HIỂN THỊ SIDEBAR
-        const folders = await mindmapsDb.collection('folders')
-            .find({ userId: userId })
-            .sort({ name: 1 }) // Sắp xếp A-Z
-            .toArray();
-
-        // --- LOGIC PHÂN TRANG VÀ TÌM KIẾM ---
-        const page = parseInt(req.query.page) || 1; 
-        const limit = 12; 
-        const skip = (page - 1) * limit;
-        const searchQuery = req.query.search || ""; 
-
-        // SỬA LẠI FILTER: Thêm folderId: { $exists: false }
-        // Để trang dashboard chính CHỈ hiển thị mindmap không thuộc thư mục nào
-        const filter = {
-            deleted: { $ne: true },
-            folderId: { $exists: false } // QUAN TRỌNG
-        };
-
-        if (searchQuery) {
-            filter.title = { $regex: searchQuery, $options: 'i' };
-        }
-        // ------------------------------------
-
-        const mindmapCollectionName = req.session.user._id.toString();
-        const collection = mindmapsDb.collection(mindmapCollectionName);
-
-        const mindmaps = await collection.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray();
-        const totalMindmaps = await collection.countDocuments(filter);
-        const totalPages = Math.ceil(totalMindmaps / limit);
-        // ------------------------------------
-
-        res.locals.showSearch = true; // Báo cho header hiển thị search
-        res.locals.searchActionUrl = '/dashboard';
-        res.locals.searchQuery = searchQuery; // Truyền query ra header
-
-        res.render('dashboard', {
-            pageTitle: 'Bảng điều khiển',
-            user: user,
-            mindmaps: mindmaps,
-            folders: folders, // TRUYỀN THƯ MỤC RA VIEW
-            currentPage: page,
-            totalPages: totalPages,
-            searchQuery: searchQuery,
-            currentFolder: null // Đánh dấu đây là trang chính, không phải thư mục
-        });
-
-    } catch (err) {
-        console.error('❌ Lỗi khi tải trang dashboard:', err);
-        req.flash('error_msg', 'Lỗi khi tải trang của bạn.');
-        res.redirect('/login');
+    // Lấy thông tin người dùng
+    const user = await userModel.findUserById(usersDb, userId);
+    if (!user) {
+      req.flash('error_msg', 'Không tìm thấy người dùng.');
+      return res.redirect('/login');
     }
+
+    // 👉 Xác định lần đầu đăng nhập
+    const isFirstLoginEver = !user.lastLogin;
+    const today = new Date();
+    const showWelcomeAnimation = !user.lastLogin || !isSameDay(user.lastLogin, today);
+    // Cập nhật lastLogin nếu chưa có hoặc khác ngày hiện tại
+    if (showWelcomeAnimation) {
+      await usersDb.collection('users').updateOne(
+        { _id: userId },
+        { $set: { lastLogin: today } }
+      );
+    }
+
+    // Lấy danh sách thư mục
+    const folders = await mindmapsDb
+      .collection('folders')
+      .find({ userId: userId })
+      .sort({ name: 1 })
+      .toArray();
+
+    // Phân trang & tìm kiếm
+    const page = parseInt(req.query.page) || 1;
+    const limit = 12;
+    const skip = (page - 1) * limit;
+    const searchQuery = req.query.search || '';
+
+    const filter = {
+      deleted: { $ne: true },
+      folderId: { $exists: false },
+    };
+
+    if (searchQuery) {
+      filter.title = { $regex: searchQuery, $options: 'i' };
+    }
+
+    const mindmapCollectionName = req.session.user._id.toString();
+    const collection = mindmapsDb.collection(mindmapCollectionName);
+
+    const mindmaps = await collection
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    const totalMindmaps = await collection.countDocuments(filter);
+    const totalPages = Math.ceil(totalMindmaps / limit);
+
+    // Render ra dashboard
+    res.locals.showSearch = true;
+    res.locals.searchActionUrl = '/dashboard';
+    res.locals.searchQuery = searchQuery;
+
+    res.render('dashboard', {
+      pageTitle: 'Bảng điều khiển',
+      user: {
+        ...user,
+        isFirstLogin: showWelcomeAnimation,
+        isFirstLoginEver: isFirstLoginEver
+      },
+      mindmaps,
+      folders,
+      currentPage: page,
+      totalPages,
+      searchQuery,
+      currentFolder: null,
+    });
+  } catch (err) {
+    console.error('❌ Lỗi khi tải trang dashboard:', err);
+    req.flash('error_msg', 'Lỗi khi tải trang của bạn.');
+    res.redirect('/login');
+  }
 };
-
-// ... (Giữ nguyên các hàm về Thùng rác) ...
-
-// ================================================
-// === THÊM MỚI CÁC HÀM DƯỚI ĐÂY VÀO CUỐI FILE ===
-// ================================================
-
 // [POST] /dashboard/folders
 exports.createFolder = async (req, res) => {
     try {
@@ -110,33 +134,28 @@ exports.getFolderPage = async (req, res) => {
         const userId = new ObjectId(req.session.user._id);
         const folderId = new ObjectId(req.params.id);
 
-        // Lấy thông tin user (giữ nguyên)
         const user = await userModel.findUserById(usersDb, userId);
         if (!user) return res.redirect('/login');
         
-        // 1. Lấy tất cả thư mục (để hiển thị sidebar)
         const folders = await mindmapsDb.collection('folders')
             .find({ userId: userId })
             .sort({ name: 1 })
             .toArray();
 
-        // 2. Lấy thông tin của thư mục HIỆN TẠI
         const currentFolder = folders.find(f => f._id.equals(folderId));
         if (!currentFolder) {
             req.flash('error_msg', 'Không tìm thấy thư mục.');
             return res.redirect('/dashboard');
         }
 
-        // 3. Phân trang & Tìm kiếm BÊN TRONG THƯ MỤC
         const page = parseInt(req.query.page) || 1; 
         const limit = 12; 
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || ""; 
 
-        // FILTER: Lấy mindmap CÓ folderId là thư mục này
         const filter = {
             deleted: { $ne: true },
-            folderId: folderId // QUAN TRỌNG
+            folderId: folderId
         };
         if (searchQuery) {
             filter.title = { $regex: searchQuery, $options: 'i' };
@@ -149,16 +168,15 @@ exports.getFolderPage = async (req, res) => {
         const totalMindmaps = await collection.countDocuments(filter);
         const totalPages = Math.ceil(totalMindmaps / limit);
 
-        // 4. Render, dùng chung view dashboard.pug
         res.render('dashboard', {
             pageTitle: `Thư mục: ${currentFolder.name}`,
             user: user,
             mindmaps: mindmaps,
-            folders: folders, // Danh sách tất cả thư mục
+            folders: folders,
             currentPage: page,
             totalPages: totalPages,
             searchQuery: searchQuery,
-            currentFolder: currentFolder // Thông tin thư mục hiện tại
+            currentFolder: currentFolder
         });
 
     } catch (err) {
@@ -181,17 +199,13 @@ exports.moveMindmap = async (req, res) => {
         const db = req.app.locals.mindmapsDb;
         const collectionName = req.session.user._id.toString();
         
-        let updateOperation; 
+        let updateOperation;
 
-        // === THÊM LOGIC MỚI Ở ĐÂY ===
         if (folderId === "root") {
-            // Nếu là root, $unset (xóa) trường folderId
             updateOperation = { $unset: { folderId: "" } };
         } else {
-            // Nếu là folderId bình thường, $set như cũ
             updateOperation = { $set: { folderId: new ObjectId(folderId) } };
         }
-        // === KẾT THÚC LOGIC MỚI ===
 
         const result = await db.collection(collectionName).updateOne(
             { _id: new ObjectId(mindmapId) },
@@ -206,7 +220,6 @@ exports.moveMindmap = async (req, res) => {
 
     } catch (err) {
         console.error('❌ Lỗi khi di chuyển mindmap:', err);
-        // Bắt lỗi nếu folderId không phải "root" và cũng không phải ObjectId hợp lệ
         if (err.name === 'BSONTypeError') {
             return res.status(400).json({ success: false, message: 'Folder ID không hợp lệ.' });
         }
@@ -214,12 +227,19 @@ exports.moveMindmap = async (req, res) => {
     }
 };
 
-
 exports.getTrashPage = async (req, res) => {
     try {
         const mindmapsDb = req.app.locals.mindmapsDb;
-        const collectionName = req.session.user._id.toString();
+        const usersDb = req.app.locals.usersDb;
+        const userId = new ObjectId(req.session.user._id);
+        
+        const user = await userModel.findUserById(usersDb, userId);
+        if (!user) {
+            req.flash('error_msg', 'Không tìm thấy người dùng.');
+            return res.redirect('/login');
+        }
 
+        const collectionName = req.session.user._id.toString();
         const searchQuery = req.query.search || ""; 
         const filter = {
             deleted: true
@@ -230,27 +250,20 @@ exports.getTrashPage = async (req, res) => {
 
         const deletedMindmaps = await mindmapsDb.collection(collectionName)
                                  .find(filter) 
-                                 .sort({ deletedAt: -1 }) // <-- Sắp xếp theo ngày xóa
+                                 .sort({ deletedAt: -1 })
                                  .toArray();
         
-        // === SỬA LỖI Ở ĐÂY: Bổ sung logic tính toán ===
         const mindmapsWithRemainingDays = deletedMindmaps.map(mindmap => {
             if (!mindmap.deletedAt) {
-              // Xử lý dự phòng nếu mindmap không có ngày xóa
               return { ...mindmap, remainingDays: 0 };
             }
             
-            // Tính ngày hết hạn (30 ngày sau khi xóa)
             const deletionDate = moment(mindmap.deletedAt);
             const expiryDate = deletionDate.add(30, 'days');
-            
-            // Tính số ngày còn lại (làm tròn lên)
-            // Dùng max(0, ...) để đảm bảo không hiển thị số âm
             const remainingDays = Math.max(0, expiryDate.diff(moment(), 'days') + 1); 
             
-            return { ...mindmap, remainingDays: remainingDays }; // Trả về object đã tính toán
+            return { ...mindmap, remainingDays: remainingDays };
         });
-        // === KẾT THÚC SỬA LỖI ===
         
         res.locals.showSearch = true; 
         res.locals.searchActionUrl = '/dashboard/trash'; 
@@ -258,8 +271,8 @@ exports.getTrashPage = async (req, res) => {
 
         res.render('dashboard-trash', {
             pageTitle: 'Thùng rác',
-            user: req.session.user,
-            mindmaps: mindmapsWithRemainingDays, // <-- Dùng biến đã xử lý
+            user: user,
+            mindmaps: mindmapsWithRemainingDays,
             searchQuery: searchQuery
         });
     } catch (err) {
@@ -275,7 +288,6 @@ exports.recoverMindmap = async (req, res) => {
         const mindmapId = new ObjectId(req.params.id);
         const collectionName = req.session.user._id.toString();
 
-        // Cập nhật lại trường 'deleted' thành false
         const result = await db.collection(collectionName).updateOne(
             { _id: mindmapId },
             { $set: { deleted: false } }
@@ -285,7 +297,6 @@ exports.recoverMindmap = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap để khôi phục.' });
         }
 
-        // Trả về tín hiệu thành công
         res.json({ success: true, message: 'Khôi phục thành công!' });
 
     } catch (error) {
@@ -300,7 +311,6 @@ exports.deleteMindmapPermanently = async (req, res) => {
         const mindmapId = new ObjectId(req.params.id);
         const collectionName = req.session.user._id.toString();
 
-        // Chỉ xóa vĩnh viễn các mục CỦA USER NÀY và ĐÃ Ở TRONG THÙNG RÁC
         const result = await db.collection(collectionName).deleteOne(
             { _id: mindmapId, deleted: true } 
         );
@@ -309,7 +319,6 @@ exports.deleteMindmapPermanently = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap trong thùng rác.' });
         }
 
-        // Trả về tín hiệu thành công
         res.json({ success: true, message: 'Đã xóa vĩnh viễn mindmap.' });
 
     } catch (error) {
@@ -318,16 +327,11 @@ exports.deleteMindmapPermanently = async (req, res) => {
     }
 };
 
-/**
- * Xóa vĩnh viễn TẤT CẢ mindmap trong thùng rác.
- * Được gọi từ nút "Dọn sạch thùng rác".
- */
 exports.emptyTrash = async (req, res) => {
     try {
         const db = req.app.locals.mindmapsDb;
         const collectionName = req.session.user._id.toString();
 
-        // Xóa TẤT CẢ các mục CỦA USER NÀY và ĐÃ Ở TRONG THÙNG RÁC
         const result = await db.collection(collectionName).deleteMany(
             { deleted: true } 
         );
@@ -336,7 +340,6 @@ exports.emptyTrash = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Thùng rác đã trống.' });
         }
 
-        // Trả về tín hiệu thành công
         res.json({ success: true, message: `Đã dọn sạch ${result.deletedCount} mục.` });
 
     } catch (error) {
@@ -348,9 +351,8 @@ exports.emptyTrash = async (req, res) => {
 // [GET] /dashboard/api/search-suggestions
 exports.getSearchSuggestions = async (req, res) => {
     try {
-        const query = req.query.q || ""; // Lấy từ khóa tìm kiếm 'q'
+        const query = req.query.q || "";
         
-        // Chỉ tìm khi có ít nhất 2 ký tự
         if (query.length < 2) { 
             return res.json([]);
         }
@@ -360,16 +362,15 @@ exports.getSearchSuggestions = async (req, res) => {
 
         const filter = {
             deleted: { $ne: true },
-            title: { $regex: query, $options: 'i' } // Tìm kiếm không phân biệt hoa thường
+            title: { $regex: query, $options: 'i' }
         };
 
         const suggestions = await mindmapsDb.collection(collectionName)
             .find(filter)
-            .limit(5) // Giới hạn 5 gợi ý
-            .project({ title: 1 }) // Chỉ lấy _id (mặc định) và title
+            .limit(5)
+            .project({ title: 1 })
             .toArray();
         
-        // Trả về một mảng JSON
         res.json(suggestions);
 
     } catch (err) {
@@ -388,9 +389,8 @@ exports.getTrashSearchSuggestions = async (req, res) => {
         const mindmapsDb = req.app.locals.mindmapsDb;
         const collectionName = req.session.user._id.toString();
 
-        // === THAY ĐỔI: Chỉ tìm mục ĐÃ XÓA ===
         const filter = {
-            deleted: true, // Chỉ tìm trong thùng rác
+            deleted: true,
             title: { $regex: query, $options: 'i' }
         };
 
@@ -408,27 +408,28 @@ exports.getTrashSearchSuggestions = async (req, res) => {
     }
 };
 
-// === THÊM MỚI: [GET] /dashboard/folder ===
-// Hàm này lấy và hiển thị TRANG danh sách các thư mục
+// [GET] /dashboard/folder
 exports.getFoldersPage = async (req, res) => {
     try {
         const mindmapsDb = req.app.locals.mindmapsDb;
+        const usersDb = req.app.locals.usersDb;
         const userId = new ObjectId(req.session.user._id);
 
-        // Lấy tất cả thư mục của user, sắp xếp A-Z
+        const user = await userModel.findUserById(usersDb, userId);
+        if (!user) {
+            req.flash('error_msg', 'Không tìm thấy người dùng.');
+            return res.redirect('/login');
+        }
+
         const folders = await mindmapsDb.collection('folders')
             .find({ userId: userId })
             .sort({ name: 1 })
             .toArray();
-        
-        // (Nâng cao - Tạm thời bỏ qua): Bạn có thể chạy aggregation
-        // để đếm số lượng mindmap trong mỗi thư mục ở đây
 
         res.render('dashboard-folders', {
             pageTitle: 'Thư mục của bạn',
+            user: user,
             folders: folders,
-            // Biến 'currentFolder' không dùng ở đây,
-            // nhưng chúng ta cần nó để sidebar render đúng
             currentFolder: null 
         });
 
@@ -439,11 +440,11 @@ exports.getFoldersPage = async (req, res) => {
     }
 };
 
-// === THÊM MỚI: [PATCH] /dashboard/folders/:id/rename ===
+// [PATCH] /dashboard/folders/:id/rename
 exports.renameFolder = async (req, res) => {
     try {
         const folderId = req.params.id;
-        const userId = new ObjectId(req.session.user._id); // <--- SỬA Ở ĐÂY (thành ObjectId)
+        const userId = new ObjectId(req.session.user._id);
         const { name: newName } = req.body;
 
         if (!ObjectId.isValid(folderId)) {
@@ -458,7 +459,7 @@ exports.renameFolder = async (req, res) => {
         const mindmapsDb = req.app.locals.mindmapsDb;
 
         const result = await mindmapsDb.collection('folders').updateOne(
-            { _id: folderObjectId, userId: userId }, // Đảm bảo đúng user sở hữu
+            { _id: folderObjectId, userId: userId },
             { $set: { name: trimmedName } }
         );
 
@@ -466,7 +467,6 @@ exports.renameFolder = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy thư mục hoặc bạn không có quyền sửa.' });
         }
         
-        // Trả về cả tên mới để frontend cập nhật UI ngay lập tức
         res.json({ success: true, message: 'Đổi tên thư mục thành công!', newName: trimmedName });
 
     } catch (err) {
@@ -475,10 +475,11 @@ exports.renameFolder = async (req, res) => {
     }
 };
 
+// [DELETE] /dashboard/folders/:id
 exports.deleteFolder = async (req, res) => {
     try {
         const folderId = req.params.id;
-        const userId = new ObjectId(req.session.user._id); // <--- SỬA Ở ĐÂY (thành ObjectId)        
+        const userId = new ObjectId(req.session.user._id);
         const mindmapCollectionName = req.session.user._id.toString();
 
         if (!ObjectId.isValid(folderId)) {
@@ -488,16 +489,13 @@ exports.deleteFolder = async (req, res) => {
         const folderObjectId = new ObjectId(folderId);
         const mindmapsDb = req.app.locals.mindmapsDb;
 
-        // BƯỚC 1: Di chuyển tất cả mindmap trong thư mục này ra root
-        // (Chúng ta $unset trường folderId của chúng)
         await mindmapsDb.collection(mindmapCollectionName).updateMany(
-            { folderId: folderObjectId }, // Tìm tất cả mindmap trong thư mục này
-            { $unset: { folderId: "" } }  // Xóa trường folderId của chúng
+            { folderId: folderObjectId },
+            { $unset: { folderId: "" } }
         );
 
-        // BƯỚC 2: Xóa thư mục
         const result = await mindmapsDb.collection('folders').deleteOne(
-            { _id: folderObjectId, userId: userId } // Đảm bảo đúng user sở hữu
+            { _id: folderObjectId, userId: userId }
         );
 
         if (result.deletedCount === 0) {
@@ -511,3 +509,4 @@ exports.deleteFolder = async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server không xác định khi xóa thư mục.' });
     }
 };
+

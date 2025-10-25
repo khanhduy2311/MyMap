@@ -69,9 +69,19 @@ block main
 
     //- Thêm scripts cho particles và hiệu ứng
     script(src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js")
+    // Thay 'load' bằng 'DOMContentLoaded'
     script.
-      window.addEventListener('load', function() {
-        // Khởi tạo particles.js
+      document.addEventListener('DOMContentLoaded', function() {
+        // Ẩn loading overlay ngay lập tức
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        if (loadingOverlay) {
+          loadingOverlay.style.opacity = '0';
+          setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+          }, 500); // 500ms là thời gian hiệu ứng mờ dần (transition)
+        }
+
+        // Khởi tạo particles.js sau khi DOM sẵn sàng
         if (typeof particlesJS !== 'undefined') {
           particlesJS('particles-js', {
             particles: {
@@ -106,15 +116,6 @@ block main
               }
             }
           });
-        }
-
-        // Ẩn loading overlay sau khi trang tải xong
-        const loadingOverlay = document.querySelector('.loading-overlay');
-        if (loadingOverlay) {
-          loadingOverlay.style.opacity = '0';
-          setTimeout(() => {
-            loadingOverlay.style.display = 'none';
-          }, 500);
         }
       });
 

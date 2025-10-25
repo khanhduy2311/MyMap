@@ -110,6 +110,7 @@ body.register-page {
   border: 1px solid rgba(19,41,52,0.06);
   background: rgba(255,255,255,0.9);
   color: #07202a;
+  transition: all 0.2s ease-out;
 }
 .register-form input:focus {
   outline: none;
@@ -177,8 +178,10 @@ body.register-page {
 
 
 .register-form input:focus {
-  transform: translateY(-2px);
-  background: rgba(162, 158, 158, 0.08);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-  border-color: rgba(255,255,255,0.22);
+  outline: none;
+  transform: translateY(-2px); /* <-- Hình động bạn muốn */
+  background: rgba(255, 255, 255, 1); /* Sửa nền mờ thành nền trắng rõ */
+  box-shadow: 0 8px 22px rgba(6,34,44,0.15); /* Dùng box-shadow đẹp hơn */
+  border-color: rgba(6,102,255,0.22);
+  transition: none;
 }
