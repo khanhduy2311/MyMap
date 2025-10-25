@@ -27,11 +27,7 @@ block main
               span Thùng rác
 
     main.dashboard-content
-      //- SỬ DỤNG LOGIC IF/ELSE
       if mindmaps && mindmaps.length > 0
-        //- Nếu có mindmap
-        
-        //- Bọc tiêu đề và nút "Dọn rác"
         .content-header-trash
           h2.content-title-trash Thùng rác
           //- Nút Dọn sạch thùng rác
@@ -58,8 +54,9 @@ block main
                 button.btn-action.btn-delete-permanent-trash(type="button", title="Xóa vĩnh viễn"): i.fas.fa-trash-alt
 
       else
-        //- Nếu không có mindmap (giữ nguyên)
         .empty-trash-container
+          .content-header-trash
+            .content-title-trash Thùng rác đang trống
           i.fas.fa-trash-alt.empty-icon
           h4.empty-title Mọi mindmap bạn xóa sẽ nằm ở đây
           p.empty-text Bạn có 30 ngày để khôi phục trước khi chúng tự động bị xóa khỏi Thùng rác.
