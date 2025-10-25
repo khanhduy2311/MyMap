@@ -35,7 +35,7 @@
     "multer": "^2.0.2",
     "multer-gridfs-storage": "^5.0.2",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^7.0.9",
+    "nodemailer": "^7.0.10",
     "openai": "^6.3.0",
     "pdf-parse": "^1.1.1",
     "pdf2pic": "^3.2.0",
