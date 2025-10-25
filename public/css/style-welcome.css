@@ -1,4 +1,11 @@
 /* --- WELCOME SCREEN STYLES --- */
+@media (max-width: 768px) {
+        body {
+            cursor: default !important;
+        }
+        
+    }
+
 .welcome-screen {
     position: fixed;
     top: 0;

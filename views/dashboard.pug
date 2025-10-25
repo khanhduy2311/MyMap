@@ -4,14 +4,7 @@ block styles
   link(rel="stylesheet" href="/css/style-welcome.css")
   link(rel="stylesheet" href="/css/style-dashboard.css")
   link(rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=scan_delete")
-  style.
-    /* Hiển thị cursor mặc định trên mobile */
-    @media (max-width: 768px) {
-        body {
-            cursor: default !important;
-        }
-        
-    }
+    
 
 block main
   //- MÀN HÌNH CHÀO MỪNG (chỉ hiện trên dashboard chính, không phải thư mục, không có search)
@@ -75,8 +68,7 @@ block main
         #mindmapGrid.mindmap-grid
           each mindmap in mindmaps
             .mindmap-card(data-id=`${mindmap._id}`)
-              a.card-link(href=`/mindmaps/${mindmap._id}`)
-                .preview-image
+              a.card-link(href=`/mindmaps/${mindmap._id}`): .preview-image
               .card-title.card-title-display
                 a(href=`/mindmaps/${mindmap._id}`) #{mindmap.title}
               .card-title.card-title-edit(style="display: none;")
@@ -366,6 +358,20 @@ block scripts
     document.addEventListener('DOMContentLoaded', function() {
       initCustomCursor();
       initTitleAnimation();
+      
+      const moveModalElement = document.getElementById('moveFolderModal');
+      let moveModalInstance = null; // Biến để lưu trữ modal
+      if (moveModalElement) {
+        // Xóa backdrop cũ (nếu có) trước khi mở modal mới
+        moveModalElement.addEventListener('show.bs.modal', () => {
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        });
+
+        moveModalInstance = new bootstrap.Modal(moveModalElement, {
+          backdrop: 'static', // không cho click ra ngoài
+          keyboard: false
+        });
+      }
 
       // Xử lý mindmap grid
       const mindmapGrid = document.getElementById('mindmapGrid');
@@ -394,8 +400,9 @@ block scripts
           // Nút di chuyển
           if (target.closest('.btn-move')) {
             mindmapToMoveId = mindmapId;
-            const moveModal = new bootstrap.Modal(document.getElementById('moveFolderModal'));
-            moveModal.show();
+            if (moveModalInstance) {
+              moveModalInstance.show(); // Sử dụng lại thể hiện đã tạo
+            }
             return;
           }
 
@@ -500,9 +507,8 @@ block scripts
               if (mindmapCard) {
                 mindmapCard.remove();
               }
-              const moveModal = bootstrap.Modal.getInstance(document.getElementById('moveFolderModal'));
-              if (moveModal) {
-                moveModal.hide();
+              if (moveModalInstance) { // Thay vì gọi bootstrap.Modal.getInstance
+                moveModalInstance.hide();
               }
               showToast('Đã di chuyển mindmap thành công!', 'Thành công', 'success');
             } else {
@@ -548,6 +554,10 @@ block scripts
             showToast('Lỗi kết nối: ' + error.message, 'Lỗi', 'error');
           }
         });
+      }
+      const moveModalEl = document.getElementById('moveFolderModal');
+      if (moveModalEl && moveModalEl.parentElement !== document.body) {
+        document.body.appendChild(moveModalEl);
       }
     });
 

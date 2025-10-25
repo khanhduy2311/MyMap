@@ -2,7 +2,7 @@
 /* --- BỐ CỤC CHÍNH --- */
 .dashboard-layout {
     display: grid;
-    height: calc(100vh - 72px); 
+    height: calc(108vh - 72px); 
 }
 
 /* === STYLE CHO TRẠNG THÁI DASHBOARD TRỐNG === */
@@ -927,7 +927,7 @@
 }
 
 /* Hiệu ứng fade in khi load trang */
-.dashboard-layout {
+.dashboard-content {
     opacity: 0;
     animation: fadeInUp 1s ease-out 0.5s forwards;
 }
@@ -964,6 +964,22 @@
     position: relative;
     z-index: 1;
 }
+.modal-backdrop.show {
+  opacity: 0.5 !important;
+  z-index: 1040 !important;
+}
+
+#moveFolderModal {
+  z-index: 1055 !important;
+}
+.modal {
+  z-index: 1050 !important;
+}
+.modal-backdrop.show {
+  z-index: 1040 !important;
+}
+
+
 
 /* ==== CUSTOM CURSOR - GRADIENT ĐỘNG THUẦN CSS (FIXED) ==== */
 
@@ -1112,3 +1128,4 @@ a:hover, button:hover, .btn:hover {
     filter: brightness(1.1);
     transition: filter 0.2s ease;
 }
+
