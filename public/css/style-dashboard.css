@@ -2,7 +2,7 @@
 /* --- BỐ CỤC CHÍNH --- */
 .dashboard-layout {
     display: grid;
-    height: calc(108vh - 72px);
+    min-height: calc(108vh - 72px);
     background-image: linear-gradient(135deg, #ffecee 0%, #bbdbfe 100%);
 }
 
