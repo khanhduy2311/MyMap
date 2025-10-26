@@ -67,6 +67,7 @@ body.friends-page footer {
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid transparent;
+  position: relative; /* <<< THÊM DÒNG NÀY */
 }
 
 .friend-item:hover {
@@ -94,6 +95,39 @@ body.friends-page footer {
   text-align: center;
   padding: 2rem;
   opacity: 0.7;
+}
+
+/* Style cho chấm trạng thái */
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white; /* Viền trắng để nổi bật trên nền */
+  position: absolute;   /* <<< Định vị tuyệt đối */
+  top: 10px;            /* <<< Căn lên góc trên */
+  right: 10px;           /* <<< Căn sang góc phải */
+  transition: background-color 0.3s ease;
+  z-index: 1; /* Đảm bảo nằm trên các phần tử khác nếu cần */
+}
+
+/* Màu cho trạng thái offline */
+.status-indicator.offline {
+  background-color: #6c757d; /* Màu xám */
+}
+
+/* Màu cho trạng thái online */
+.status-indicator.online {
+  background-color: #198754; /* Màu xanh lá */
+}
+
+/* (Tùy chọn) Điều chỉnh khoảng cách tên để không bị chấm đè lên */
+.friend-details {
+  padding-right: 20px; /* Tạo khoảng trống bên phải tên */
+}
+
+/* Đảm bảo flex hoạt động đúng */
+.friend-item .d-flex {
+  width: 100%; /* Đảm bảo thẻ div chứa avatar và tên chiếm hết chiều rộng */
 }
 
 /* === CỘT PHẢI: PANEL CỬA SỔ CHAT === */

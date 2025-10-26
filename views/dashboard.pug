@@ -245,28 +245,35 @@ block scripts
     }
 
     // Hàm tạo mindmap mới
+    // Inside the <script> block of dashboard.pug
     function createNewMindmap() {
-      fetch('/mindmaps', {
+      fetch('/mindmaps', { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: 'Mindmap mới',
-          content: { nodes: [], edges: [] }
+          title: 'Mindmap mới', 
+          
+          nodes: [],
+          edges: []
         })
       })
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          window.location.href = `/mindmaps/${data.mindmapId}`;
+          // ** CHANGE IS HERE **
+          // Redirect to the React app route (/import/:id) instead of the old detail page
+          window.location.href = `/import/${data.mindmapId}`; //  modified
         } else {
-          showToast('Lỗi khi tạo mindmap: ' + data.message, 'Lỗi', 'error');
+          // Assumes showToast function is available
+          showToast('Lỗi khi tạo mindmap: ' + data.message, 'Lỗi', 'error'); //  modified for consistency
         }
       })
       .catch(error => {
-        console.error('Error:', error);
-        showToast('Lỗi kết nối khi tạo mindmap', 'Lỗi', 'error');
+        console.error('Error creating new mindmap:', error); 
+        
+        showToast('Lỗi kết nối khi tạo mindmap', 'Lỗi', 'error'); 
       });
     }
 

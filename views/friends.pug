@@ -66,7 +66,7 @@ block main
                   data-username=friend.username
                   onclick=`selectFriend('${friend._id}', '${friend.username}')`
                 )
-                  .d-flex.align-items-center
+                  .d-flex.align-items-center.w-100
                     //- Avatar
                     img.rounded-circle.me-3.friend-avatar(
                       src=friend.avatar || '/images/default-avatar.png',
@@ -76,13 +76,14 @@ block main
                       style="object-fit: cover;",
                       onerror="this.onerror=null; this.src='/images/default-avatar.png';"
                     )
-                    .friend-details
+                    .friend-details.flex-grow-1
                       .fw-bold #{friend.username}
                       //- Kiểm tra displayName trước khi hiển thị
                       if friend.displayName
                         small.text-muted #{friend.displayName}
                       else
                         small.text-muted ...
+                    span.status-indicator.offline(data-user-id=friend._id)
 
             else
               //- Trạng thái rỗng khi chưa có bạn

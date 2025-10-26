@@ -1,262 +1,322 @@
-// Biến toàn cục để theo dõi trạng thái
-let currentUserId = null;
-let currentReceiverId = null; // Lưu ID của người đang chat
-let currentReceiverUsername = null; // Lưu username của người đang chat
-let socket = null;
+// File: public/js/friends-chat.js
 
 document.addEventListener('DOMContentLoaded', () => {
-  // === 1. KHỞI TẠO KẾT NỐI SOCKET ===
-  if (!socket) {
-    socket = io({ autoConnect: true });
-    console.log('Đang khởi tạo kết nối Socket.IO...');
-  } else {
-    console.log('Socket.IO đã được khởi tạo.');
-  }
+    // === KHAI BÁO BIẾN ===
+    let currentUserId = null;       // ID của người dùng hiện tại (lấy từ server)
+    let currentReceiverId = null;   // ID của người đang chat cùng
+    let currentReceiverUsername = null; // Username của người đang chat cùng
+    const socket = io();          // Kết nối Socket.IO
 
-  // Lấy các element quan trọng
-  const messagesContainer = document.getElementById('messages');
-  const chatForm = document.getElementById('chatForm');
-  const messageInput = document.getElementById('messageInput');
-  const chatHeader = document.getElementById('chatWithHeader');
-  const friendsListContainer = document.querySelector('.friends-list-scrollable');
-  const sendButton = chatForm ? chatForm.querySelector('button[type="submit"]') : null;
+    // Lấy các element trên trang
+    const messagesContainer = document.getElementById('messages');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatHeader = document.getElementById('chatWithHeader');
+    const friendsListContainer = document.querySelector('.friends-list-scrollable');
+    const messageSubmitButton = chatForm ? chatForm.querySelector('button[type="submit"]') : null;
 
-  // === 2. CÁC HÀM TRỢ GIÚP ===
+    // === HÀM TRỢ GIÚP ===
 
-  // Hàm để render tin nhắn
-  function renderMessage(message, isOwn) {
-    const emptyState = messagesContainer.querySelector('.empty-chat-state');
-    if (emptyState) {
-      emptyState.remove();
-    }
-
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message', isOwn ? 'own' : 'other');
-
-    const bubble = document.createElement('div');
-    bubble.classList.add('message-bubble');
-    // Chỉ thêm nội dung text vào bubble trước
-    bubble.appendChild(document.createTextNode(message.content || '')); // Xử lý null content
-
-    // === THÊM THỜI GIAN VÀO BÊN TRONG BUBBLE ===
-    const timeDiv = document.createElement('div');
-    timeDiv.classList.add('message-time');
-    // Thêm class riêng để căn chỉnh
-    timeDiv.classList.add(isOwn ? 'time-own' : 'time-other');
-    timeDiv.textContent = message.createdAt ? new Date(message.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
-
-    // Thêm timeDiv vào cuối bubble
-    bubble.appendChild(timeDiv);
-    // ===========================================
-
-    // Thêm bubble (đã chứa cả text và time) vào messageDiv
-    messageDiv.appendChild(bubble);
-
-    messagesContainer.prepend(messageDiv);
-  }
-
-  // --- Các hàm activateChatWindow, deactivateChatWindow giữ nguyên ---
-  function activateChatWindow(username) {
-    if (chatHeader) chatHeader.textContent = `Trò chuyện với ${username}`;
-    if (messageInput) messageInput.disabled = false;
-    if (sendButton) sendButton.disabled = false;
-    if (messagesContainer) messagesContainer.innerHTML = ''; // Xóa tin nhắn cũ
-    if (messageInput) messageInput.focus();
-  }
-
-  function deactivateChatWindow() {
-    if (chatHeader) chatHeader.textContent = 'Chọn bạn bè để trò chuyện';
-    if (messageInput) messageInput.disabled = true;
-    if (sendButton) sendButton.disabled = true;
-    currentReceiverId = null;
-    currentReceiverUsername = null;
-    if (messagesContainer) {
-        messagesContainer.innerHTML = `
-          <div class="empty-chat-state">
-            <i class="fas fa-comments fa-4x"></i>
-            <p>Chọn một người bạn để bắt đầu trò chuyện</p>
-          </div>`;
-    }
-    if (friendsListContainer) {
-        friendsListContainer.querySelectorAll('.friend-item.active').forEach(el => el.classList.remove('active'));
-    }
-  }
-
-
-  // === 3. LẮNG NGHE SỰ KIỆN TỪ SERVER ===
-  if (socket) {
-      socket.on('connect', () => {
-        console.log('Socket.IO đã kết nối. ID:', socket.id);
-      });
-
-      socket.on('authenticated', (data) => {
-        console.log('Socket đã xác thực:', data.userId);
-        currentUserId = data.userId;
-      });
-
-      socket.on('chatHistory', (data) => {
-        console.log("Nhận lịch sử chat:", data);
-        if (!data || data.receiverId !== currentReceiverId) {
-          console.log(`Lịch sử chat cho ${data?.receiverId}, nhưng đang xem ${currentReceiverId}. Bỏ qua.`);
-          return;
+    // Hàm cuộn xuống cuối khu vực tin nhắn
+    function scrollToBottom() {
+        if (messagesContainer) {
+            // Đặt scroll behavior thành 'smooth' nếu muốn cuộn mượt
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
+    }
 
-        if (messagesContainer) messagesContainer.innerHTML = '';
+    // Hàm hiển thị tin nhắn
+    function displayMessage(msg, isOwnMessage) {
+        if (!messagesContainer) return;
 
-        if (!data.messages || data.messages.length === 0) {
-            if (messagesContainer) {
-                messagesContainer.innerHTML = `
-                  <div class="empty-chat-state">
-                    <i class="fas fa-history fa-4x"></i>
-                    <p>Chưa có tin nhắn nào. Hãy bắt đầu!</p>
-                  </div>`;
-            }
-          return;
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', isOwnMessage ? 'own' : 'other');
+
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.classList.add('message-bubble');
+        bubbleDiv.textContent = msg.content; // Chỉ hiển thị nội dung
+
+        // Thêm thời gian gửi (định dạng nếu cần)
+        const timeSpan = document.createElement('span');
+        timeSpan.classList.add('message-time');
+        timeSpan.textContent = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
+        bubbleDiv.appendChild(timeSpan);
+
+        messageDiv.appendChild(bubbleDiv);
+
+        // Chèn tin nhắn mới vào ĐẦU container (vì flex-direction: column-reverse)
+        messagesContainer.insertBefore(messageDiv, messagesContainer.firstChild);
+
+        // Xóa trạng thái rỗng nếu có
+        const emptyState = messagesContainer.querySelector('.empty-chat-state');
+        if (emptyState) {
+            emptyState.remove();
         }
+    }
 
-        data.messages.forEach(msg => {
-          renderMessage(msg, msg.senderId === data.currentUserId);
-        });
-      });
-
-      socket.on('receiveMessage', (message) => {
-        console.log("Nhận tin nhắn mới:", message);
-        if (!message) return;
-
-        if (message.senderId === currentReceiverId) {
-          renderMessage(message, false);
+    // Hàm cập nhật trạng thái online/offline cho bạn bè
+    function updateUserStatus(userId, isOnline) {
+        if (!friendsListContainer) return;
+        const statusIndicator = friendsListContainer.querySelector(`.status-indicator[data-user-id="${userId}"]`);
+        if (statusIndicator) {
+            statusIndicator.classList.toggle('online', isOnline); // Thêm/xóa class 'online'
+            statusIndicator.classList.toggle('offline', !isOnline); // Thêm/xóa class 'offline'
+            console.log(`Status updated for ${userId}: ${isOnline ? 'Online' : 'Offline'}`);
         } else {
-          if (friendsListContainer) {
-              const friendItem = friendsListContainer.querySelector(`.friend-item[data-user-id="${message.senderId}"]`);
-              if (friendItem) {
-                friendItem.classList.add('has-unread');
-                console.log(`Tin nhắn mới từ ${friendItem.dataset.username}`);
-                // (Nâng cao) Cập nhật trạng thái chưa đọc ở đây
-              }
-          }
+             console.log(`Status indicator not found for user ${userId}`);
         }
-      });
+    }
 
-      socket.on('messageSent', (message) => {
-        console.log("Tin nhắn của bạn đã được gửi:", message);
-        if (!message) return;
-        renderMessage(message, true);
-      });
-
-      socket.on('chatError', (errorMessage) => {
-        console.error('Lỗi từ server:', errorMessage);
-        if (typeof showToast === 'function') {
-          showToast(errorMessage, 'Lỗi Chat', 'error');
-        }
-      });
-
-      socket.on('disconnect', (reason) => {
-        console.warn('Socket.IO đã ngắt kết nối:', reason);
-        deactivateChatWindow();
-        if (typeof showToast === 'function') {
-          showToast('Mất kết nối với máy chủ chat.', 'Cảnh báo', 'warning');
-        }
-      });
-  }
-
-  // === 4. GỬI SỰ KIỆN LÊN SERVER ===
-  if (chatForm) {
-    chatForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const content = messageInput ? messageInput.value.trim() : '';
-
-      if (content && currentReceiverId && socket && socket.connected) {
-        console.log(`Đang gửi tin nhắn tới ${currentReceiverId}: ${content}`);
-        socket.emit('sendMessage', {
-          receiverId: currentReceiverId,
-          content: content,
+    // === XỬ LÝ SOCKET.IO ===
+    if (socket) {
+        // --- Kết nối thành công ---
+        socket.on('connect', () => {
+            console.log('🔗 Connected to Socket.IO server');
         });
-        if (messageInput) messageInput.value = '';
-      } else if (socket && !socket.connected) {
-        if (typeof showToast === 'function') {
-          showToast('Không thể gửi tin nhắn. Đang mất kết nối.', 'Lỗi', 'error');
-        }
-      }
-    });
-  }
 
-  // --- Logic typing indicator giữ nguyên ---
-    let typingTimer;
-    const TYPING_TIMER_LENGTH = 500; // ms
-    if (messageInput) {
-        messageInput.addEventListener('input', () => {
-          if (currentReceiverId && socket && socket.connected) {
-            socket.emit('typingStart', { receiverId: currentReceiverId });
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => {
-              if (socket && socket.connected) {
-                  socket.emit('typingStop', { receiverId: currentReceiverId });
-              }
-            }, TYPING_TIMER_LENGTH);
-          }
-        });
-        messageInput.addEventListener('blur', () => {
-            clearTimeout(typingTimer);
-            if (currentReceiverId && socket && socket.connected) {
-                socket.emit('typingStop', { receiverId: currentReceiverId });
+        // --- Xác thực thành công, nhận userId ---
+        socket.on('authenticated', (data) => {
+            if (data && data.userId) {
+                currentUserId = data.userId;
+                console.log(`✅ Authenticated with User ID: ${currentUserId}`);
             }
         });
+
+        // --- Nhận lịch sử chat ---
+        socket.on('chatHistory', (data) => {
+            console.log(`📜 Received chat history with ${data.receiverId}`);
+            if (messagesContainer && data.receiverId === currentReceiverId) { // Chỉ hiển thị nếu đúng người đang chọn
+                // Xóa tin nhắn cũ và trạng thái rỗng
+                messagesContainer.innerHTML = '';
+
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        // Kiểm tra ID dạng string
+                        const isOwn = msg.senderId.toString() === currentUserId.toString();
+                        displayMessage(msg, isOwn);
+                    });
+                    scrollToBottom(); // Cuộn xuống cuối sau khi tải xong
+                } else {
+                    // Hiển thị lại trạng thái rỗng nếu không có tin nhắn
+                    messagesContainer.innerHTML = `
+                        <div class="empty-chat-state">
+                          <i class="fas fa-comments fa-4x"></i>
+                          <p>Chưa có tin nhắn nào. Bắt đầu trò chuyện!</p>
+                        </div>`;
+                }
+            }
+        });
+
+        // --- Nhận tin nhắn mới ---
+        socket.on('receiveMessage', (msg) => {
+            console.log('📩 Received message:', msg);
+            // Chỉ hiển thị nếu đang chat với người gửi
+            if (msg && msg.senderId === currentReceiverId) {
+                displayMessage(msg, false); // Tin nhắn từ người khác
+                scrollToBottom();
+            } else if (msg) {
+                // (Tùy chọn: Hiển thị thông báo có tin nhắn mới từ người khác)
+                console.log(`Tin nhắn mới từ ${msg.senderId}, nhưng không phải người đang chat.`);
+                 // Có thể thêm hiệu ứng nhấp nháy hoặc badge cho người gửi trong danh sách bạn bè
+                 const friendItem = friendsListContainer.querySelector(`.friend-item[data-user-id="${msg.senderId}"]`);
+                 if (friendItem && !friendItem.classList.contains('active')) {
+                     // Ví dụ: thêm class để nhấp nháy
+                     friendItem.classList.add('new-message-indicator');
+                     setTimeout(() => friendItem.classList.remove('new-message-indicator'), 2000); // Bỏ nháy sau 2s
+                 }
+            }
+        });
+
+        // --- Xác nhận tin nhắn đã gửi ---
+        // (Hữu ích nếu bạn muốn cập nhật trạng thái 'đã gửi'/'đã xem')
+        socket.on('messageSent', (msg) => {
+            console.log('✅ Message sent confirmation:', msg);
+            // Hiện tại chỉ log, bạn có thể thêm logic cập nhật UI nếu cần
+        });
+
+        // --- Nhận lỗi từ server ---
+        socket.on('chatError', (errorMessage) => {
+            console.error('❌ Chat Error:', errorMessage);
+            // Hiển thị lỗi cho người dùng (ví dụ: dùng toast)
+            if (typeof showToast === 'function') { // Kiểm tra hàm showToast tồn tại
+                 showToast(errorMessage, 'Lỗi Chat', 'error');
+            } else {
+                 alert(`Lỗi Chat: ${errorMessage}`);
+            }
+        });
+
+        // --- Nhận trạng thái typing ---
+        socket.on('typing', (data) => {
+            if (data && data.userId === currentReceiverId) {
+                // (Tùy chọn: Hiển thị/ẩn indicator "...")
+                console.log(`${currentReceiverUsername} is ${data.isTyping ? 'typing...' : 'stopped typing'}`);
+                const typingIndicator = document.getElementById('typingIndicator'); // Cần tạo element này trong HTML
+                if (typingIndicator) {
+                    typingIndicator.style.display = data.isTyping ? 'block' : 'none';
+                }
+            }
+        });
+
+        // --- Nhận trạng thái bạn bè ban đầu ---
+        socket.on('friends status', (data) => {
+            console.log('Received initial friends status:', data);
+            if (data?.onlineFriendIds && Array.isArray(data.onlineFriendIds) && friendsListContainer) {
+                // 1. Reset tất cả về offline
+                friendsListContainer.querySelectorAll('.status-indicator').forEach(el => {
+                    el.classList.remove('online');
+                    el.classList.add('offline');
+                });
+                // 2. Cập nhật online cho những người trong danh sách
+                data.onlineFriendIds.forEach(userId => {
+                    updateUserStatus(userId, true);
+                });
+            }
+        });
+
+        // --- Nhận thông báo bạn bè online ---
+        socket.on('user online', (data) => {
+            console.log('User came online:', data);
+            if (data?.userId) {
+                updateUserStatus(data.userId, true);
+            }
+        });
+
+        // --- Nhận thông báo bạn bè offline ---
+        socket.on('user offline', (data) => {
+            console.log('User went offline:', data);
+            if (data?.userId) {
+                updateUserStatus(data.userId, false);
+            }
+        });
+
+        // --- Mất kết nối ---
+        socket.on('disconnect', (reason) => {
+            console.warn(`🔌 Disconnected from Socket.IO server. Reason: ${reason}`);
+            // (Tùy chọn: Hiển thị thông báo mất kết nối, thử kết nối lại)
+            if (chatHeader) chatHeader.textContent = "Mất kết nối...";
+             if (messageInput) messageInput.disabled = true;
+             if (messageSubmitButton) messageSubmitButton.disabled = true;
+             // Reset trạng thái online của mọi người về offline trên UI
+             if (friendsListContainer) {
+                 friendsListContainer.querySelectorAll('.status-indicator.online').forEach(el => {
+                    el.classList.remove('online');
+                    el.classList.add('offline');
+                 });
+             }
+        });
+
+    } else {
+        console.error("Socket.IO client not initialized!");
+         if (chatHeader) chatHeader.textContent = "Không thể kết nối chat";
     }
 
-}); // Hết DOMContentLoaded
+    // === XỬ LÝ GỬI TIN NHẮN ===
+    if (chatForm && messageInput && messageSubmitButton) {
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const content = messageInput.value.trim();
 
-// === 5. HÀM GLOBAL (ĐỂ PUG CÓ THỂ GỌI) ===
-function selectFriend(friendId, friendUsername) {
-  console.log(`Chọn bạn: ${friendUsername} (${friendId})`);
-  if (!socket) {
-    console.error('Socket chưa được khởi tạo!');
-    if (typeof showToast === 'function') {
-      showToast('Lỗi kết nối chat.', 'Lỗi', 'error');
+            if (content && currentReceiverId && socket && socket.connected) {
+                console.log(`✉️ Sending message to ${currentReceiverId}: ${content}`);
+                // Gửi tin nhắn lên server
+                socket.emit('sendMessage', {
+                    receiverId: currentReceiverId,
+                    content: content
+                });
+
+                // Hiển thị tin nhắn của mình ngay lập tức (Optimistic UI)
+                const tempMessage = {
+                    content: content,
+                    createdAt: new Date(), // Thời gian tạm thời
+                    senderId: currentUserId // Đảm bảo đúng ID
+                };
+                displayMessage(tempMessage, true);
+                scrollToBottom();
+
+                messageInput.value = ''; // Xóa input
+                messageInput.focus();
+                // (Tùy chọn: Gửi sự kiện typingStop sau khi gửi)
+                 socket.emit('typingStop', { receiverId: currentReceiverId });
+            } else if (!socket || !socket.connected) {
+                 console.error("Không thể gửi tin nhắn: Mất kết nối.");
+                 if (typeof showToast === 'function') {
+                    showToast("Mất kết nối, không thể gửi tin nhắn.", 'Lỗi', 'error');
+                 }
+            }
+        });
+
+        // === XỬ LÝ TYPING INDICATOR (GỬI LÊN SERVER) ===
+         let typingTimer;
+         const typingTimeout = 1500; // ms
+
+         messageInput.addEventListener('input', () => {
+             if (currentReceiverId && socket && socket.connected) {
+                 // Gửi 'typingStart' ngay lập tức
+                 socket.emit('typingStart', { receiverId: currentReceiverId });
+
+                 // Đặt lại bộ đếm thời gian
+                 clearTimeout(typingTimer);
+                 typingTimer = setTimeout(() => {
+                     // Gửi 'typingStop' sau khi ngừng gõ
+                     socket.emit('typingStop', { receiverId: currentReceiverId });
+                 }, typingTimeout);
+             }
+         });
     }
-    return;
-  }
 
-  if (friendId === currentReceiverId) {
-    console.log('Đã chọn người này rồi.');
-    return;
-  }
+    // === HÀM GLOBAL ĐỂ CHỌN BẠN BÈ ===
+    // (Đặt ở global scope để onclick trong Pug có thể gọi)
+    window.selectFriend = (userId, username) => {
+        console.log(`Selected friend: ${username} (${userId})`);
 
-  currentReceiverId = friendId;
-  currentReceiverUsername = friendUsername;
+        // Bỏ active của người cũ (nếu có)
+        const currentActive = friendsListContainer ? friendsListContainer.querySelector('.friend-item.active') : null;
+        if (currentActive) {
+            currentActive.classList.remove('active');
+        }
 
-  // Cập nhật UI
-  const friendsListContainer = document.querySelector('.friends-list-scrollable');
-  const chatHeader = document.getElementById('chatWithHeader');
-  const messageInput = document.getElementById('messageInput');
-  const chatForm = document.getElementById('chatForm');
-  const sendButton = chatForm ? chatForm.querySelector('button[type="submit"]') : null;
+        // Đặt active cho người mới chọn
+        const newActive = friendsListContainer ? friendsListContainer.querySelector(`.friend-item[data-user-id="${userId}"]`) : null;
+        if (newActive) {
+            newActive.classList.add('active');
+            // Bỏ hiệu ứng tin nhắn mới nếu có
+             newActive.classList.remove('new-message-indicator');
+        }
 
-  if (friendsListContainer) {
-    const oldActive = friendsListContainer.querySelector('.friend-item.active');
-    if (oldActive) {
-      oldActive.classList.remove('active');
+        // Cập nhật thông tin người đang chat
+        currentReceiverId = userId;
+        currentReceiverUsername = username;
+
+        // Cập nhật header chat
+        if (chatHeader) {
+            chatHeader.textContent = `Trò chuyện với ${username}`;
+        }
+
+        // Kích hoạt input và nút gửi
+         if (messageInput) messageInput.disabled = false;
+         if (messageSubmitButton) messageSubmitButton.disabled = false;
+
+
+        // Yêu cầu lịch sử chat từ server
+        if (socket && socket.connected) {
+            messagesContainer.innerHTML = '<div>Đang tải lịch sử chat...</div>'; // Hiển thị loading tạm thời
+            socket.emit('getChatHistory', { receiverId: userId });
+        } else {
+             messagesContainer.innerHTML = '<div class="empty-chat-state"><p>Mất kết nối...</p></div>';
+        }
+    };
+
+}); // Kết thúc DOMContentLoaded
+
+
+// (Tùy chọn) CSS cho hiệu ứng tin nhắn mới
+const style = document.createElement('style');
+style.textContent = `
+    .friend-item.new-message-indicator {
+        animation: blinkBackground 0.5s 3; /* Nháy 3 lần */
     }
-    const newActive = friendsListContainer.querySelector(`.friend-item[data-user-id="${friendId}"]`);
-    if (newActive) {
-      newActive.classList.add('active');
-      newActive.classList.remove('has-unread');
+    @keyframes blinkBackground {
+        50% { background-color: rgba(13, 110, 253, 0.1); }
     }
-  }
-
-  // Kích hoạt cửa sổ chat
-  if (chatHeader) chatHeader.textContent = `Trò chuyện với ${friendUsername}`;
-  if (messageInput) messageInput.disabled = false;
-  if (sendButton) sendButton.disabled = false;
-  if (messageInput) messageInput.focus();
-
-  // Yêu cầu lịch sử chat
-  console.log(`Yêu cầu lịch sử chat với ${friendId}`);
-  if (socket.connected) {
-    socket.emit('getChatHistory', { receiverId: friendId });
-  } else {
-    console.warn('Không thể yêu cầu lịch sử chat vì socket không kết nối.');
-    if (typeof showToast === 'function') {
-      showToast('Mất kết nối, không thể tải tin nhắn.', 'Lỗi', 'error');
-    }
-  }
-}
+`;
+document.head.appendChild(style);
