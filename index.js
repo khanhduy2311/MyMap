@@ -7,7 +7,9 @@ const { MongoClient } = require('mongodb');
 const MongoStore = require('connect-mongo');
 const http = require('http');
 const { Server } = require("socket.io");
-const cors = require('cors');
+// const cors = require('cors'); // Bạn có thể xóa nếu không cần CORS cho Express khi chạy chung cổng
+const path = require('path'); // Đảm bảo 'path' được require ở đầu
+
 // ====== Routes ======
 const authRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document');
@@ -28,6 +30,7 @@ async function startServer() {
   try {
     await client.connect();
     console.log("✅ Successfully connected to MongoDB Atlas!");
+    console.log("✅ DB Connected!"); // Log 1
 
     // === KHỞI TẠO DATABASE ===
     const usersDb = client.db('users_identity');
@@ -35,19 +38,22 @@ async function startServer() {
     const chatDb = client.db('chat_storage');
 
     const app = express();
-     app.use(cors({
-      origin: 'http://localhost:3001',  // ✅ địa chỉ frontend React
-      credentials: true,                // ✅ cho phép gửi cookie/session
-      methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization']
-    }));
+
+    // === BỎ HOẶC SỬA CORS CHO PHÙ HỢP KHI CHẠY 1 CỔNG ===
+    // app.use(cors({
+    //   origin: 'http://localhost:3001', // Không cần thiết khi chạy cùng cổng
+    //   credentials: true,
+    //   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    //   allowedHeaders: ['Content-Type', 'Authorization']
+    // }));
+
     const PORT = process.env.PORT || 3000;
     const server = http.createServer(app);
-    
-    // === SỬA LẠI: Cấu hình Socket.IO với CORS ===
+
+    // === SOCKET.IO VẪN CẦN CORS ===
     const io = new Server(server, {
       cors: {
-        origin: "*", // Hoặc "http://localhost:3000" cho production
+        origin: "*", // Hoặc "http://localhost:3000" khi deploy
         methods: ["GET", "POST"]
       }
     });
@@ -56,41 +62,41 @@ async function startServer() {
     app.locals.usersDb = usersDb;
     app.locals.mindmapsDb = mindmapsDb;
     app.locals.chatDb = chatDb;
+    console.log("✅ App & Locals Initialized!"); // Log 2
 
-    // ... (Cấu hình middleware)
+    // === Cấu hình middleware cơ bản ===
     app.set('view engine', 'pug');
     app.set('views', 'views');
+    // Phục vụ file tĩnh (CSS, JS) cho các trang Pug TRƯỚC TIÊN
     app.use(express.static('public'));
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ limit: '50mb', extended: true }));
+    console.log("✅ Basic Middleware Set!"); // Log 3
 
+    // === Cấu hình Session Middleware ===
     const sessionMiddleware = session({
-      secret: process.env.SESSION_SECRET || 'my_session_secret', // Nên dùng biến môi trường
-      resave: false,
-      saveUninitialized: false,
+      secret: process.env.SESSION_SECRET || 'my_session_secret',
+      resave: false, // Bắt buộc
+      saveUninitialized: false, // Bắt buộc
       store: MongoStore.create({
         client: client,
         dbName: 'users_identity',
         collectionName: 'sessions',
-        ttl: 30 * 24 * 60 * 60
+        ttl: 30 * 24 * 60 * 60 // 30 days
       }),
       cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === 'production', // HTTPS trong production
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        sameSite: 'none' 
+        sameSite: 'lax'
       }
     });
-
-    // === SỬ DỤNG SESSION CHO EXPRESS ===
     app.use(sessionMiddleware);
+    io.engine.use(sessionMiddleware); // Chia sẻ session cho Socket.IO
 
-    // === CHIA SẺ SESSION CHO SOCKET.IO - SỬA LẠI ===
-    io.engine.use(sessionMiddleware);
+    app.use(flash()); // Middleware cho flash messages
 
-    app.use(flash());
-
-    // === MIDDLEWARE TRUYỀN DATABASE ===
+    // === Middleware truyền DB và locals ===
     app.use((req, res, next) => {
       req.usersDb = req.app.locals.usersDb;
       req.mindmapsDb = req.app.locals.mindmapsDb;
@@ -100,50 +106,95 @@ async function startServer() {
       res.locals.error_msg = req.flash('error_msg');
       next();
     });
+    console.log("✅ Session & Flash Middleware Set!"); // Log 4
 
-    // === KHỞI TẠO SOCKET HANDLER - THÊM usersDb ===
-    require('./socketHandler.js')(io, usersDb, chatDb); 
+    // === KHỞI TẠO SOCKET HANDLER ===
+    require('./socketHandler.js')(io, usersDb, chatDb);
+    console.log("✅ Socket Handler Initialized!"); // Log 5
 
-    // ====== ĐĂNG KÝ ROUTES ======
+    // ==========================================================
+    // === ✨ THỨ TỰ ROUTE MỚI ĐỂ ƯU TIÊN PUG ✨ ===
+    // ==========================================================
+
+    // === ƯU TIÊN 1: Đăng ký các API Routes và Pug Routes (dashboard, profile...) ===
+    // Express sẽ kiểm tra các route này trước tiên
     app.use('/friends', friendRoutes(usersDb));
-    app.use('/dashboard', dashboardRoutes);
+    app.use('/dashboard', dashboardRoutes); // Xử lý các route bắt đầu bằng /dashboard
     app.use('/profile', profileRoutes);
     app.use('/upload', documentRoutes);
-    app.use('/mindmaps', mindmapRoutes);
-    app.use('/', authRoutes);
-        // === ROUTE CHÍNH ===
+    app.use('/mindmaps', mindmapRoutes); // API endpoints cho mindmap (vd: /mindmaps/json/:id)
+    app.use('/', authRoutes);          // Xử lý /login, /register, /home (nếu có), /logout...
+    console.log("✅ API & Pug Routes Registered!"); // Log 6
+
+    // === ƯU TIÊN 2: Route chính '/', chuyển hướng dựa trên đăng nhập ===
+    // Phải đặt SAU `authRoutes` để không ghi đè /login, /register...
     app.get('/', (req, res) => {
       if (req.session.user) {
+        console.log("➡️ User logged in, redirecting to /dashboard");
         res.redirect('/dashboard');
       } else {
+        // Giả sử authRoutes xử lý '/login' hoặc '/home' khi chưa đăng nhập
+        // Hoặc bạn có thể render trang chủ Pug trực tiếp ở đây nếu muốn
+        console.log("➡️ User not logged in, redirecting to /login");
         res.redirect('/login');
       }
     });
 
-    // Xử lý lỗi 404
-    app.use((req, res) => {
-      res.status(404).render('404', {
-        pageTitle: 'Lỗi 404',
-        user: req.session.user
-      });
+    // === ƯU TIÊN 3: Route đặc biệt để phục vụ React App ===
+    // Chỉ xử lý khi truy cập đúng đường dẫn /import/:id
+    app.get('/import/:id', (req, res) => {
+      console.log(`➡️ Serving React App for /import/${req.params.id}`);
+      res.sendFile(path.join(__dirname, 'MindMapBoDoi', 'project-d10', 'build', 'index.html'));
     });
+    console.log("✅ React Specific Route Set!"); // Log 7a
 
-    // Xử lý lỗi 500
+    // === ƯU TIÊN 4: Phục vụ các file tĩnh (CSS, JS) từ thư mục build của React ===
+    // Chỉ xử lý nếu request không khớp các route trên VÀ là file trong thư mục build
+    app.use(express.static(path.join(__dirname, 'MindMapBoDoi', 'project-d10', 'build')));
+    console.log("✅ React Static Files Serving Set!"); // Log 7b
+
+
+    // === ƯU TIÊN 5: Xử lý lỗi 404 (đặt gần cuối) ===
+    // Route này sẽ bắt tất cả các request không khớp với bất kỳ route nào ở trên
+    app.use((req, res, next) => {
+        // Tùy chọn: Nếu bạn muốn React xử lý các route khác (vd: client-side routing)
+        // bạn có thể thêm logic kiểm tra ở đây và gửi index.html của React
+        // if (req.method === 'GET' && !req.originalUrl.startsWith('/api') && !req.path.includes('.')) {
+        //   console.log(`➡️ Serving React App index.html as fallback for ${req.originalUrl}`);
+        //   return res.sendFile(path.join(__dirname, 'MindMapBoDoi', 'project-d10', 'build', 'index.html'));
+        // }
+
+        // Nếu không, trả về trang 404 Pug
+        console.log(`⚠️ 404 Not Found: ${req.method} ${req.originalUrl}`);
+        res.status(404).render('404', {
+            pageTitle: 'Lỗi 404',
+            user: req.session.user
+        });
+    });
+    console.log("✅ Final Routes & Error Handlers Set!"); // Log 8
+
+
+    // === Xử lý lỗi 500 (đặt cuối cùng) ===
     app.use((error, req, res, next) => {
       console.error('Server Error:', error);
+      // Tránh gửi response nếu header đã được gửi (ví dụ: lỗi trong stream)
+      if (res.headersSent) {
+        return next(error);
+      }
       res.status(500).render('500', {
         pageTitle: 'Lỗi Server',
-        user: req.session.user
+        user: req.session.user // Vẫn cố gắng truyền user nếu có thể
       });
     });
 
+    // === Khởi động server ===
     server.listen(PORT, () => {
-      console.log(`🚀 Server is listening on port ${PORT}`);
+      console.log(`🚀 Server is listening on port ${PORT}`); // Dòng log quan trọng nhất
       console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
 
   } catch (error) {
-    console.error("❌ Failed to connect to the database.", error);
+    console.error("❌ Failed to connect to the database or start server.", error);
     process.exit(1);
   }
 }

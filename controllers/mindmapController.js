@@ -234,3 +234,61 @@ exports.deleteMindmapPermanently = async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server khi xóa vĩnh viễn.' });
     }
 };
+
+// === THÊM MỚI: Hàm xử lý lưu dữ liệu mindmap (nodes, edges) từ React ===
+exports.updateMindmapData = async (req, res) => {
+    const db = req.app.locals.mindmapsDb;
+    const collectionName = req.session.user._id.toString(); // Lấy collection dựa trên user ID
+    let mindmapObjectId;
+
+    // --- 1. Lấy ID và Dữ liệu ---
+    try {
+        mindmapObjectId = new ObjectId(req.params.id);
+    } catch (error) {
+        console.warn(`Invalid ObjectId for data update: ${req.params.id}`);
+        return res.status(400).json({ success: false, message: 'ID mindmap không hợp lệ.' });
+    }
+
+    // Lấy dữ liệu nodes và edges từ body của request (React gửi lên)
+    const { nodes, edges } = req.body;
+
+    // --- 2. Validate Dữ liệu (Cơ bản) ---
+    // Kiểm tra xem nodes và edges có phải là mảng không (có thể thêm kiểm tra kỹ hơn)
+    if (!Array.isArray(nodes) || !Array.isArray(edges)) {
+        console.warn(`Invalid data format received for mindmap ${req.params.id}: nodes or edges are not arrays.`);
+        return res.status(400).json({ success: false, message: 'Dữ liệu gửi lên không đúng định dạng (nodes và edges phải là mảng).' });
+    }
+
+    // --- 3. Cập nhật Database ---
+    try {
+        const result = await db.collection(collectionName).updateOne(
+            { _id: mindmapObjectId, deleted: { $ne: true } }, // Chỉ cập nhật mindmap chưa bị xóa
+            {
+                $set: {
+                    nodes: nodes,       // Lưu mảng nodes
+                    edges: edges,       // Lưu mảng edges
+                    updatedAt: new Date() // Cập nhật thời gian sửa đổi
+                }
+            }
+        );
+
+        // --- 4. Gửi Phản hồi ---
+        if (result.matchedCount === 0) {
+            console.log(`Mindmap not found or deleted for data update: ID ${req.params.id}`);
+            return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap hoặc mindmap đã ở trong thùng rác.' });
+        }
+
+        if (result.modifiedCount === 0) {
+            // Tìm thấy nhưng không có gì thay đổi (dữ liệu giống hệt)
+            console.log(`Mindmap data unchanged: ID ${req.params.id}`);
+            return res.json({ success: true, message: 'Dữ liệu mindmap không thay đổi.', updated: false });
+        }
+
+        console.log(`Mindmap data updated successfully: ID ${req.params.id}`);
+        res.json({ success: true, message: 'Đã lưu sơ đồ thành công!', updated: true });
+
+    } catch (error) {
+        console.error("Lỗi khi cập nhật dữ liệu mindmap:", error);
+        res.status(500).json({ success: false, message: 'Lỗi server khi lưu sơ đồ.' });
+    }
+};

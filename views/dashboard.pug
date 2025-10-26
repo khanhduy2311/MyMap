@@ -72,32 +72,18 @@ block main
         #mindmapGrid.mindmap-grid
           each mindmap in mindmaps
             .mindmap-card(data-id=`${mindmap._id}`)
-              a.card-link(href=`/mindmaps/${mindmap._id}`): .preview-image
+              a.card-link(href=`/import/${mindmap._id}` target="_blank"): .preview-image
               .card-title.card-title-display
-                a(href=`/mindmaps/${mindmap._id}`) #{mindmap.title}
+                a(href=`/import/${mindmap._id}` target="_blank") #{mindmap.title}
               .card-title.card-title-edit(style="display: none;")
                 form.inline-edit-form
                   input.inline-edit-input(type="text", value=mindmap.title)
+              
               .card-actions
                 button.btn-action.btn-edit(type="button" title="Chỉnh sửa tên")
                   i.fas.fa-pencil-alt
                 button.btn-action.btn-move(type="button" title="Di chuyển tới thư mục")
                   i.fas.fa-folder-plus
-              .card-actions
-                button.btn-action.btn-edit(type="button" title="Chỉnh sửa tên")
-                  i.fas.fa-pencil-alt
-
-                button.btn-action.btn-move(type="button" title="Di chuyển tới thư mục")
-                  i.fas.fa-folder-plus
-
-                // ✨ Nút Vẽ Mindmap (trỏ sang React App)
-                a.btn-action.btn-draw(
-                  href=`http://localhost:3001/import/${mindmap._id}`
-                  target="_blank"
-                  title="Vẽ mindmap tương tác"
-                )
-                  i.fas.fa-project-diagram
-
                 button.btn-action.btn-delete(
                   type="button"
                   data-id=`${mindmap._id}`

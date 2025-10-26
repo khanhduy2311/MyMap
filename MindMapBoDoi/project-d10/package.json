@@ -17,7 +17,7 @@
     "react-dom": "^19.2.0",
     "react-draggable": "^4.5.0",
     "react-router-dom": "^7.9.4",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "sass": "^1.93.2",
     "uuid": "^13.0.0",
     "web-vitals": "^2.1.4",
@@ -26,9 +26,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "build": "react-scripts build"
   },
   "proxy": "http://localhost:3000",
   "eslintConfig": {
