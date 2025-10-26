@@ -1,183 +1,255 @@
 extends ../views/layouts/default.pug
+
 block styles
   link(rel="stylesheet", href="/css/style-profile-edit.css")
-block main
-  //- Sử dụng container-fluid để khối nội dung rộng ra
-  .container-fluid.px-md-5.mt-5
-    //- Thay thế .row bằng class .profile-edit-grid của riêng mình
-    .profile-edit-grid
 
-      //- Card 1: Chỉnh sửa thông tin
-      .profile-edit-card
-        .card
-          .card-header
-            h4 Chỉnh sửa thông tin
-          .card-body
-            //- Form và các nội dung bên trong giữ nguyên
-            form#editProfileForm
-              .mb-3
-                label.form-label(for="editName") Họ và tên
-                input#editName.form-control(type="text", value=user.name || '')
-              .mb-3
-                label.form-label(for="editUsername") Tên người dùng
-                input#editUsername.form-control(type="text", value=user.username || '')
-              .mb-3
-                label.form-label(for="editEmail") Email
-                input#editEmail.form-control(type="email", value=user.email || '', readonly)
-                small.form-text.text-muted Email không thể thay đổi.
-              .d-flex.justify-content-end
-                a.btn.btn-secondary.me-2(href="/profile") Hủy
-                button.btn.btn-primary(type="submit") Lưu thay đổi
-              hr.my-4
-              h4.mb-3 Đổi mật khẩu
-              .form-group
+block main
+  .container.mt-5.mb-5
+    .row.justify-content-center
+      .col-lg-10.col-md-12
+        .profile-edit-grid
+
+          //- CARD 1: CHỈNH SỬA THÔNG TIN & ĐỔI MẬT KHẨU
+          .profile-edit-card
+            .card
+              .card-header
+                h4 Chỉnh sửa thông tin
+              .card-body
+                //- FORM CHỈ CHỨA THÔNG TIN CƠ BẢN (NAME, USERNAME, EMAIL)
+                form#editProfileForm
+                  //- Input ẩn để gửi userId
+                  input(type="hidden", name="userId", value=user._id.toString())
+                  .mb-3
+                    label.form-label(for="editName") Họ và tên
+                    input#editName.form-control(type="text", name="name", value=user.name || '')
+                  .mb-3
+                    label.form-label(for="editUsername") Tên người dùng
+                    input#editUsername.form-control(type="text", name="username", value=user.username || '')
+                  .mb-3
+                    label.form-label(for="editEmail") Email
+                    input#editEmail.form-control(type="email", value=user.email || '', readonly)
+                    small.form-text.text-muted Email không thể thay đổi.
+                  .d-flex.justify-content-end
+                    a.btn.btn-secondary.me-2(href="/profile") Hủy
+                    //- Nút submit cho form thông tin cơ bản
+                    button.btn.btn-primary(type="submit") Lưu thay đổi
+                //- KẾT THÚC FORM THÔNG TIN CƠ BẢN
+
+                //- === PHẦN ĐỔI MẬT KHẨU (Nằm ngoài form trên) ===
+                hr.my-4
+                h4.mb-3 Đổi mật khẩu
                 .mb-3
                   label.form-label(for="newPassword") Mật khẩu mới
-                  input#newPassword.form-control(type="password" required)
-                
+                  input#newPassword.form-control(type="password", required)
                 .mb-3
                   label.form-label(for="confirmPassword") Xác nhận mật khẩu mới
-                  input#confirmPassword.form-control(type="password" required)
-                
+                  input#confirmPassword.form-control(type="password", required)
                 .d-flex.justify-content-end
+                  //- Nút xử lý đổi mật khẩu riêng bằng JS
                   button#changePasswordBtn.btn.btn-danger(type="button") Đổi mật khẩu
+                //- === KẾT THÚC PHẦN ĐỔI MẬT KHẨU ===
 
-              script.
-                document.getElementById('changePasswordBtn').addEventListener('click', async function() {
-                  const password = document.getElementById('newPassword').value;
-                  const confirmPassword = document.getElementById('confirmPassword').value;
-                  
-                  console.log("🎯 BẮT ĐẦU ĐỔI MẬT KHẨU");
-                  console.log("Mật khẩu:", password);
-                  console.log("Xác nhận:", confirmPassword);
-                  
-                  if (!password || !confirmPassword) {
-                    alert('Vui lòng nhập đầy đủ mật khẩu!');
-                    return;
-                  }
-                  
-                  if (password !== confirmPassword) {
-                    alert('Mật khẩu xác nhận không khớp!');
-                    return;
-                  }
-                  
-                  try {
-                    const response = await fetch('/profile/change-password', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        password: password,
-                        confirmPassword: confirmPassword
-                      })
-                    });
-                    
-                    console.log("📨 Response status:", response.status);
-                    
-                    // Chuyển hướng
-                    window.location.href = '/profile';
-                    
-                  } catch (error) {
-                    console.error('❌ Lỗi:', error);
-                    alert('Có lỗi xảy ra!');
-                  }
-                });
-      //- Card 2: Cập nhật ảnh đại diện
-      .profile-edit-card
-        .card
-          .card-header
-            h4 Cập nhật ảnh đại diện
-          .card-body
-            form(action="/profile/avatar" method="POST" enctype="multipart/form-data")
-              input#avatarInput(type="file" name="avatar" accept="image/*" class="d-none" required)
-              button.btn.btn-outline-secondary.mb-3(type="button", onclick="document.getElementById('avatarInput').click()")
-                i.fas.fa-upload.me-2
-                | Chọn ảnh mới
-              span#fileNameAvatar.text-muted.mb-3 Chưa có file nào được chọn
+          //- CARD 2: CẬP NHẬT ẢNH ĐẠI DIỆN
+          .profile-edit-card
+            .card
+              .card-header
+                h4 Cập nhật ảnh đại diện
+              .card-body.d-flex.flex-column.align-items-center.justify-content-center
+                //- Form upload ảnh (submit thông thường)
+                form#avatarUploadForm(action="/profile/avatar", method="POST", enctype="multipart/form-data")
+                  .mb-3.text-center
+                    .avatar-preview-wrapper(style="position: relative; display: inline-block;")
+                      img#avatarPreview.rounded-circle.mb-3(
+                        src=user.avatar || '/images/default-avatar.png',
+                        alt="Xem trước avatar",
+                        width="150",
+                        height="150",
+                        style="object-fit: cover; border: 3px solid #eee; position: relative;"
+                      )
+                      button#btnClosePreview.btn-close-preview(type="button", style="display: none;") &times;
+                  input#avatarInput.form-control(type="file", name="avatar", accept="image/*", style="display: none;")
+                  label.btn.btn-outline-primary.mb-2(for="avatarInput") Chọn ảnh mới
+                  p#fileNameAvatar.text-muted.text-center(style="font-size: 0.9em;") Chưa chọn file nào
+                  button#saveAvatarBtn.btn.btn-success(type="submit", disabled) Lưu ảnh đại diện
 
-             
-              #previewContainer.mb-3(style="position: relative; display: none;")
-                img#avatarPreview.rounded-circle.shadow(style="width:150px;height:150px;object-fit:cover;border:3px solid #ddd;")
-                //- Nút xóa (dấu 'x')
-                button#btnClosePreview.btn-close-preview(type="button") &times;
-
-              button.btn.btn-primary(type="submit")
-                i.fas.fa-save.me-2
-                | Lưu ảnh đại diện
-  
+//- === SCRIPTS ===
+block scripts
   script.
-    document.getElementById('editProfileForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('editName').value.trim();
-      const username = document.getElementById('editUsername').value.trim();
-      const userId = "#{user._id}";
+    // Đảm bảo code chỉ chạy sau khi DOM đã tải xong
+    document.addEventListener('DOMContentLoaded', () => {
 
-      try {
-        const res = await fetch('/profile/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, name, username })
+      // --- 1. XỬ LÝ FORM CHỈNH SỬA THÔNG TIN (AJAX) ---
+      const editProfileForm = document.getElementById('editProfileForm');
+      if (editProfileForm) {
+        editProfileForm.addEventListener('submit', async (e) => {
+          e.preventDefault(); // Ngăn submit form mặc định
+          const formData = new FormData(editProfileForm);
+          // Chỉ lấy các trường cần thiết
+          const updateData = {
+            userId: formData.get('userId'),
+            name: formData.get('name'),
+            username: formData.get('username')
+          };
+
+          // (Tùy chọn) Vô hiệu hóa nút submit để tránh double click
+          const submitButton = editProfileForm.querySelector('button[type="submit"]');
+          if (submitButton) submitButton.disabled = true;
+
+          try {
+            const response = await fetch('/profile/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updateData)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+              if (typeof showToast === 'function') {
+                showToast('Cập nhật thông tin thành công! Chuyển hướng...', 'Thành công', 'success');
+              } else {
+                alert('Cập nhật thông tin thành công! Chuyển hướng...');
+              }
+              setTimeout(() => window.location.href = '/profile', 1500);
+
+            } else {
+               if (typeof showToast === 'function') {
+                 showToast(result.message || 'Có lỗi xảy ra khi cập nhật.', 'Lỗi', 'error');
+               } else {
+                 alert(result.message || 'Có lỗi xảy ra khi cập nhật.');
+               }
+            }
+          } catch (error) {
+            console.error('Lỗi khi cập nhật profile:', error);
+             if (typeof showToast === 'function') {
+               showToast('Lỗi kết nối mạng.', 'Lỗi', 'error');
+             } else {
+               alert('Lỗi kết nối mạng.');
+             }
+          } finally {
+            // Kích hoạt lại nút submit
+            if (submitButton) submitButton.disabled = false;
+          }
         });
-        const data = await res.json();
-        if (data.success) {
-          window.location.href = '/profile';
-        } else {
-          alert('❌ ' + (data.message || 'Có lỗi xảy ra.'));
-        }
-      } catch (err) {
-        alert('⚠️ Lỗi khi gửi dữ liệu: ' + err.message);
-      }
-    });
+      } // Kết thúc if (editProfileForm)
 
+      // --- 2. XỬ LÝ NÚT ĐỔI MẬT KHẨU (AJAX) ---
+      const changePasswordBtn = document.getElementById('changePasswordBtn');
+      const newPasswordInput = document.getElementById('newPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
 
-  //- Script cho preview ảnh
-  script.
-    document.getElementById('avatarInput')?.addEventListener('change', e => {
-      const file = e.target.files[0];
-      const fileNameAvatar = document.getElementById('fileNameAvatar');
+      if (changePasswordBtn && newPasswordInput && confirmPasswordInput) {
+        changePasswordBtn.addEventListener('click', async function() {
+          const password = newPasswordInput.value;
+          const confirmPassword = confirmPasswordInput.value;
+
+          // Kiểm tra input
+          if (!password || !confirmPassword) {
+            if(typeof showToast === 'function') showToast('Vui lòng nhập đầy đủ mật khẩu mới và xác nhận.', 'Thiếu thông tin', 'error'); else alert('Vui lòng nhập đầy đủ mật khẩu mới và xác nhận.');
+            return;
+          }
+          if (password !== confirmPassword) {
+            if(typeof showToast === 'function') showToast('Mật khẩu xác nhận không khớp.', 'Lỗi', 'error'); else alert('Mật khẩu xác nhận không khớp.');
+            return;
+          }
+
+          // (Tùy chọn) Vô hiệu hóa nút để tránh double click
+          changePasswordBtn.disabled = true;
+
+          try {
+            const response = await fetch('/profile/change-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password: password, confirmPassword: confirmPassword })
+            });
+
+            if (response.ok) {
+               // Server sẽ gửi flash message và redirect, nên chỉ cần thông báo tạm thời
+               if(typeof showToast === 'function') showToast('Đổi mật khẩu thành công! Chuyển hướng...', 'Thành công', 'success'); else alert('Đổi mật khẩu thành công! Chuyển hướng...');
+               // Chờ một chút để user đọc thông báo rồi chuyển hướng
+               setTimeout(() => window.location.href = '/profile', 1500);
+            } else {
+               // Lấy lỗi từ server (nếu có)
+               const errorData = await response.json().catch(() => ({ message: 'Đổi mật khẩu thất bại. Vui lòng thử lại.' }));
+               if(typeof showToast === 'function') showToast(errorData.message || 'Đổi mật khẩu thất bại.', 'Lỗi', 'error'); else alert(errorData.message || 'Đổi mật khẩu thất bại.');
+               newPasswordInput.value = ''; // Xóa input khi lỗi
+               confirmPasswordInput.value = '';
+            }
+          } catch (error) {
+            console.error('Lỗi khi đổi mật khẩu:', error);
+             if(typeof showToast === 'function') showToast('Lỗi kết nối mạng khi đổi mật khẩu.', 'Lỗi', 'error'); else alert('Lỗi kết nối mạng khi đổi mật khẩu.');
+             newPasswordInput.value = '';
+             confirmPasswordInput.value = '';
+          } finally {
+            // Kích hoạt lại nút (nếu không chuyển hướng)
+             if (!window.location.pathname.endsWith('/profile')) { // Kiểm tra để tránh lỗi sau khi chuyển hướng
+                changePasswordBtn.disabled = false;
+             }
+          }
+        }); // Kết thúc event listener click
+      } // Kết thúc if (changePasswordBtn ...)
+
+      // --- 3. XỬ LÝ XEM TRƯỚC ẢNH ĐẠI DIỆN ---
+      const avatarInput = document.getElementById('avatarInput');
       const avatarPreview = document.getElementById('avatarPreview');
-      if (file) {
-        fileNameAvatar.textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = e => {
-          avatarPreview.src = e.target.result;
-          avatarPreview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+      const fileNameAvatar = document.getElementById('fileNameAvatar');
+      const saveAvatarBtn = document.getElementById('saveAvatarBtn');
+      const btnClosePreview = document.getElementById('btnClosePreview');
+      const originalAvatarSrc = avatarPreview ? avatarPreview.src : '/images/default-avatar.png';
 
-  script.
-    // Lấy ra tất cả các phần tử cần thiết
-    const avatarInput = document.getElementById('avatarInput');
-    const fileNameAvatar = document.getElementById('fileNameAvatar');
-    const previewContainer = document.getElementById('previewContainer');
-    const avatarPreview = document.getElementById('avatarPreview');
-    const btnClosePreview = document.getElementById('btnClosePreview');
+      if (avatarInput && avatarPreview && fileNameAvatar && saveAvatarBtn && btnClosePreview) {
+        avatarInput.addEventListener('change', function(event) {
+          const file = event.target.files[0];
+          if (file) {
+            // Kiểm tra loại file
+            if (!file.type.startsWith('image/')) {
+               if(typeof showToast === 'function') showToast('Vui lòng chỉ chọn file ảnh.', 'Sai định dạng', 'error'); else alert('Vui lòng chỉ chọn file ảnh.');
+              avatarInput.value = ''; // Reset
+              // Đặt lại trạng thái ban đầu
+              avatarPreview.src = originalAvatarSrc;
+              fileNameAvatar.textContent = 'Chưa chọn file nào';
+              saveAvatarBtn.disabled = true;
+              btnClosePreview.style.display = 'none';
+              return;
+            }
+            // Kiểm tra kích thước file (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+              if(typeof showToast === 'function') showToast('Kích thước ảnh tối đa là 5MB.', 'Quá lớn', 'error'); else alert('Kích thước ảnh tối đa là 5MB.');
+              avatarInput.value = ''; // Reset
+              // Đặt lại trạng thái ban đầu
+              avatarPreview.src = originalAvatarSrc;
+              fileNameAvatar.textContent = 'Chưa chọn file nào';
+              saveAvatarBtn.disabled = true;
+              btnClosePreview.style.display = 'none';
+              return;
+            }
 
-    // Hàm để reset lại form upload
-    function resetAvatarUpload() {
-      avatarInput.value = ''; // Xóa file đã chọn
-      fileNameAvatar.textContent = 'Chưa có file nào được chọn';
-      previewContainer.style.display = 'none'; // Ẩn ảnh preview và nút xóa
-    }
+            // Hiển thị preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              avatarPreview.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+            fileNameAvatar.textContent = file.name;
+            saveAvatarBtn.disabled = false; // Kích hoạt nút lưu
+            btnClosePreview.style.display = 'block'; // Hiện nút xóa preview
+          } else {
+            // Reset nếu hủy chọn file
+            avatarPreview.src = originalAvatarSrc;
+            fileNameAvatar.textContent = 'Chưa chọn file nào';
+            saveAvatarBtn.disabled = true;
+            btnClosePreview.style.display = 'none';
+          }
+        }); // Kết thúc event listener change
 
-    // Sự kiện khi người dùng chọn một file ảnh mới
-    avatarInput?.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (file) {
-        fileNameAvatar.textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = e => {
-          avatarPreview.src = e.target.result;
-          previewContainer.style.display = 'block'; // Hiển thị cả khối preview
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+        // Xử lý nút xóa preview
+        btnClosePreview.addEventListener('click', function() {
+          avatarInput.value = ''; // Reset input file
+          avatarPreview.src = originalAvatarSrc; // Đặt lại ảnh gốc
+          fileNameAvatar.textContent = 'Chưa chọn file nào';
+          saveAvatarBtn.disabled = true; // Vô hiệu hóa nút lưu
+          btnClosePreview.style.display = 'none'; // Ẩn nút xóa
+        }); // Kết thúc event listener click close preview
 
-    // Sự kiện khi người dùng nhấp vào nút xóa
-    btnClosePreview?.addEventListener('click', () => {
-      resetAvatarUpload();
-    });
+      } // Kết thúc if (avatarInput ...)
+
+    }); // <<<=== KẾT THÚC DOMContentLoaded
