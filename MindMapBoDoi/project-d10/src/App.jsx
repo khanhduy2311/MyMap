@@ -245,146 +245,7 @@ function MindmapEditor() {
     </div>
   );
 }
-// Hook này dùng để trì hoãn 1 giá trị, giúp chúng ta không save liên tục
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  return debouncedValue;
-}
 
-// === THÊM MỚI: Component Wrapper (Quan trọng nhất) ===
-// Component này xử lý logic TẢI (Load) và TỰ ĐỘNG LƯU (Auto-Save)
-function MindmapEditorWrapper() {
-  const { id: mindmapId } = useParams(); // Lấy ID từ URL (ví dụ: /editor/12345)
-  const navigate = useNavigate();
-  
-  // Lấy hàm loadState và state (nodes, edges) từ store
-  const { loadState, nodes, edges, resetToInitialState } = useStore((state) => ({
-    loadState: state.loadState,
-    nodes: state.nodes,
-    edges: state.edges,
-    resetToInitialState: state.resetToInitialState, // Lấy hàm reset
-  }));
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isFirstLoad, setIsFirstLoad] = useState(true); // Cờ để chặn auto-save khi mới load
-
-  // 1. LOGIC TẢI DỮ LIỆU (Khi ID thay đổi)
-  useEffect(() => {
-    // Nếu không có ID (vào /editor), reset store về trống và KHÔNG làm gì cả
-    // (Chúng ta sẽ dựa vào nút "Tạo mới" để lấy ID)
-    if (!mindmapId) {
-      console.log("Không có ID mindmap, reset store về trạng thái đầu.");
-      resetToInitialState(); // Reset store
-      setIsLoading(false);
-      setIsFirstLoad(true);
-      return; 
-    }
-
-    console.log(`Đang tải mindmap với ID: ${mindmapId}`);
-    setIsLoading(true);
-    setIsFirstLoad(true); // Đặt lại cờ
-
-    fetch(`http://localhost:3000/mindmaps/${mindmapId}/json`, {
-      credentials: 'include',
-    })
-    .then((res) => {
-      if (!res.ok) throw new Error('Không thể tải mindmap hoặc không có quyền');
-      return res.json();
-    })
-    .then((data) => {
-      if (data.success && data.data.nodes && data.data.nodes.length > 0) {
-        // Ưu tiên load nodes/edges nếu có
-        loadState({ nodes: data.data.nodes, edges: data.data.edges });
-        console.log('Tải dữ liệu (nodes/edges) từ DB thành công.');
-      } else if (data.success && data.data.content) {
-        // Fallback: Nếu không có nodes/edges, thử import từ content (cho mindmap cũ)
-        console.log('Không có nodes/edges, thử import từ markdown content...');
-        const { nodes: mdNodes, edges: mdEdges } = markdownToMindmap(data.data.content);
-        loadState({ nodes: mdNodes, edges: mdEdges });
-      } else {
-         throw new Error('Dữ liệu mindmap không hợp lệ');
-      }
-      setIsLoading(false);
-      // Đặt cờ isFirstLoad thành false sau 1 khoảng trễ để auto-save bắt đầu
-      setTimeout(() => setIsFirstLoad(false), 1000); 
-    })
-    .catch((err) => {
-      console.error(err);
-      alert('Không thể tải mindmap này: ' + err.message);
-      navigate('/dashboard'); // Về dashboard nếu lỗi
-    });
-
-  }, [mindmapId, loadState, navigate, resetToInitialState]);
-
-  // 2. LOGIC TỰ ĐỘNG LƯU (AUTO-SAVE)
-  const debouncedNodes = useDebounce(nodes, 1500); // Trì hoãn 1.5 giây
-  const debouncedEdges = useDebounce(edges, 1500);
-
-  // Dùng useCallback để hàm save không bị tạo lại liên tục
-  const saveMindmapData = useCallback(async () => {
-    // Không lưu khi: Mới load xong, đang loading, hoặc không có ID (trang mới)
-    if (isFirstLoad || isLoading || !mindmapId) return;
-
-    // Chỉ lưu khi ID là hợp lệ (không phải "new" hay gì khác)
-    if (!mindmapId.match(/^[0-9a-fA-F]{24}$/)) {
-        return;
-    }
-    
-    console.log(`Auto-saving... ${mindmapId}`);
-    setIsSaving(true);
-
-    try {
-      const response = await fetch(`http://localhost:3000/mindmaps/${mindmapId}/save`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodes: debouncedNodes, edges: debouncedEdges }),
-        credentials: 'include',
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message);
-
-      if(result.updated) {
-        console.log('Auto-save thành công!');
-      }
-
-    } catch (error) {
-      console.error('Lỗi auto-save:', error);
-      // Có thể thêm UI báo lỗi auto-save ở đây
-    } finally {
-      // Dùng setTimeout để giữ chữ "Đang lưu..." lâu hơn một chút
-      setTimeout(() => setIsSaving(false), 1000);
-    }
-  }, [mindmapId, debouncedNodes, debouncedEdges, isFirstLoad, isLoading]);
-
-  // Kích hoạt auto-save khi nodes/edges (đã debounce) thay đổi
-  useEffect(() => {
-    saveMindmapData();
-  }, [debouncedNodes, debouncedEdges, saveMindmapData]); // Thêm saveMindmapData vào dependencies
-
-
-  if (isLoading && mindmapId) { // Chỉ loading khi có ID
-    return <div style={styles.loadingContainer}><h2>Đang tải Mindmap...</h2></div>;
-  }
-
-  // Luôn render MindmapEditor, nhưng thêm chỉ báo (indicator) đang lưu
-  return (
-    <>
-      <div style={isSaving ? styles.savingIndicator : styles.savingIndicatorHidden}>
-        Đang lưu...
-      </div>
-      <MindmapEditor />
-    </>
-  );
-}
 /* --------------------------- IMPORT MINDMAP --------------------------- */
 function ImportMindmap() {
   const { id } = useParams();
@@ -469,17 +330,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* SỬA ĐỔI: Thay đổi route mặc định */}
-        <Route path="/" element={<MindmapEditorWrapper />} /> 
-        
-        {/* Route /editor không có ID sẽ hiển thị 1 map trống (không lưu) */}
-        <Route path="/editor" element={<MindmapEditorWrapper />} /> 
-        
-        {/* Route /editor/:id LÀ ROUTE CHÍNH để load và auto-save */}
-        <Route path="/editor/:id" element={<MindmapEditorWrapper />} /> 
-
+        <Route path="/" element={<MindmapEditor />} />
+        <Route path="/editor" element={<MindmapEditor />} />
         <Route path="/import/:id" element={<ImportMindmap />} />
-        <Route path="/cyto/:id" element={<CytoscapeViewer />} />
+        <Route path="/cyto/:id" element={<CytoscapeViewer />} /> {/* ✅ hỗ trợ mindmap khổng lồ */}
       </Routes>
     </BrowserRouter>
   );
@@ -535,36 +389,6 @@ const styles = {
     borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '16px',
-  },
-  // THÊM MỚI: Style cho chỉ báo saving
-  savingIndicator: {
-    position: 'absolute',
-    top: '15px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: 'rgba(0, 0, 0, 0.7)',
-    color: 'white',
-    padding: '5px 15px',
-    borderRadius: '15px',
-    fontSize: '14px',
-    zIndex: 100,
-    opacity: 1,
-    transition: 'opacity 0.5s ease',
-  },
-  savingIndicatorHidden: {
-    position: 'absolute',
-    top: '15px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: 'rgba(0, 0, 0, 0.7)',
-    color: 'white',
-    padding: '5px 15px',
-    borderRadius: '15px',
-    fontSize: '14px',
-    zIndex: 100,
-    opacity: 0,
-    pointerEvents: 'none',
-    transition: 'opacity 0.5s ease',
   },
 };
 
