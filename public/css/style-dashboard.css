@@ -986,3 +986,15 @@
   z-index: 1040 !important;
 }
 
+
+/* ------------------ phần preview ảnh ----------------------- */
+.mindmap-thumbnail {
+    width: 100%;
+    height: 120px; /* Chiều cao cố định cho thumbnail */
+    object-fit: cover; /* Đảm bảo ảnh không bị méo khi co giãn */
+    border-bottom: 1px solid #eee; /* Đường kẻ dưới ảnh */
+    margin-bottom: 10px; /* Khoảng cách với tiêu đề */
+    border-radius: 8px 8px 0 0; /* Bo tròn góc trên của ảnh (nếu card có bo tròn) */
+    background-color: #f8f9fa; /* Màu nền khi ảnh chưa tải/lỗi */
+}
+

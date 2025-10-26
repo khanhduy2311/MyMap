@@ -71,14 +71,22 @@ block main
       if mindmaps && mindmaps.length > 0
         #mindmapGrid.mindmap-grid
           each mindmap in mindmaps
-            .mindmap-card(data-id=`${mindmap._id}`)
-              a.card-link(href=`/import/${mindmap._id}` target="_blank"): .preview-image
+            .mindmap-card(data-id=`${mindmap._id}`) 
+              //- === HIỂN THỊ ẢNH PREVIEW ===
+              a.card-link(href=`/import/${mindmap._id}` target="_blank") 
+                //- Hiển thị ảnh thumbnail nếu có, nếu không thì dùng ảnh placeholder
+                if mindmap.thumbnailUrl
+                  img.mindmap-thumbnail(src=mindmap.thumbnailUrl, alt=mindmap.title || 'Mindmap Preview', onerror="this.onerror=null; this.src='/images/default-mindmap-thumbnail.png';") 
+                else
+                  div.preview-image
               .card-title.card-title-display
-                a(href=`/import/${mindmap._id}` target="_blank") #{mindmap.title}
+                a(href=`/import/${mindmap._id}` target="_blank") #{mindmap.title} 
               .card-title.card-title-edit(style="display: none;")
                 form.inline-edit-form
                   input.inline-edit-input(type="text", value=mindmap.title)
-              
+
+
+
               .card-actions
                 button.btn-action.btn-edit(type="button" title="Chỉnh sửa tên")
                   i.fas.fa-pencil-alt

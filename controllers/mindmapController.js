@@ -250,7 +250,7 @@ exports.updateMindmapData = async (req, res) => {
     }
 
     // Lấy dữ liệu nodes và edges từ body của request (React gửi lên)
-    const { nodes, edges } = req.body;
+    const { nodes, edges, thumbnailUrl } = req.body;
 
     // --- 2. Validate Dữ liệu (Cơ bản) ---
     // Kiểm tra xem nodes và edges có phải là mảng không (có thể thêm kiểm tra kỹ hơn)
@@ -259,16 +259,33 @@ exports.updateMindmapData = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Dữ liệu gửi lên không đúng định dạng (nodes và edges phải là mảng).' });
     }
 
+    if (thumbnailUrl && typeof thumbnailUrl !== 'string') {
+         console.warn(`Invalid thumbnailUrl format received for mindmap ${req.params.id}`);
+         // Không chặn request, nhưng có thể bỏ qua việc lưu URL nếu nó không hợp lệ
+         // Hoặc trả lỗi nếu thumbnailUrl là bắt buộc
+         // return res.status(400).json({ success: false, message: 'Định dạng URL thumbnail không hợp lệ.' });
+    }
+
     // --- 3. Cập nhật Database ---
     try {
+        // Tạo đối tượng $set động để chỉ cập nhật thumbnailUrl nếu nó được gửi lên
+        const updateFields = {
+            nodes: nodes,
+            edges: edges,
+            updatedAt: new Date()
+        };
+        // Chỉ thêm thumbnailUrl vào $set nếu nó tồn tại và là string
+        if (thumbnailUrl && typeof thumbnailUrl === 'string') {
+            updateFields.thumbnailUrl = thumbnailUrl; // <<<--- THÊM thumbnailUrl VÀO ĐÂY
+        } else {
+             console.log(`ThumbnailUrl not provided or invalid for mindmap ${req.params.id}, skipping update.`);
+        }
+
+
         const result = await db.collection(collectionName).updateOne(
-            { _id: mindmapObjectId, deleted: { $ne: true } }, // Chỉ cập nhật mindmap chưa bị xóa
+            { _id: mindmapObjectId, deleted: { $ne: true } },
             {
-                $set: {
-                    nodes: nodes,       // Lưu mảng nodes
-                    edges: edges,       // Lưu mảng edges
-                    updatedAt: new Date() // Cập nhật thời gian sửa đổi
-                }
+                $set: updateFields // <<<--- SỬ DỤNG ĐỐI TƯỢNG updateFields
             }
         );
 
@@ -278,13 +295,13 @@ exports.updateMindmapData = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap hoặc mindmap đã ở trong thùng rác.' });
         }
 
-        if (result.modifiedCount === 0) {
-            // Tìm thấy nhưng không có gì thay đổi (dữ liệu giống hệt)
+        // Kiểm tra xem có thực sự cập nhật gì không (bao gồm cả thumbnailUrl)
+        if (result.modifiedCount === 0 && result.upsertedCount === 0) {
             console.log(`Mindmap data unchanged: ID ${req.params.id}`);
             return res.json({ success: true, message: 'Dữ liệu mindmap không thay đổi.', updated: false });
         }
 
-        console.log(`Mindmap data updated successfully: ID ${req.params.id}`);
+        console.log(`Mindmap data updated successfully (incl. thumbnail? ${!!updateFields.thumbnailUrl}): ID ${req.params.id}`);
         res.json({ success: true, message: 'Đã lưu sơ đồ thành công!', updated: true });
 
     } catch (error) {
