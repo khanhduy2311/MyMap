@@ -163,7 +163,21 @@ const storeCreator = (set, get) => ({
   appMode: 'normal', 
   activeDrawAreaId: null,
   currentDrawTool: { mode: 'cursor' }, 
-
+  // === THÊM MỚI: Hàm Reset Store ===
+  resetToInitialState: () => {
+    console.log("Reseting store to initial state...");
+    set({
+      nodes: initialNodes,
+      edges: [],
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      selectedNodeIds: [],
+      needsFitView: true,
+      // Đặt lại các state khác nếu cần
+    });
+    // Gọi clear của zundo (middleware temporal)
+    useStore.temporal.clear();
+  },
   // --- QUAN TRỌNG: Sửa hàm loadState ---
   loadState: (newState) => {
     if (newState && Array.isArray(newState.nodes) && Array.isArray(newState.edges)) {

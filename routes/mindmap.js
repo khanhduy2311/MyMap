@@ -4,6 +4,7 @@ const mindmapController = require('../controllers/mindmapController.js');
 const authMiddleware = require('../middlewares/middlewares.js');
 const { ObjectId } = require('mongodb');
 
+router.post('/create-blank', authMiddleware.checkLoggedIn, mindmapController.createBlankMindmap);
 router.patch('/:id', authMiddleware.checkLoggedIn, mindmapController.updateMindmapTitleAPI);
 router.post('/create', authMiddleware.checkLoggedIn, mindmapController.createMindmap);
 router.delete('/:id', authMiddleware.checkLoggedIn, mindmapController.deleteMindmap);

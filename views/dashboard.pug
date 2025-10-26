@@ -244,36 +244,40 @@ block scripts
       });
     }
 
-    // Hàm tạo mindmap mới
-    // Inside the <script> block of dashboard.pug
     function createNewMindmap() {
-      fetch('/mindmaps', { 
+      // 1. Gán biến 'currentFolder' từ server (Pug) cho biến 'currentFolder' (JS)
+      // Pug sẽ tự động chuyển đối tượng thành JSON hoặc 'null' một cách chính xác
+      // Dòng !{...} này phải nằm ngoài comment của Javascript
+      const currentFolder = !{currentFolder ? JSON.stringify(currentFolder) : 'null'};
+      
+      let body = {};
+      if (currentFolder && currentFolder._id) {
+        body.folderId = currentFolder._id;
+      }
+      
+      console.log('Đang tạo mindmap mới...', body);
+
+      // 2. Gọi API /create-blank mới
+      fetch('/mindmaps/create-blank', { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: 'Mindmap mới', 
-          
-          nodes: [],
-          edges: []
-        })
+        body: JSON.stringify(body) // Gửi kèm folderId (nếu có)
       })
       .then(response => response.json())
       .then(data => {
-        if (data.success) {
-          // ** CHANGE IS HERE **
-          // Redirect to the React app route (/import/:id) instead of the old detail page
-          window.location.href = `/import/${data.mindmapId}`; //  modified
+        if (data.success && data.mindmapId) {
+          // 3. CHUYỂN HƯỚNG TỚI EDITOR (REACT)
+          console.log('Tạo thành công, ID:', data.mindmapId);
+          window.location.href = `/editor/${data.mindmapId}`; // Chuyển hướng tới React Editor
         } else {
-          // Assumes showToast function is available
-          showToast('Lỗi khi tạo mindmap: ' + data.message, 'Lỗi', 'error'); //  modified for consistency
+          showToast('Lỗi khi tạo mindmap: ' + (data.error || 'Lỗi không xác định'), 'Lỗi', 'error');
         }
       })
       .catch(error => {
         console.error('Error creating new mindmap:', error); 
-        
-        showToast('Lỗi kết nối khi tạo mindmap', 'Lỗi', 'error'); 
+        showToast('Lỗi kết nối khi tạo mindmap', 'Lỗi', 'error');
       });
     }
 
