@@ -3,10 +3,14 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');
-const { MongoClient } = require('mongodb');
+const {
+  MongoClient
+} = require('mongodb');
 const MongoStore = require('connect-mongo');
 const http = require('http');
-const { Server } = require("socket.io");
+const {
+  Server
+} = require("socket.io");
 // const cors = require('cors'); // Bạn có thể xóa nếu không cần CORS cho Express khi chạy chung cổng
 const path = require('path'); // Đảm bảo 'path' được require ở đầu
 
@@ -69,8 +73,13 @@ async function startServer() {
     app.set('views', 'views');
     // Phục vụ file tĩnh (CSS, JS) cho các trang Pug TRƯỚC TIÊN
     app.use(express.static('public'));
-    app.use(express.json({ limit: '50mb' }));
-    app.use(express.urlencoded({ limit: '50mb', extended: true }));
+    app.use(express.json({
+      limit: '50mb'
+    }));
+    app.use(express.urlencoded({
+      limit: '50mb',
+      extended: true
+    }));
     console.log("✅ Basic Middleware Set!"); // Log 3
 
     // === Cấu hình Session Middleware ===
@@ -123,7 +132,7 @@ async function startServer() {
     app.use('/profile', profileRoutes);
     app.use('/upload', documentRoutes);
     app.use('/mindmaps', mindmapRoutes); // API endpoints cho mindmap (vd: /mindmaps/json/:id)
-    app.use('/', authRoutes);          // Xử lý /login, /register, /home (nếu có), /logout...
+    app.use('/', authRoutes); // Xử lý /login, /register, /home (nếu có), /logout...
     console.log("✅ API & Pug Routes Registered!"); // Log 6
 
     // === ƯU TIÊN 2: Route chính '/', chuyển hướng dựa trên đăng nhập ===
@@ -157,23 +166,32 @@ async function startServer() {
     // === ƯU TIÊN 5: Xử lý lỗi 404 (đặt gần cuối) ===
     // Route này sẽ bắt tất cả các request không khớp với bất kỳ route nào ở trên
     app.use((req, res, next) => {
-        // Tùy chọn: Nếu bạn muốn React xử lý các route khác (vd: client-side routing)
-        // bạn có thể thêm logic kiểm tra ở đây và gửi index.html của React
-        // if (req.method === 'GET' && !req.originalUrl.startsWith('/api') && !req.path.includes('.')) {
-        //   console.log(`➡️ Serving React App index.html as fallback for ${req.originalUrl}`);
-        //   return res.sendFile(path.join(__dirname, 'MindMapBoDoi', 'project-d10', 'build', 'index.html'));
-        // }
+      // Tùy chọn: Nếu bạn muốn React xử lý các route khác (vd: client-side routing)
+      // bạn có thể thêm logic kiểm tra ở đây và gửi index.html của React
+      // if (req.method === 'GET' && !req.originalUrl.startsWith('/api') && !req.path.includes('.')) {
+      //   console.log(`➡️ Serving React App index.html as fallback for ${req.originalUrl}`);
+      //   return res.sendFile(path.join(__dirname, 'MindMapBoDoi', 'project-d10', 'build', 'index.html'));
+      // }
 
-        // Nếu không, trả về trang 404 Pug
-        console.log(`⚠️ 404 Not Found: ${req.method} ${req.originalUrl}`);
-        res.status(404).render('404', {
-            pageTitle: 'Lỗi 404',
-            user: req.session.user
-        });
+      // Nếu không, trả về trang 404 Pug
+      console.log(`⚠️ 404 Not Found: ${req.method} ${req.originalUrl}`);
+      res.status(404).render('404', {
+        pageTitle: 'Lỗi 404',
+        user: req.session.user
+      });
     });
     console.log("✅ Final Routes & Error Handlers Set!"); // Log 8
 
+    // 2. Phục vụ React App (Build)
+    // Phục vụ các file static (JS, CSS...)
+    app.use(express.static(path.join(__dirname, 'build')));
 
+    // 3. Route "Catch-All"
+    // Bất kỳ request nào không khớp với API ở trên (ví dụ: /editor/123, /import/456, /profile)
+    // sẽ được chuyển về file index.html của React.
+    app.get('/*', (req, res) => {
+      res.sendFile(path.resolve(__dirname, 'build', 'index.html'));
+    });
     // === Xử lý lỗi 500 (đặt cuối cùng) ===
     app.use((error, req, res, next) => {
       console.error('Server Error:', error);
