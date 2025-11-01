@@ -38,7 +38,7 @@ async function startServer() {
     const chatDb = client.db('chat_storage');
 
     const app = express();
-
+    app.set('trust proxy', 1);
     // === BỎ HOẶC SỬA CORS CHO PHÙ HỢP KHI CHẠY 1 CỔNG ===
     // app.use(cors({
     //   origin: 'http://localhost:3001', // Không cần thiết khi chạy cùng cổng
