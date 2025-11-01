@@ -188,10 +188,10 @@ async function startServer() {
     });
 
     // === Khởi động server ===
-    server.listen(PORT, () => {
-      console.log(`🚀 Server is listening on port ${PORT}`); // Dòng log quan trọng nhất
-      console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server is listening on port ${PORT}`); 
+  console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
 
   } catch (error) {
     console.error("❌ Failed to connect to the database or start server.", error);
