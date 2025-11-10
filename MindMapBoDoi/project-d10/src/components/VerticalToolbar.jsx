@@ -9,43 +9,38 @@ import {
   RedoOutlined,
   SearchOutlined,
   DeleteOutlined,
-  EditOutlined,       // Dùng cho "Chế độ Canvas"
-  BorderOutlined,     // Dùng cho "Tạo Vùng Vẽ" (MỚI)
-  AimOutlined,        // Dùng cho "Trỏ chuột" (MỚI)
-  HighlightOutlined,  // Dùng cho "Highlight" (Chuyển từ DrawAreaToolbar)
-  ClearOutlined,      // Dùng cho "Tẩy" (Chuyển từ DrawAreaToolbar)
+  EditOutlined,
+  BorderOutlined,
+  AimOutlined,
+  HighlightOutlined,
+  ClearOutlined,
 } from '@ant-design/icons';
 import { toPng } from 'html-to-image';
 import { AutoComplete, message } from 'antd';
 import { useReactFlow } from '@xyflow/react';
-// ✨ XÓA: Import không dùng đến
-// import DrawAreaToolbar from './DrawAreaToolbar'; 
 
 // --- (Các icon SVG cho Thêm Node) ---
 const OvalIcon = () => <svg width="24" height="24" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="22" height="14" rx="7" stroke="currentColor" strokeWidth="2" /></svg>;
 const SquareIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" /></svg>;
 const CircleIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" /></svg>;
 // --- Hết Icon ---
-// ✨ CHUYỂN VÀO TỪ DrawAreaToolbar.jsx
-// Preset cho VẼ
+// --- (Các Preset cho chế độ Canvas) ---
 const DRAW_PRESETS = [
   { name: 'Mỏng', color: '#000000', settings: { mode: 'draw', color: '#000000', thickness: 2, opacity: 1 } },
   { name: 'Vừa', color: '#FE6464', settings: { mode: 'draw', color: '#FE6464', thickness: 5, opacity: 1 } },
   { name: 'Dày', color: '#2DC75C', settings: { mode: 'draw', color: '#2DC75C', thickness: 10, opacity: 1 } },
 ];
-// Preset cho HIGHLIGHT
 const HIGHLIGHT_PRESETS = [
   { name: 'Vàng', color: '#FFEDA4', settings: { mode: 'highlight', color: '#FFEDA4', thickness: 20, opacity: 0.5 } },
   { name: 'Hồng', color: '#FFB1B1', settings: { mode: 'highlight', color: '#FFB1B1', thickness: 20, opacity: 0.5 } },
   { name: 'Lục', color: '#96E3AD', settings: { mode: 'highlight', color: '#96E3AD', thickness: 20, opacity: 0.5 } },
 ];
-// Preset cho Tẩy
 const ERASE_TOOL = { mode: 'erase', color: '#FFFFFF', thickness: 20, opacity: 1 };
-// Preset cho Trỏ chuột
 const CURSOR_TOOL = { mode: 'cursor' };
-// --- HẾT CHUYỂN ---
+// --- Hết Preset ---
 
-const VerticalToolbar = () => {
+// SỬA 1: Nhận prop 'onManualSave' (Hàm lưu vào DB)
+const VerticalToolbar = ({ onManualSave }) => {
   const {
     addNode,
     loadState,
@@ -56,8 +51,8 @@ const VerticalToolbar = () => {
     deleteElements,
     selectedNodeIds,
     selectedEdgeId,
-    appMode,      // ✨ 1. Lấy state mode
-    setAppMode,   // ✨ 2. Lấy action đổi mode
+    appMode,
+    setAppMode,
     currentDrawTool,
     setCurrentDrawTool,
   } = useStore();
@@ -83,9 +78,8 @@ const VerticalToolbar = () => {
   const canDelete = (appMode === 'normal' && (selectedNodeIds.length > 0 || !!selectedEdgeId)) ||
     (appMode === 'canvasMode' && selectedNodeIds.length > 0);
 
-  // --- (Tất cả các hàm handle... giữ nguyên) ---
+  // --- (Hàm handleAddNode giữ nguyên) ---
   const handleAddNode = (shape) => {
-    // ... (giữ nguyên)
     let style = {};
     if (shape === 'oval') style.borderRadius = '50px';
     if (shape === 'circle') style.borderRadius = '50%';
@@ -93,26 +87,9 @@ const VerticalToolbar = () => {
     addNode(style);
     setPickerVisible(false);
   };
-  const handleSave = (e) => {
-    // ... (giữ nguyên)
-    e.stopPropagation();
-    const { nodes, edges } = useStore.getState();
-    const stateToSave = { nodes, edges };
-    const jsonString = JSON.stringify(stateToSave, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mindmap.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    message.success('Đã lưu sơ đồ!');
-  };
   const handleLoadClick = (e) => { e.stopPropagation(); fileInputRef.current?.click(); };
+  
   const handleFileChange = (event) => {
-    // ... (giữ nguyên)
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -122,7 +99,7 @@ const VerticalToolbar = () => {
         if (typeof text === 'string') {
           const parsedState = JSON.parse(text);
           loadState(parsedState);
-          message.success('Tải sơ đồ thành công!');
+          message.success('Tải sơ đồ (JSON) thành công!');
         }
       } catch (err) {
         console.error("Error parsing JSON file:", err);
@@ -132,8 +109,8 @@ const VerticalToolbar = () => {
     reader.readAsText(file);
     event.target.value = null;
   };
+  
   const handleExportPNG = () => {
-    // ... (giữ nguyên)
     const viewport = document.querySelector(' .react-flow__viewport');
     if (!viewport) {
       message.error('Không tìm thấy sơ đồ để xuất ảnh!');
@@ -164,18 +141,16 @@ const VerticalToolbar = () => {
       message.error({ content: 'Đã xảy ra lỗi khi xuất ảnh.', key, duration: 2 });
     });
   };
+  
   const searchOptions = useMemo(() => { return nodes.map((node) => ({ value: node.id, label: node.data.label || '(Node không tên)', })); }, [nodes]);
   const onSearchSelect = (nodeId) => { fitView({ nodes: [{ id: nodeId }], duration: 300, maxZoom: 1.2, }); };
-  // ✨ SỬA: Hàm này giờ BẬT/TẮT Chế độ Canvas
+  
   const handleToggleCanvasMode = () => {
     setAppMode(appMode === 'canvasMode' ? 'normal' : 'canvasMode');
   };
-  // ✨ THÊM: Hàm này BẬT/TẮT Chế độ Tạo Vùng
   const handleToggleCreateAreaMode = () => {
     setAppMode(appMode === 'creatingDrawArea' ? 'normal' : 'creatingDrawArea');
   };
-  // --- Hết Hàm ---
-  
   // --- Hết Hàm ---
 
 
@@ -210,10 +185,9 @@ const VerticalToolbar = () => {
           <EditOutlined />
         </button>
         
-        {/* ✨ THÊM: Thanh công cụ Canvas Toàn cục */}
+        {/* Thanh công cụ Canvas Toàn cục (Giữ nguyên) */}
         {appMode === 'canvasMode' && (
           <div className="draw-toolbar-global">
-            {/* Nút Trỏ chuột */}
             <button
               className={currentDrawTool.mode === 'cursor' ? 'active' : ''}
               onClick={() => setCurrentDrawTool(CURSOR_TOOL)}
@@ -223,7 +197,6 @@ const VerticalToolbar = () => {
             </button>
             <div className="divider" />
             
-            {/* Nút Vẽ + Presets */}
             {DRAW_PRESETS.map(p => (
               <button
                 key={p.name}
@@ -243,7 +216,6 @@ const VerticalToolbar = () => {
             ))}
             <div className="divider" />
 
-            {/* Nút Highlight + Presets */}
             {HIGHLIGHT_PRESETS.map(p => (
               <button
                 key={p.name}
@@ -259,7 +231,6 @@ const VerticalToolbar = () => {
             ))}
             <div className="divider" />
 
-            {/* Nút Tẩy */}
             <button
               className={currentDrawTool.mode === 'erase' ? 'active' : ''}
               onClick={() => setCurrentDrawTool(ERASE_TOOL)}
@@ -270,10 +241,15 @@ const VerticalToolbar = () => {
           </div>
         )}
         
-        {/* ✨ XÓA: Khối 'editingCanvas' và DrawAreaToolbar đã bị loại bỏ */}
-        {/* ✨ XÓA: Khối 'draw-toolbar-global' bị trùng lặp đã bị loại bỏ */}
-
-        <button onClick={handleSave} title="Lưu Sơ Đồ (JSON)"> <SaveOutlined /> </button>
+        
+        {/* SỬA 3: Thay đổi onClick và title của nút lưu */}
+        <button 
+          onClick={onManualSave} 
+          title="Lưu Sơ Đồ (vào Database)"
+        > 
+          <SaveOutlined /> 
+        </button>
+        
         <button onClick={handleLoadClick} title="Tải Sơ Đồ (JSON)"> <FolderOpenOutlined /> </button>
         <button onClick={handleExportPNG} title="Xuất ra ảnh PNG"> <CameraOutlined /> </button>
         <button onClick={runAutoLayout} title="Tự động sắp xếp"> <ApartmentOutlined /> </button>
@@ -285,7 +261,6 @@ const VerticalToolbar = () => {
         >
           <SearchOutlined />
         </button>
-        {/* ✨ THÊM: Nút tạo vùng vẽ (kéo thả) */}
         <button
           onClick={handleToggleCreateAreaMode}
           className={appMode === 'creatingDrawArea' ? 'active' : ''}
@@ -294,11 +269,9 @@ const VerticalToolbar = () => {
           <BorderOutlined />
         </button>
         
-
-        {/* ✨ KIỂM TRA LẠI NÚT DELETE */}
         <button
-          onClick={deleteElements} // Gọi đúng action
-          disabled={!canDelete}    // Dùng đúng biến cờ
+          onClick={deleteElements}
+          disabled={!canDelete}
           title="Xóa"
         >
           <DeleteOutlined />
