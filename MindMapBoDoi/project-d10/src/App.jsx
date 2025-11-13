@@ -350,7 +350,10 @@ function MindmapEditor() {
             if(setLoaded) setLoaded(false);
             const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
             if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
-              window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+              message.warning('Phiên đăng nhập đã hết, vui lòng đăng nhập lại...', 1.5);
+              setTimeout(() => {
+                window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+              }, 800);
               return;
             }
             if (!res.ok) throw new Error('Không thể tải mindmap');
@@ -411,7 +414,10 @@ function ImportMindmap() {
       
       const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
       if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
-        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        message.warning('Phiên đăng nhập đã hết, vui lòng đăng nhập lại...', 1.5);
+        setTimeout(() => {
+          window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        }, 800);
         return;
       }
       if (!res.ok) throw new Error('Không thể tải nội dung mindmap từ server');
