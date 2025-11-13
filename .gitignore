@@ -26,3 +26,7 @@ gcp-credentials.json
 # logs
 /logs
 *.log
+# Large video files (use CDN for production)
+public/videos/*.mp4
+public/videos/*.mov
+public/videos/*.avi
