@@ -37,4 +37,5 @@ services:
     name: mymap-redis
     region: singapore
     plan: free
+    ipAllowList: []
     maxmemoryPolicy: allkeys-lru
