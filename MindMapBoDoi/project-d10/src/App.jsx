@@ -348,7 +348,11 @@ function MindmapEditor() {
       const fetchMindmap = async () => {
          try {
             if(setLoaded) setLoaded(false);
-            const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include' });
+            const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
+            if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
+              window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+              return;
+            }
             if (!res.ok) throw new Error('Không thể tải mindmap');
             const data = await res.json();
             if (!data.success || !data.data) throw new Error('Dữ liệu không hợp lệ');
@@ -405,7 +409,11 @@ function ImportMindmap() {
       setLoading(true);
       if (setLoaded) setLoaded(false); // Báo là đang tải
       
-      const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include' });
+      const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
+      if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
+        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
       if (!res.ok) throw new Error('Không thể tải nội dung mindmap từ server');
       
       const data = await res.json();
@@ -482,7 +490,14 @@ function CytoscapeViewer() {
   const { id } = useParams();
   const [markdown, setMarkdown] = useState('');
   useEffect(() => {
-    fetch(`/mindmaps/${id}/json`, { credentials: 'include' })
+    fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } })
+      .then((res) => {
+        if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
+          window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+          return Promise.reject(new Error('Unauthorized'));
+        }
+        return res;
+      })
       .then((res) => res.json())
       .then((data) => setMarkdown(data.data?.content || ''))
       .catch(console.error);

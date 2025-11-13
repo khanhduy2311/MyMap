@@ -24,7 +24,11 @@ const ImportMindmap = () => {
       setLoading(true);
       
       // Gọi API backend
-      const response = await fetch(`/mindmaps/${id}/json`);
+      const response = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
+      if (response.status === 401 || (response.redirected && response.url.includes('/login'))) {
+        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
       const result = await response.json();
       
       if (!result.success) {
