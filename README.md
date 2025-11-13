@@ -208,6 +208,21 @@ node test-gemini.js
 | NODE_ENV | ❌ | development | Environment mode |
 | LOG_LEVEL | ❌ | info | Logging level |
 
+## 🔑 Secrets & Environment
+
+- Keep secrets out of git: `.env` is ignored. Use `.env.example` as a template.
+- Production on Render: set all variables in the service dashboard. Do not upload `.env`.
+- Rotate leaked keys immediately if exposed in commits or screenshots:
+    - MongoDB: change user password and update `MONGO_URI`.
+    - Cloudinary: regenerate `CLOUDINARY_API_SECRET` (and API key if needed).
+    - Gemini, Hugging Face, OpenRouter, OCR.Space: revoke and recreate tokens.
+    - Redis: prefer `REDIS_URL` (rotate credentials or new instance).
+    - Email: regenerate app password (`EMAIL_PASS`).
+    - Session: set a new strong `SESSION_SECRET`.
+
+Render build note:
+- Pin Node to LTS via `package.json` engines (`node: 18.x`) to avoid Node 25 `localStorage` build errors when building the React app.
+
 ## 🤝 Contributing
 
 1. Fork repository
