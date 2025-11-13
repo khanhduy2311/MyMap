@@ -19,6 +19,8 @@ git remote add origin https://github.com/khanhduy2311/MyMap.git
 git push -u origin main
 ```
 
+> ⚠️ **Lưu ý về Video Files**: Các video lớn (>10MB) đã được loại khỏi Git. Xem [VIDEO_PRODUCTION_NOTES.md](./VIDEO_PRODUCTION_NOTES.md) để biết cách xử lý videos cho production (upload lên CDN như Cloudinary).
+
 ### 2. **Chuẩn Bị Environment Variables**
 
 Bạn cần có sẵn các thông tin sau:
