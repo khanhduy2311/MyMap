@@ -22,3 +22,7 @@ yarn-debug.log*
 yarn-error.log*
 .vercel
 gcp-credentials.json
+
+# logs
+/logs
+*.log

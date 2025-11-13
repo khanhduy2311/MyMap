@@ -34,20 +34,17 @@ const ImportMindmap = () => {
       // Chuyển đổi Markdown → Mindmap
       const { nodes, edges } = markdownToMindmap(result.data.content);
       
-      // Load vào store
+      // Load vào store với layout đã có sẵn (CHIỀU NGANG)
       loadState({ nodes, edges });
       
-      // Tự động layout (tùy chọn)
-      setTimeout(() => {
-        runAutoLayout();
-      }, 100);
+      console.log('✅ Đã load', nodes.length, 'nodes với layout NGANG');
       
       setLoading(false);
       
-      // Chuyển sang editor sau 500ms
+      // Chuyển sang editor ngay lập tức
       setTimeout(() => {
         navigate('/mindmap-editor');
-      }, 500);
+      }, 100);
       
     } catch (err) {
       console.error('Import error:', err);

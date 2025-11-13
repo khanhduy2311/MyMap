@@ -1,4 +1,4 @@
-import {
+﻿import {
   ReactFlow,
   Background,
   ReactFlowProvider,
@@ -279,6 +279,8 @@ function FlowContent({ currentMindmapId, onManualSave }) {
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
+          defaultZoom={1.0}
+          fitViewOptions={{ padding: 0.05, minZoom: 0.5, maxZoom: 1.5 }} // ✅ ZOOM GẦN HƠN NỮA
           onlyRenderVisibleElements
           panOnDrag={[2]}
           selectionOnDrag={true}
@@ -287,7 +289,7 @@ function FlowContent({ currentMindmapId, onManualSave }) {
           nodesDraggable
           nodesConnectable
           selectionMode={SelectionMode.Partial}
-          minZoom={0.02}
+          minZoom={0.3}
           maxZoom={3}
           onEdgeClick={handleEdgeClick}
           onPaneClick={handlePaneClick}
@@ -341,8 +343,8 @@ function MindmapEditor() {
   const { isLoaded, setLoaded, loadState, nodes, setCurrentMindmapId } = useStore();
   
   useEffect(() => {
-    // Chỉ tải nếu chưa tải, hoặc ID không khớp
-    if (!isLoaded || currentMindmapId !== id) {
+    // Chỉ tải nếu chưa tải (bỏ kiểm tra ID khớp vì id thay đổi qua URL)
+    if (!isLoaded) {
       const fetchMindmap = async () => {
          try {
             if(setLoaded) setLoaded(false);
@@ -351,13 +353,12 @@ function MindmapEditor() {
             const data = await res.json();
             if (!data.success || !data.data) throw new Error('Dữ liệu không hợp lệ');
 
-            // Ưu tiên nodes/edges đã lưu, nếu không có thì mới chuyển từ markdown
-            if (data.data.nodes && data.data.nodes.length > 0) {
-              loadState({ nodes: data.data.nodes, edges: data.data.edges });
-            } else {
-              const { nodes, edges } = markdownToMindmap(data.data.content);
-              loadState({ nodes, edges });
-            }
+            // ✅ LUÔN convert từ markdown để có layout NGANG mới nhất
+            console.log('🔄 Converting markdown to mindmap with HORIZONTAL layout...');
+            const { nodes, edges } = markdownToMindmap(data.data.content);
+            loadState({ nodes, edges });
+            console.log('✅ Loaded', nodes.length, 'nodes with HORIZONTAL layout');
+            
             if(setCurrentMindmapId) setCurrentMindmapId(id);
             if(setLoaded) setLoaded(true);
          } catch(err) {
@@ -368,7 +369,7 @@ function MindmapEditor() {
       };
       fetchMindmap();
     }
-  }, [id, isLoaded, loadState, setLoaded, setCurrentMindmapId, currentMindmapId]);
+  }, [id, isLoaded, loadState, setLoaded, setCurrentMindmapId]);
 
 
   return (
@@ -579,5 +580,6 @@ const styles = {
     fontSize: '16px',
   },
 };
+
 
 export default App;

@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.git
+.gitignore
+README.md
+.DS_Store
+.vscode
+coverage
+*.log
+temp/
+logs/*.log
+MindMapBoDoi/project-d10/node_modules
+MindMapBoDoi/project-d10/.env
+public/uploads/documents/*
+!public/uploads/documents/.gitkeep

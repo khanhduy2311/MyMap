@@ -12,16 +12,19 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { HfInference } = require('@huggingface/inference');
 const authMiddleware = require('../middlewares/middlewares.js');
 const documentController = require('../controllers/documentController.js');
+const logger = require('../utils/logger');
+const { jobManager } = require('../utils/redisClient');
+const { uploadLimiter } = require('../middlewares/rateLimiter');
 
 const OCRSPACE_API_KEY = process.env.OCRSPACE_API_KEY;
 const GEMINI_KEYS = (process.env.GEMINI_API_KEYS || '').split(',').map(k => k.trim()).filter(Boolean);
 const HUGGINGFACE_TOKEN = process.env.HUGGINGFACE_TOKEN;
 const CHUNK_SIZE = parseInt(process.env.CHUNK_SIZE || '8000', 10);
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-if (!OCRSPACE_API_KEY) console.warn("⚠️ OCRSPACE_API_KEY not set in .env — OCR.Space calls will fail.");
-if (GEMINI_KEYS.length === 0) console.warn("⚠️ GEMINI_API_KEYS not set.");
-if (!HUGGINGFACE_TOKEN) console.warn("⚠️ HUGGINGFACE_TOKEN not set in .env — Hugging Face calls will fail.");
-if (!OPENROUTER_API_KEY) console.warn("⚠️ OPENROUTER_API_KEY not set in .env — OpenRouter calls will fail.");
+if (!OCRSPACE_API_KEY) logger.warn("OCRSPACE_API_KEY not set in .env — OCR.Space calls will fail.");
+if (GEMINI_KEYS.length === 0) logger.warn("GEMINI_API_KEYS not set.");
+if (!HUGGINGFACE_TOKEN) logger.warn("HUGGINGFACE_TOKEN not set in .env — Hugging Face calls will fail.");
+if (!OPENROUTER_API_KEY) logger.warn("OPENROUTER_API_KEY not set in .env — OpenRouter calls will fail.");
 // Khởi tạo Hugging Face client
 const hf = HUGGINGFACE_TOKEN ? new HfInference(HUGGINGFACE_TOKEN) : null;
 
@@ -52,7 +55,7 @@ async function generateWithOpenRouter(prompt) {
 
     for (const model of models) {
         try {
-            console.log(`🌐 Trying OpenRouter: ${model}`);
+            logger.info(`Trying OpenRouter: ${model}`);
             
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
                 model: model,
@@ -81,7 +84,7 @@ YÊU CẦU: Luôn trả về JSON hợp lệ, bắt đầu bằng { và kết th
             });
 
             const content = response.data.choices[0].message.content;
-            console.log(`✓ OpenRouter success with ${model}`);
+            logger.info(`✓ OpenRouter success with ${model}`);
             
             return { 
                 response: {
@@ -94,7 +97,7 @@ YÊU CẦU: Luôn trả về JSON hợp lệ, bắt đầu bằng { và kết th
             };
 
         } catch (error) {
-            console.warn(`❌ OpenRouter ${model} failed:`, error.response?.data?.error?.message || error.message);
+            logger.warn(`❌ OpenRouter ${model} failed:`, error.response?.data?.error?.message || error.message);
             continue;
         }
     }
@@ -122,7 +125,7 @@ async function generateWithHuggingFace(prompt, maxRetries = 2) {
         const model = models[attempt] || models[0];
         
         try {
-            console.log(`🤗 Hugging Face Attempt ${attempt + 1} with: ${model}`);
+            logger.info(`🤗 Hugging Face Attempt ${attempt + 1} with: ${model}`);
             
             // PROMPT ENGINEERING QUAN TRỌNG
             const enhancedPrompt = `BẠN PHẢI TRẢ VỀ DUY NHẤT JSON. KHÔNG CÓ BẤT KỲ TEXT NÀO KHÁC.
@@ -155,14 +158,14 @@ NHẮC LẠI: CHỈ TRẢ VỀ JSON, KHÔNG GIẢI THÍCH, KHÔNG MARKDOWN.`;
                 throw new Error(response.data.error);
             }
 
-            console.log(`✓ Hugging Face success with ${model}`);
+            logger.info(`✓ Hugging Face success with ${model}`);
             return { generated_text: response.data[0]?.generated_text || "" };
 
         } catch (error) {
-            console.warn(`❌ Hugging Face ${model} failed:`, error.message);
+            logger.warn(`❌ Hugging Face ${model} failed:`, error.message);
             
             if (attempt < maxRetries - 1) {
-                console.log(`🔄 Trying next Hugging Face model...`);
+                logger.info(`🔄 Trying next Hugging Face model...`);
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } else {
                 throw new Error(`All Hugging Face models failed: ${error.message}`);
@@ -195,14 +198,14 @@ async function generateWithRetry(prompt, maxRetries = 3) {
                     }
                 });
 
-                console.log(`🤖 Gemini Attempt ${attempt + 1} with ${selectedModel}`);
+                logger.info(`🤖 Gemini Attempt ${attempt + 1} with ${selectedModel}`);
                 const result = await model.generateContent(prompt);
-                console.log(`✓ Gemini ${selectedModel} success`);
+                logger.info(`✓ Gemini ${selectedModel} success`);
                 return result;
 
             } catch (error) {
                 lastError = error;
-                console.warn(`❌ Gemini ${selectedModel} failed:`, error.message);
+                logger.warn(`❌ Gemini ${selectedModel} failed:`, error.message);
                 if (attempt < maxRetries - 1) {
                     await new Promise(resolve => setTimeout(resolve, 800));
                 }
@@ -212,16 +215,16 @@ async function generateWithRetry(prompt, maxRetries = 3) {
 
     // 2. Thử OpenRouter (free) - RẤT QUAN TRỌNG
     try {
-        console.log("🔄 Falling back to OpenRouter free models...");
+        logger.info("🔄 Falling back to OpenRouter free models...");
         return await generateWithOpenRouter(prompt);
     } catch (error) {
         lastError = error;
-        console.warn("OpenRouter fallback failed:", error.message);
+        logger.warn("OpenRouter fallback failed:", error.message);
     }
 
     // 3. Cuối cùng dùng Hugging Face (luôn available)
     try {
-        console.log("🔄 Falling back to Hugging Face...");
+        logger.info("🔄 Falling back to Hugging Face...");
         const hfResult = await generateWithHuggingFace(prompt);
         return { 
             response: {
@@ -234,14 +237,14 @@ async function generateWithRetry(prompt, maxRetries = 3) {
         };
     } catch (error) {
         lastError = error;
-        console.warn("Hugging Face fallback failed:", error.message);
+        logger.warn("Hugging Face fallback failed:", error.message);
     }
 
     throw new Error(`All AI services failed: ${lastError?.message || 'Unknown error'}`);
 }
 // ========== TEXT EXTRACTION ==========
 async function extractTextSmart(buffer, mimeType, sseRes) {
-  console.log("🔍 Extracting text from:", mimeType);
+  logger.info("🔍 Extracting text from:", mimeType);
   sendSSE(sseRes, 'progress', { message: `🔍 Bắt đầu trích xuất từ ${mimeType}...` });
 
   if (mimeType === 'application/pdf') {
@@ -251,21 +254,21 @@ async function extractTextSmart(buffer, mimeType, sseRes) {
       if (!text) throw new Error("Extracted PDF text is empty or pdf-parse failed.");
 
       sendSSE(sseRes, 'progress', { message: `✓ Đã trích xuất ${text.length} ký tự từ PDF` });
-      console.log(`✓ Successfully extracted ${text.length} characters from PDF.`);
+      logger.info(`✓ Successfully extracted ${text.length} characters from PDF.`);
       return text;
 
     } catch (error) {
-      console.warn("PDF extraction failed:", error.message);
+      logger.warn("PDF extraction failed:", error.message);
       sendSSE(sseRes, 'progress', { message: '🔄 Trích xuất PDF thất bại, thử sử dụng OCR...' });
 
       try {
         const ocrText = await runOcrSpaceFull(buffer, mimeType);
         if (!ocrText) throw new Error("OCR text for PDF is empty.");
-        console.log(`✓ Successfully extracted ${ocrText.length} characters from PDF via OCR.`);
+        logger.info(`✓ Successfully extracted ${ocrText.length} characters from PDF via OCR.`);
         sendSSE(sseRes, 'progress', { message: `✓ Đã trích xuất ${ocrText.length} ký tự từ PDF bằng OCR` });
         return ocrText;
       } catch (ocrError) {
-        console.error("OCR for PDF also failed:", ocrError.message);
+        logger.error("OCR for PDF also failed:", ocrError.message);
         sendSSE(sseRes, 'error', { message: `Lỗi OCR PDF: ${ocrError.message}` });
         throw new Error(`Không thể trích xuất văn bản từ PDF bằng cả hai phương pháp: ${ocrError.message}`);
       }
@@ -278,10 +281,10 @@ async function extractTextSmart(buffer, mimeType, sseRes) {
       const text = value?.trim() || '';
       if (!text) throw new Error("Extracted DOCX text is empty.");
       sendSSE(sseRes, 'progress', { message: `✓ Đã trích xuất ${text.length} ký tự từ DOCX` });
-      console.log(`✓ Successfully extracted ${text.length} characters from DOCX.`);
+      logger.info(`✓ Successfully extracted ${text.length} characters from DOCX.`);
       return text;
     } catch (error) {
-      console.error("DOCX extraction failed:", error.message);
+      logger.error("DOCX extraction failed:", error.message);
       sendSSE(sseRes, 'error', { message: `Lỗi trích xuất DOCX: ${error.message}` });
       throw new Error(`Không thể trích xuất văn bản từ DOCX: ${error.message}`);
     }
@@ -292,32 +295,32 @@ async function extractTextSmart(buffer, mimeType, sseRes) {
       const text = buffer.toString('utf8').trim();
       if (!text) throw new Error("Extracted TXT text is empty.");
       sendSSE(sseRes, 'progress', { message: `✓ Đã trích xuất ${text.length} ký tự từ TXT` });
-      console.log(`✓ Successfully extracted ${text.length} characters from TXT.`);
+      logger.info(`✓ Successfully extracted ${text.length} characters from TXT.`);
       return text;
     } catch (error) {
-      console.error("TXT extraction failed:", error.message);
+      logger.error("TXT extraction failed:", error.message);
       sendSSE(sseRes, 'error', { message: `Lỗi đọc file TXT: ${error.message}` });
       throw new Error(`Không thể đọc file TXT: ${error.message}`);
     }
   }
 
   if (mimeType.startsWith('image/')) {
-    console.log(`Attempting OCR for image type: ${mimeType}`);
+    logger.info(`Attempting OCR for image type: ${mimeType}`);
     sendSSE(sseRes, 'progress', { message: '🔄 Đang xử lý hình ảnh với OCR...' });
     try {
       const ocrText = await runOcrSpaceFull(buffer, mimeType);
       if (!ocrText) throw new Error("OCR text for image is empty.");
-      console.log(`✓ Successfully extracted ${ocrText.length} characters from image via OCR.`);
+      logger.info(`✓ Successfully extracted ${ocrText.length} characters from image via OCR.`);
       sendSSE(sseRes, 'progress', { message: `✓ Đã trích xuất ${ocrText.length} ký tự ảnh bằng OCR` });
       return ocrText;
     } catch (error) {
-      console.error("Image OCR failed:", error.message);
+      logger.error("Image OCR failed:", error.message);
       sendSSE(sseRes, 'error', { message: `Lỗi OCR ảnh: ${error.message}` });
       throw new Error(`Không thể trích xuất văn bản từ ảnh bằng OCR: ${error.message}`);
     }
   }
 
-  console.error(`Unsupported or unknown file type: ${mimeType || 'unknown'}`);
+  logger.error(`Unsupported or unknown file type: ${mimeType || 'unknown'}`);
   sendSSE(sseRes, 'error', { message: `Định dạng file không được hỗ trợ hoặc không xác định: ${mimeType || 'unknown'}` });
   throw new Error(`Định dạng file không được hỗ trợ hoặc không xác định: ${mimeType || 'unknown'}`);
 }
@@ -341,7 +344,7 @@ function splitChunksSimple(text, size = CHUNK_SIZE) {
     currentPos = endPos;
   }
 
-  console.log(`Split text (${text.length} chars) into ${chunks.length} chunks of size ~${size}.`);
+  logger.info(`Split text (${text.length} chars) into ${chunks.length} chunks of size ~${size}.`);
   return chunks;
 }
 
@@ -359,7 +362,7 @@ function extractJson(text) {
   // Tìm JSON object
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    console.warn('[extractJson] No JSON object found in text');
+    logger.warn('[extractJson] No JSON object found in text');
     return null;
   }
 
@@ -374,7 +377,7 @@ function extractJson(text) {
     }
     return null;
   } catch (e) {
-    console.warn('[extractJson] JSON parse error:', e.message);
+    logger.warn('[extractJson] JSON parse error:', e.message);
     return null;
   }
 }
@@ -508,7 +511,7 @@ function createSimpleFallback(chunk, chunkIndex) {
 // SỬA ĐỔI: Dùng hàm `extractJson`
 // ========== IMPROVED CHUNK ANALYSIS WITH BETTER PROMPT ==========
 async function analyzeChunkSimple(chunk, chunkIndex, totalChunks) {
-  console.log(`Analyzing chunk ${chunkIndex + 1}/${totalChunks}...`);
+  logger.info(`Analyzing chunk ${chunkIndex + 1}/${totalChunks}...`);
 
   // PROMPT ĐƠN GIẢN VÀ RÕ RÀNG HƠN
   const prompt = `PHÂN TÍCH VĂN BẢN VÀ TRẢ VỀ JSON THEO ĐÚNG CẤU TRÚC SAU:
@@ -545,7 +548,7 @@ QUY TẮC:
   // Retry logic
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      console.log(`Attempt ${attempt + 1} for chunk ${chunkIndex + 1}`);
+      logger.info(`Attempt ${attempt + 1} for chunk ${chunkIndex + 1}`);
       
       const result = await generateWithRetry(prompt);
       const rawText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -554,19 +557,19 @@ QUY TẮC:
         throw new Error('Empty response from AI');
       }
 
-      console.log(`Raw AI response for chunk ${chunkIndex + 1}:`, rawText.substring(0, 200) + '...');
+      logger.info(`Raw AI response for chunk ${chunkIndex + 1}:`, rawText.substring(0, 200) + '...');
 
       // Sử dụng hàm extractJson
       const parsedJson = extractJson(rawText);
       
       if (parsedJson && validateJsonStructure(parsedJson)) {
-        console.log(`✓ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} SUCCESS`);
+        logger.info(`✓ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} SUCCESS`);
         
         // Clean up và validate data
         return cleanAndValidateJson(parsedJson);
       } else {
-        console.warn(`⚠️ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} JSON validation failed`);
-        console.log('Parsed JSON:', parsedJson);
+        logger.warn(`⚠️ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} JSON validation failed`);
+        logger.info('Parsed JSON:', parsedJson);
         
         if (attempt < 2) {
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -574,7 +577,7 @@ QUY TẮC:
         }
       }
     } catch (error) {
-      console.error(`❌ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} error:`, error.message);
+      logger.error(`❌ Chunk ${chunkIndex + 1} - Attempt ${attempt + 1} error:`, error.message);
       if (attempt < 2) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         continue;
@@ -583,7 +586,7 @@ QUY TẮC:
   }
 
   // Fallback thông minh
-  console.log(`🔄 Using intelligent fallback for chunk ${chunkIndex + 1}`);
+  logger.info(`🔄 Using intelligent fallback for chunk ${chunkIndex + 1}`);
   return createSimpleFallback(chunk, chunkIndex);
 }
 
@@ -788,7 +791,7 @@ async function processSingleChunk(chunk, chunkIndex, totalChunks, sse) {
     totalChunks: totalChunks
   };
   sendSSE(sse, 'progress', progressData);
-  console.log(`Job: ${progressData.message}`);
+  logger.info(`Job: ${progressData.message}`);
 
   try {
     const analysis = await analyzeChunkSimple(chunk, chunkIndex, totalChunks);
@@ -800,11 +803,11 @@ async function processSingleChunk(chunk, chunkIndex, totalChunks, sse) {
     };
     sendSSE(sse, 'progress', chunkDoneData);
     
-    if (analysis.error) console.warn(`Chunk ${chunkIndex + 1} error: ${chunkDoneData.message}`);
+    if (analysis.error) logger.warn(`Chunk ${chunkIndex + 1} error: ${chunkDoneData.message}`);
     
     return analysis;
   } catch (error) {
-    console.error(`❌ Error processing chunk ${chunkIndex + 1}:`, error);
+    logger.error(`❌ Error processing chunk ${chunkIndex + 1}:`, error);
     return {
       mainTopic: `Lỗi phần ${chunkIndex + 1}`,
       subTopics: [],
@@ -816,11 +819,11 @@ async function processSingleChunk(chunk, chunkIndex, totalChunks, sse) {
 
 // ========== MINDMAP STRUCTURE AGGREGATION & GENERATION (SỬA ĐỔI) ==========
 function aggregateJsonResults(results, chunks) {
-    console.log(`Aggregating results from ${results.length} JSON analyses (expected ${chunks.length}).`);
+    logger.info(`Aggregating results from ${results.length} JSON analyses (expected ${chunks.length}).`);
     const validResults = results.filter(r => r && !r.error && !r.fallback);
 
     if (validResults.length === 0) {
-        console.warn("⚠️ No valid JSON analysis results to aggregate.");
+        logger.warn("⚠️ No valid JSON analysis results to aggregate.");
         return {
             mainTopic: "Lỗi Phân Tích Tài Liệu",
             subTopics: [{
@@ -864,7 +867,7 @@ function aggregateJsonResults(results, chunks) {
             finalMainTopic = topic;
         }
     }
-    console.log(`[Aggregation] Chosen mainTopic: "${finalMainTopic}" (Count: ${maxCount}) from ${topicMap.size} topics.`);
+    logger.info(`[Aggregation] Chosen mainTopic: "${finalMainTopic}" (Count: ${maxCount}) from ${topicMap.size} topics.`);
 
 
     const combinedSummary = validResults.map(r => r.summary || '').filter(Boolean).join('\n\n');
@@ -885,12 +888,12 @@ function aggregateJsonResults(results, chunks) {
             if (!currentChapter.mainSections.some(existing => existing.title === mainSection.title)) {
                 currentChapter.mainSections.push(mainSection);
             } else {
-                 console.warn(`Duplicate mainSection title found and skipped: "${mainSection.title}" in chapter "${chapterKey}"`);
+                 logger.warn(`Duplicate mainSection title found and skipped: "${mainSection.title}" in chapter "${chapterKey}"`);
             }
         });
     });
 
-     console.log(`Aggregated into ${groupedSubTopics.length} chapters/subtopics.`);
+     logger.info(`Aggregated into ${groupedSubTopics.length} chapters/subtopics.`);
 
     return {
         mainTopic: finalMainTopic,
@@ -902,10 +905,10 @@ function aggregateJsonResults(results, chunks) {
 }
 
 function generateMarkdownFromJson(aggregatedJson) {
-    console.log("Generating final Markdown from aggregated JSON structure...");
+    logger.info("Generating final Markdown from aggregated JSON structure...");
     
     if (aggregatedJson.error) {
-        console.warn("⚠️ Aggregated JSON indicates error. Generating error Markdown.");
+        logger.warn("⚠️ Aggregated JSON indicates error. Generating error Markdown.");
         return `# ${aggregatedJson.mainTopic}\n\n## Lỗi phân tích\n\n${aggregatedJson.summary || 'Không thể phân tích tài liệu'}`;
     }
 
@@ -962,8 +965,8 @@ function generateMarkdownFromJson(aggregatedJson) {
         markdown += `---\n\n*Tổng hợp từ ${aggregatedJson.analyzedChunks}/${aggregatedJson.totalChunks} phần nội dung.*`;
     }
 
-    console.log("✓ Successfully generated clean Markdown from JSON.");
-    console.log("Markdown preview:", markdown.substring(0, 200) + "...");
+    logger.info("✓ Successfully generated clean Markdown from JSON.");
+    logger.info("Markdown preview:", markdown.substring(0, 200) + "...");
     
     return markdown.trim();
 }
@@ -979,41 +982,41 @@ async function ocrSpaceParseBuffer(buffer, mimeType) {
   form.append('scale', 'true'); 
   form.append('detectOrientation', 'true'); 
   form.append('file', buffer, { filename: `upload.${mimeType ? mimeType.split('/')[1] || 'bin' : 'bin'}` }); 
-  console.log('Sending request to OCR.Space...'); 
+  logger.info('Sending request to OCR.Space...'); 
   try { 
     const resp = await axios.post('https://api.ocr.space/parse/image', form, { headers: form.getHeaders(), timeout: 90000 }); 
-    console.log('Received response from OCR.Space.'); 
+    logger.info('Received response from OCR.Space.'); 
     if (resp.data?.IsErroredOnProcessing) { 
-      console.error('OCR.Space Processing Error:', resp.data.ErrorMessage.join ? resp.data.ErrorMessage.join('; ') : resp.data.ErrorMessage); 
+      logger.error('OCR.Space Processing Error:', resp.data.ErrorMessage.join ? resp.data.ErrorMessage.join('; ') : resp.data.ErrorMessage); 
     } 
     if (resp.data?.OCRExitCode !== 1) { 
-      console.warn(`OCR.Space Exit Code: ${resp.data?.OCRExitCode}. Details might be in ErrorMessage.`); 
+      logger.warn(`OCR.Space Exit Code: ${resp.data?.OCRExitCode}. Details might be in ErrorMessage.`); 
     } 
     return resp.data; 
   } catch (error) { 
-    console.error("OCR.Space API request error:", error.message); 
+    logger.error("OCR.Space API request error:", error.message); 
     if (error.response) { 
-      console.error("OCR.Space Response Status:", error.response.status); 
-      console.error("OCR.Space Response Data:", error.response.data); 
+      logger.error("OCR.Space Response Status:", error.response.status); 
+      logger.error("OCR.Space Response Data:", error.response.data); 
     } 
     throw new Error(`Lỗi gọi API OCR.Space: ${error.message}`); 
   } 
 }
 
 async function runOcrSpaceFull(buffer, mimeType) { 
-  console.log("Running full OCR process..."); 
+  logger.info("Running full OCR process..."); 
   const data = await ocrSpaceParseBuffer(buffer, mimeType); 
   if (data?.IsErroredOnProcessing || data?.OCRExitCode !== 1) { 
     const errorMessages = data?.ErrorMessage?.join ? data.ErrorMessage.join('; ') : (data?.ErrorMessage || "Lỗi xử lý OCR không xác định"); 
-    console.error(`OCR processing failed with exit code ${data?.OCRExitCode}. Errors: ${errorMessages}`); 
+    logger.error(`OCR processing failed with exit code ${data?.OCRExitCode}. Errors: ${errorMessages}`); 
     throw new Error(errorMessages); 
   } 
   if (!data.ParsedResults || data.ParsedResults.length === 0) { 
-    console.warn("OCR processed successfully but returned no parsed results."); 
+    logger.warn("OCR processed successfully but returned no parsed results."); 
     return ''; 
   } 
   const combinedText = data.ParsedResults.map(p => p.ParsedText || '').join('\n').trim(); 
-  console.log(`OCR successful, extracted ${combinedText.length} characters.`); 
+  logger.info(`OCR successful, extracted ${combinedText.length} characters.`); 
   return combinedText; 
 }
 
@@ -1026,38 +1029,29 @@ const upload = multer({
     if (allowedTypes.includes(file.mimetype)) { 
       cb(null, true); 
     } else { 
-      console.warn(`File rejected: Unsupported type ${file.mimetype}`); 
+      logger.warn(`File rejected: Unsupported type ${file.mimetype}`); 
       cb(new Error(`Chỉ chấp nhận file PDF, DOCX, TXT, JPG, PNG, GIF.`)); 
     } 
   } 
 });
 
-// ========== JOB STORAGE (IN-MEMORY) ==========
-// CẢNH BÁO PRODUCTION: 
-// Lưu job trong `Map` (bộ nhớ server) hoạt động tốt khi phát triển (development).
-// Tuy nhiên, khi "chạy thật" (production), nếu server bị restart, deploy, hoặc crash,
-// tất cả các job đang chạy và đã hoàn thành sẽ bị MẤT.
-//
-// GIẢI PHÁP: Sử dụng một hệ thống lưu trữ bên ngoài như REDIS.
-// - Redis cực kỳ nhanh và lưu trữ dữ liệu bền bỉ.
-// - Bạn có thể dùng `redis.set(jobId, jsonData, 'EX', 10 * 60)` để job tự động 
-//   hết hạn sau 10 phút, thay thế cho `setTimeout` để xóa job.
-// - Điều này cho phép bạn mở rộng (scale) lên nhiều server mà không mất job.
-const jobs = new Map();
-const sseClients = new Map();
+// ========== JOB STORAGE (REDIS) ==========
+// ✅ ĐÃ CHUYỂN SANG REDIS - Jobs giờ được lưu persistent, không mất khi restart
+// Job manager được import từ utils/redisClient.js
+const sseClients = new Map(); // SSE connections vẫn dùng Map (chỉ lưu connection, không lưu data)
 
 // ========== SSE FUNCTIONS ==========
 function sendSSE(res, event, data) { 
   if (!res || res.writableEnded) { 
     if (res && res.writableEnded) { 
-      console.warn(`Attempted to write to an already closed SSE stream for event: ${event}`); 
+      logger.warn(`Attempted to write to an already closed SSE stream for event: ${event}`); 
     } 
     return; 
   } 
   try { 
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); 
   } catch (e) { 
-    console.error(`❌ Failed to send SSE event '${event}':`, e.message); 
+    logger.error(`Failed to send SSE event '${event}': ${e.message}`); 
     try { res.end(); } catch (closeErr) {} 
     sseClients.delete(findJobIdByResponse(res)); 
   } 
@@ -1075,26 +1069,28 @@ function findJobIdByResponse(res) {
 // ========== ROUTES ==========
 router.get('/page', authMiddleware.checkLoggedIn, documentController.getUploadPage);
 
-router.post('/start-summarize', authMiddleware.checkLoggedIn, upload.single('documentFile'), (req, res, next) => { 
+router.post('/start-summarize', authMiddleware.checkLoggedIn, uploadLimiter, upload.single('documentFile'), async (req, res, next) => { 
   if (!req.file) { 
-    console.log("Upload failed: No file received."); 
+    logger.warn("Upload failed: No file received."); 
     return res.status(400).json({ error: 'Không có file nào được tải lên.' }); 
   } 
-  console.log(`Received file: ${req.file.originalname}, Type: ${req.file.mimetype}, Size: ${req.file.size}`); 
+  logger.info(`Received file: ${req.file.originalname}, Type: ${req.file.mimetype}, Size: ${req.file.size}`); 
   const jobId = uuidv4(); 
-  jobs.set(jobId, { 
+  
+  // Lưu buffer dạng base64 để có thể serialize vào Redis
+  await jobManager.createJob(jobId, { 
     id: jobId, 
     status: 'pending', 
-    buffer: req.file.buffer, // Buffer được lưu tạm thời
+    buffer: req.file.buffer.toString('base64'), // Convert buffer to base64 string
     mimeType: req.file.mimetype, 
     filename: req.file.originalname, 
     results: [], 
     startTime: Date.now() 
   }); 
-  console.log(`Job created: ${jobId} for file ${req.file.originalname}`); 
+  logger.info(`Job created: ${jobId} for file ${req.file.originalname}`); 
   res.status(202).json({ jobId }); 
 }, (err, req, res, next) => { 
-  console.error("Multer Upload Error:", err.message); 
+  logger.error(`Multer Upload Error: ${err.message}`); 
   if (err instanceof multer.MulterError) { 
     if (err.code === 'LIMIT_FILE_SIZE') { 
       return res.status(400).json({ error: `File quá lớn, tối đa 50MB.` }); 
@@ -1109,14 +1105,14 @@ router.post('/start-summarize', authMiddleware.checkLoggedIn, upload.single('doc
   next(); 
 });
 
-router.get('/summarize-stream', authMiddleware.checkLoggedIn, (req, res) => { 
+router.get('/summarize-stream', authMiddleware.checkLoggedIn, async (req, res) => { 
   const { jobId } = req.query; 
-  const job = jobs.get(jobId); 
+  const job = await jobManager.getJob(jobId); 
   if (!jobId || !job) { 
-    console.log(`SSE connection failed: Job ${jobId} not found.`); 
+    logger.warn(`SSE connection failed: Job ${jobId} not found.`); 
     return res.status(404).send('Job not found or expired.'); 
   } 
-  console.log(`SSE client connected for job: ${jobId}`); 
+  logger.info(`SSE client connected for job: ${jobId}`); 
   res.writeHead(200, { 
     'Content-Type': 'text/event-stream', 
     'Cache-Control': 'no-cache', 
@@ -1124,35 +1120,37 @@ router.get('/summarize-stream', authMiddleware.checkLoggedIn, (req, res) => {
     'Access-Control-Allow-Origin': '*', 
   }); 
   sseClients.set(jobId, res); 
-  req.on('close', () => { 
-    console.log(`SSE client disconnected for job: ${jobId}`); 
+  req.on('close', async () => { 
+    logger.info(`SSE client disconnected for job: ${jobId}`); 
     sseClients.delete(jobId); 
-    const currentJob = jobs.get(jobId); 
+    const currentJob = await jobManager.getJob(jobId); 
     if (currentJob && (currentJob.status === 'processing' || currentJob.status === 'pending')) { 
-      console.log(`Job ${jobId} still processing after client disconnect.`); 
+      logger.info(`Job ${jobId} still processing after client disconnect.`); 
     } 
     if (!res.writableEnded) { 
       res.end(); 
     } 
   }); 
   if (job.status === 'pending') { 
-    console.log(`Starting processing for pending job: ${jobId}`); 
-    processDocument(jobId).catch(error => { 
-      console.error(`❌ CRITICAL: Uncaught error starting processDocument for ${jobId}:`, error); 
+    logger.info(`Starting processing for pending job: ${jobId}`); 
+    processDocument(jobId).catch(async error => { 
+      logger.error(`CRITICAL: Uncaught error starting processDocument for ${jobId}: ${error.message}`); 
       sendSSE(sseClients.get(jobId), 'error', { message: `Lỗi nghiêm trọng khi bắt đầu xử lý: ${error.message}` }); 
       if (sseClients.has(jobId)) { 
         try { sseClients.get(jobId).end(); } catch (e) {} 
         sseClients.delete(jobId); 
       } 
-      if (jobs.has(jobId)) { 
-        const jobToError = jobs.get(jobId);
-          jobToError.status = 'error'; 
-        jobToError.error = `Lỗi nghiêm trọng: ${error.message}`; 
-        jobToError.buffer = null; // Dọn dẹp buffer
+      const jobToError = await jobManager.getJob(jobId);
+      if (jobToError) { 
+        await jobManager.updateJob(jobId, {
+          status: 'error', 
+          error: `Lỗi nghiêm trọng: ${error.message}`,
+          buffer: null // Dọn dẹp buffer
+        });
       } 
     }); 
   } else { 
-    console.log(`Job ${jobId} status is already '${job.status}'. Sending final status.`); 
+    logger.info(`Job ${jobId} status is already '${job.status}'. Sending final status.`); 
     if (job.status === 'done') { 
       sendSSE(res, 'complete', { 
         markdown: job.result, 
@@ -1169,14 +1167,14 @@ router.get('/summarize-stream', authMiddleware.checkLoggedIn, (req, res) => {
 
 // ========== MAIN PROCESSING FUNCTION - OPTIMIZED ==========
 async function processDocument(jobId) {
-  const job = jobs.get(jobId);
+  const job = await jobManager.getJob(jobId);
   if (!job || job.status !== 'pending') {
-    console.warn(`Attempted to process job ${jobId} but its status is ${job?.status || 'not found'}.`);
+    logger.warn(`Attempted to process job ${jobId} but its status is ${job?.status || 'not found'}.`);
     return;
   }
 
-  console.log(`Processing document for job: ${jobId}`);
-  job.status = 'processing';
+  logger.info(`Processing document for job: ${jobId}`);
+  await jobManager.updateJob(jobId, { status: 'processing' });
   const sse = sseClients.get(jobId);
   let extractedText = null; // Khai báo ở scope ngoài
 
@@ -1185,22 +1183,25 @@ async function processDocument(jobId) {
 
     // Step 1: Extract text
     sendSSE(sse, 'progress', { message: '📄 Đang trích xuất văn bản...' });
-    console.time(`extractText-${jobId}`);
-    extractedText = await extractTextSmart(job.buffer, job.mimeType, sse);
-    console.timeEnd(`extractText-${jobId}`);
+    logger.info(`extractText start for job ${jobId}`);
+    
+    // Convert base64 back to buffer
+    const buffer = Buffer.from(job.buffer, 'base64');
+    extractedText = await extractTextSmart(buffer, job.mimeType, sse);
+    logger.info(`extractText completed for job ${jobId}`);
     
     // Dọn dẹp buffer ngay sau khi trích xuất xong
-    job.buffer = null; 
-    console.log(`Job ${jobId}: Cleared file buffer from memory.`);
+    await jobManager.updateJob(jobId, { buffer: null }); 
+    logger.info(`Job ${jobId}: Cleared file buffer from memory.`);
 
     if (!extractedText || typeof extractedText !== 'string' || extractedText.trim().length < 50) {
       const errorMsg = 'Không thể trích xuất đủ nội dung từ tài liệu. File có thể trống, bị lỗi hoặc định dạng không được hỗ trợ đầy đủ.';
-      console.error(`Error for job ${jobId}: ${errorMsg}. Text length: ${extractedText?.length}`);
+      logger.error(`Error for job ${jobId}: ${errorMsg}. Text length: ${extractedText?.length}`);
       throw new Error(errorMsg);
     }
 
     sendSSE(sse, 'progress', { message: `✅ Đã trích xuất ${extractedText.length} ký tự`, textLength: extractedText.length });
-    console.log(`Job ${jobId}: Extracted ${extractedText.length} chars.`);
+    logger.info(`Job ${jobId}: Extracted ${extractedText.length} chars.`);
 
     // Step 2: Split into chunks
     const chunks = splitChunksSimple(extractedText, CHUNK_SIZE);
@@ -1208,13 +1209,13 @@ async function processDocument(jobId) {
       throw new Error('Nội dung trích xuất không thể chia thành các phần để phân tích.');
     }
     sendSSE(sse, 'progress', { message: `📦 Đã chia thành ${chunks.length} phần để phân tích`, totalChunks: chunks.length });
-    console.log(`Job ${jobId}: Split into ${chunks.length} chunks.`);
+    logger.info(`Job ${jobId}: Split into ${chunks.length} chunks.`);
 
     // Step 3: Process chunks với PARALLEL PROCESSING và RATE LIMITING
     sendSSE(sse, 'progress', { message: `🤖 Bắt đầu phân tích ${chunks.length} phần (xử lý song song)...` });
     
     const analyses = [];
-    console.time(`analyzeChunks-${jobId}`);
+    logger.info(`analyzeChunks start for job ${jobId}`);
     
     // Xử lý song song với giới hạn concurrent requests
     const CONCURRENT_LIMIT = 3; 
@@ -1252,73 +1253,72 @@ async function processDocument(jobId) {
       }
     }
     
-    console.timeEnd(`analyzeChunks-${jobId}`);
+    logger.info(`analyzeChunks completed for job ${jobId}`);
 
     // Step 4: Aggregate results
     sendSSE(sse, 'progress', { message: '📊 Đang tổng hợp kết quả JSON...' });
-    console.log(`Job ${jobId}: Aggregating ${analyses.length} JSON analysis results.`);
-    console.time(`aggregateJson-${jobId}`);
+    logger.info(`Job ${jobId}: Aggregating ${analyses.length} JSON analysis results.`);
+    logger.info(`aggregateJson-${jobId}`);
     const aggregatedJsonResult = aggregateJsonResults(analyses, chunks);
-    console.timeEnd(`aggregateJson-${jobId}`);
+    logger.info(`aggregateJson-${jobId}`);
 
     if (aggregatedJsonResult.error) {
       throw new Error(aggregatedJsonResult.summary || "Lỗi tổng hợp kết quả phân tích JSON.");
     }
 
     sendSSE(sse, 'progress', { message: `📊 Tổng hợp JSON xong. Chủ đề chính: ${aggregatedJsonResult.mainTopic}` });
-    console.log(`Job ${jobId}: JSON Aggregation complete. Main topic: ${aggregatedJsonResult.mainTopic}`);
+    logger.info(`Job ${jobId}: JSON Aggregation complete. Main topic: ${aggregatedJsonResult.mainTopic}`);
 
     // Step 5: Generate final mindmap markdown
     sendSSE(sse, 'progress', { message: '🗺️ Đang tạo sơ đồ tư duy từ JSON...' });
-    console.log(`Job ${jobId}: Generating final mindmap markdown from JSON...`);
-    console.time(`generateMarkdown-${jobId}`);
+    logger.info(`Job ${jobId}: Generating final mindmap markdown from JSON...`);
+    logger.info(`generateMarkdown-${jobId}`);
     const mindmapMarkdown = generateMarkdownFromJson(aggregatedJsonResult);
-    console.timeEnd(`generateMarkdown-${jobId}`);
+    logger.info(`generateMarkdown-${jobId}`);
 
     // Step 6: Finalize job state
-    job.status = 'done';
-    job.result = mindmapMarkdown; // Lưu kết quả Markdown
-    job.processingTime = Date.now() - job.startTime;
-    job.stats = {
+    const processingTime = Date.now() - job.startTime;
+    const stats = {
       totalChunks: chunks.length,
       processedChunks: aggregatedJsonResult.analyzedChunks,
-      processingTime: job.processingTime,
+      processingTime: processingTime,
       textLength: extractedText.length,
       mainTopic: aggregatedJsonResult.mainTopic
     };
 
+    await jobManager.updateJob(jobId, {
+      status: 'done',
+      result: mindmapMarkdown,
+      processingTime: processingTime,
+      stats: stats
+    });
+
     sendSSE(sse, 'complete', {
       markdown: mindmapMarkdown,
       visualizationUrl: `/upload/mindmap-visualization/${jobId}`,
-      stats: job.stats
+      stats: stats
     });
 
-    console.log(`✅ Job ${jobId} completed successfully in ${job.processingTime}ms.`);
+    logger.info(`✅ Job ${jobId} completed successfully in ${processingTime}ms.`);
 
   } catch (error) {
-    console.error(`❌ Processing failed for job ${jobId}:`, error);
-    job.status = 'error';
-    job.error = error.message || 'Lỗi không xác định';
-    sendSSE(sse, 'error', { message: `Lỗi xử lý tài liệu: ${job.error}` });
+    logger.error(`❌ Processing failed for job ${jobId}:`, error);
+    const currentJob = await jobManager.getJob(jobId);
+    if (currentJob) {
+      await jobManager.updateJob(jobId, {
+        status: 'error',
+        error: error.message || 'Lỗi không xác định'
+      });
+    }
+    sendSSE(sse, 'error', { message: `Lỗi xử lý tài liệu: ${error.message || 'Lỗi không xác định'}` });
   } finally {
-    console.log(`Job ${jobId}: Finalizing processing.`);
-    try { if (sse && !sse.writableEnded) { console.log(`Job ${jobId}: Closing SSE stream.`); sse.end(); } }
-    catch (e) { console.warn(`Job ${jobId}: Error closing SSE stream:`, e.message); }
+    logger.info(`Job ${jobId}: Finalizing processing.`);
+    try { if (sse && !sse.writableEnded) { logger.info(`Job ${jobId}: Closing SSE stream.`); sse.end(); } }
+    catch (e) { logger.warn(`Job ${jobId}: Error closing SSE stream:`, e.message); }
     sseClients.delete(jobId);
     
-    // Đảm bảo buffer đã được dọn dẹp
-    if (job && job.buffer) { 
-        job.buffer = null; 
-        console.log(`Job ${jobId}: Cleared buffer in finally block.`); 
-    }
-    
-    // Đặt lịch xóa job khỏi bộ nhớ (quan trọng để tránh memory leak)
-    setTimeout(() => { 
-        if (jobs.has(jobId)) { 
-            console.log(`Job ${jobId}: Deleting job data from memory.`); 
-            jobs.delete(jobId); 
-        } 
-    }, 10 * 60 * 1000); // 10 phút sau khi xử lý xong
+    // Redis tự động xóa job sau TTL (10 phút) - không cần setTimeout
+    logger.info(`Job ${jobId}: Completed. Redis will auto-expire after TTL.`);
   }
 }
 
@@ -1326,12 +1326,12 @@ async function processDocument(jobId) {
 router.get('/', (req, res) => { res.redirect('/upload/page'); });
 
 // Mindmap visualization route
-router.get('/mindmap-visualization/:jobId', authMiddleware.checkLoggedIn, (req, res) => {
+router.get('/mindmap-visualization/:jobId', authMiddleware.checkLoggedIn, async (req, res) => {
   const { jobId } = req.params;
-  const job = jobs.get(jobId);
+  const job = await jobManager.getJob(jobId);
 
   if (!job) {
-    console.warn(`[Visualization] Job not found in memory: ${jobId}`);
+    logger.warn(`[Visualization] Job not found in memory: ${jobId}`);
     return res.status(404).send(`
         <h1 style="font-family: sans-serif; color: #d9534f;">404 - Không tìm thấy Job</h1>
         <p style="font-family: sans-serif;">Job ID này không tồn tại. 
@@ -1341,7 +1341,7 @@ router.get('/mindmap-visualization/:jobId', authMiddleware.checkLoggedIn, (req, 
   }
 
   if (job.status !== 'done' || !job.result) {
-    console.warn(`[Visualization] Job not complete: ${jobId}, status: ${job.status}`);
+    logger.warn(`[Visualization] Job not complete: ${jobId}, status: ${job.status}`);
     return res.status(400).send(`
         <h1 style="font-family: sans-serif; color: #f0ad4e;">400 - Job chưa hoàn thành</h1>
         <p style="font-family: sans-serif;">Job này đang được xử lý (${job.status}) hoặc đã gặp lỗi trong quá trình phân tích. 
@@ -1360,7 +1360,7 @@ router.get('/mindmap-visualization/:jobId', authMiddleware.checkLoggedIn, (req, 
     res.send(html);
     
   } catch (error) {
-    console.error(`[Visualization] Error generating HTML for job ${jobId}:`, error);
+    logger.error(`[Visualization] Error generating HTML for job ${jobId}:`, error);
     res.status(500).send(`
         <h1 style="font-family: sans-serif; color: #d9534f;">500 - Lỗi Server</h1>
         <p style="font-family: sans-serif;">Đã xảy ra lỗi khi tạo trang HTML cho sơ đồ tư duy.</p>
@@ -1467,7 +1467,7 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
                 const { Markmap } = window.markmap;
                 const { Transformer } = window.markmap.lib;
                 
-                console.log('Markmap libraries loaded successfully');
+                logger.info('Markmap libraries loaded successfully');
                 
                 // Transform markdown
                 const transformer = new Transformer();
@@ -1477,7 +1477,7 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
                     throw new Error('Không thể phân tích cấu trúc markdown');
                 }
 
-                console.log('Markdown transformed successfully');
+                logger.info('Markdown transformed successfully');
 
                 // Clear container
                 container.innerHTML = '';
@@ -1492,10 +1492,10 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
                 // Tạo markmap
                 Markmap.create(svg, null, root);
                 
-                console.log('Markmap created successfully');
+                logger.info('Markmap created successfully');
                 
             } catch (error) {
-                console.error('Error creating markmap:', error);
+                logger.error('Error creating markmap:', error);
                 container.innerHTML = \`
                     <div class="loading-error">
                         <strong>Lỗi khi tạo sơ đồ:</strong><br/>
@@ -1529,7 +1529,7 @@ function generateMindmapHTML(markdownContent, title = "Mindmap Visualization") {
                     typeof window.markmap.lib !== 'undefined' &&
                     typeof window.markmap.lib.Transformer !== 'undefined') {
                     
-                    console.log('All libraries loaded successfully');
+                    logger.info('All libraries loaded successfully');
                     initializeMarkmap();
                     return;
                 }

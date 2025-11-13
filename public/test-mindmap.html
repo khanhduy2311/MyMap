@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mind Map Layout</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 2px solid #ddd; border-radius: 8px; }
+        .success { border-color: #4CAF50; background: #e8f5e9; }
+        .warning { border-color: #ff9800; background: #fff3e0; }
+        h1 { color: #333; }
+        h2 { color: #666; }
+        code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Các Thay Đổi Mind Map</h1>
+    
+    <div class="test-case success">
+        <h2>✅ 1. Test Layout Chiều Ngang</h2>
+        <p><strong>Mô tả:</strong> Mind map phải hiển thị từ trái sang phải (horizontal)</p>
+        <p><strong>Cách test:</strong></p>
+        <ol>
+            <li>Truy cập: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+            <li>Login và chọn một mindmap có sẵn hoặc upload file</li>
+            <li>Kiểm tra: Node root ở bên trái, các node con mở rộng sang phải</li>
+        </ol>
+        <button class="btn btn-primary" onclick="window.open('http://localhost:3000', '_blank')">
+            🔗 Mở Dashboard
+        </button>
+    </div>
+
+    <div class="test-case success">
+        <h2>✅ 2. Test Zoom Gần</h2>
+        <p><strong>Mô tả:</strong> Khi vào mindmap, zoom mặc định phải đủ gần để đọc được chữ</p>
+        <p><strong>Thông số mới:</strong></p>
+        <ul>
+            <li><code>defaultZoom: 0.8</code> (thay vì không có)</li>
+            <li><code>minZoom: 0.1</code> (thay vì 0.02)</li>
+            <li><code>fitViewOptions.minZoom: 0.3</code></li>
+        </ul>
+    </div>
+
+    <div class="test-case success">
+        <h2>✅ 3. Test Hiệu Suất Load</h2>
+        <p><strong>Mô tả:</strong> File có nhiều chữ phải load nhanh hơn</p>
+        <p><strong>Cách test:</strong></p>
+        <ol>
+            <li>Mở DevTools (F12) → Console tab</li>
+            <li>Upload file hoặc mở mindmap</li>
+            <li>Xem log: <code>✅ Tạo X nodes và Y edges trong Zs</code></li>
+            <li>Thời gian load phải < 1 giây với ~1000 nodes</li>
+        </ol>
+        <button class="btn btn-success" onclick="openConsole()">
+            📊 Hướng dẫn mở Console
+        </button>
+    </div>
+
+    <div class="test-case warning">
+        <h2>⚠️ Lưu ý quan trọng</h2>
+        <ul>
+            <li>Nếu thấy vẫn bố cục dọc: Hard refresh bằng <code>Ctrl + Shift + R</code></li>
+            <li>Nếu vẫn chưa thay đổi: Xóa cache → DevTools → Application → Clear Storage</li>
+            <li>Build file mới: <code>main.3ba985ac.js</code></li>
+            <li>Giới hạn hiện tại: <strong>5000 nodes</strong> (có thể tăng nếu cần)</li>
+        </ul>
+    </div>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>📝 Test Checklist</h2>
+    <label><input type="checkbox"> Layout hiển thị chiều ngang (Left to Right)</label><br>
+    <label><input type="checkbox"> Zoom mặc định gần, đọc được chữ</label><br>
+    <label><input type="checkbox"> Load nhanh (<1s cho file vừa)</label><br>
+    <label><input type="checkbox"> Font size 16px (lớn hơn trước)</label><br>
+    <label><input type="checkbox"> Node width 220px (rộng hơn trước)</label><br>
+    <label><input type="checkbox"> Console log hiển thị thời gian xử lý</label><br>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>🔧 Debug</h2>
+    <button class="btn btn-primary" onclick="checkBuildFile()">
+        🔍 Kiểm tra file build
+    </button>
+    <button class="btn btn-primary" onclick="checkServer()">
+        🌐 Kiểm tra server
+    </button>
+    
+    <div id="debug-output" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; display: none;">
+        <pre id="debug-content"></pre>
+    </div>
+
+    <script>
+        function openConsole() {
+            alert('Mở Console:\n\n1. Nhấn F12\n2. Chọn tab "Console"\n3. Load mindmap để xem log');
+        }
+
+        function checkBuildFile() {
+            const output = document.getElementById('debug-output');
+            const content = document.getElementById('debug-content');
+            
+            fetch('/static/js/main.3ba985ac.js')
+                .then(res => {
+                    if (res.ok) {
+                        content.textContent = '✅ File build mới đã được load: main.3ba985ac.js\n\n' +
+                                             'Size: ' + (res.headers.get('content-length') / 1024).toFixed(2) + ' KB';
+                    } else {
+                        content.textContent = '❌ Không tìm thấy file build mới.\nVui lòng chạy: npm run build';
+                    }
+                    output.style.display = 'block';
+                })
+                .catch(err => {
+                    content.textContent = '❌ Lỗi: ' + err.message;
+                    output.style.display = 'block';
+                });
+        }
+
+        function checkServer() {
+            const output = document.getElementById('debug-output');
+            const content = document.getElementById('debug-content');
+            
+            fetch('/')
+                .then(res => {
+                    if (res.ok) {
+                        content.textContent = '✅ Server đang chạy bình thường\n\n' +
+                                             'URL: http://localhost:3000\n' +
+                                             'Status: ' + res.status;
+                    } else {
+                        content.textContent = '⚠️ Server trả về status: ' + res.status;
+                    }
+                    output.style.display = 'block';
+                })
+                .catch(err => {
+                    content.textContent = '❌ Không kết nối được server:\n' + err.message;
+                    output.style.display = 'block';
+                });
+        }
+    </script>
+
+    <hr style="margin: 30px 0;">
+    
+    <footer style="text-align: center; color: #999; padding: 20px;">
+        <p>MyMap - Mind Map Testing Page</p>
+        <p>Build date: November 13, 2025</p>
+    </footer>
+</body>
+</html>

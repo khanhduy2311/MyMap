@@ -10,6 +10,10 @@ const { Server } = require("socket.io");
 // const cors = require('cors'); // Bạn có thể xóa nếu không cần CORS cho Express khi chạy chung cổng
 const path = require('path'); // Đảm bảo 'path' được require ở đầu
 
+// ====== Utilities ======
+const logger = require('./utils/logger');
+const { redis } = require('./utils/redisClient');
+
 // ====== Routes ======
 const authRoutes = require('./routes/authRoutes.js');
 const documentRoutes = require('./routes/document');
@@ -24,13 +28,19 @@ if (!uri) {
   process.exit(1);
 }
 
+// Validate SESSION_SECRET trong production
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error("❌ Lỗi: SESSION_SECRET bắt buộc phải có trong production!");
+  process.exit(1);
+}
+
 const client = new MongoClient(uri);
 
 async function startServer() {
   try {
     await client.connect();
     console.log("✅ Successfully connected to MongoDB Atlas!");
-    console.log("✅ DB Connected!"); // Log 1
+    console.log("✅ DB Connected!");
 
     // === KHỞI TẠO DATABASE ===
     const usersDb = client.db('users_identity');
@@ -50,11 +60,14 @@ async function startServer() {
     const PORT = process.env.PORT || 3000;
     const server = http.createServer(app);
 
-    // === SOCKET.IO VẪN CẦN CORS ===
+    // === SOCKET.IO CONFIG FOR PRODUCTION ===
     const io = new Server(server, {
       cors: {
-        origin: "*", // Hoặc "http://localhost:3000" khi deploy
-        methods: ["GET", "POST"]
+        origin: process.env.NODE_ENV === 'production' 
+          ? process.env.FRONTEND_URL || true
+          : "*",
+        methods: ["GET", "POST"],
+        credentials: true
       }
     });
 
@@ -76,8 +89,8 @@ async function startServer() {
     // === Cấu hình Session Middleware ===
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || 'my_session_secret',
-      resave: false, // Bắt buộc
-      saveUninitialized: false, // Bắt buộc
+      resave: false,
+      saveUninitialized: false,
       store: MongoStore.create({
         client: client,
         dbName: 'users_identity',
@@ -88,8 +101,9 @@ async function startServer() {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        sameSite: 'lax'
-      }
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      },
+      proxy: process.env.NODE_ENV === 'production'
     });
     app.use(sessionMiddleware);
     io.engine.use(sessionMiddleware); // Chia sẻ session cho Socket.IO
@@ -188,12 +202,15 @@ async function startServer() {
     });
 
     // === Khởi động server ===
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server is listening on port ${PORT}`); 
-  console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-  } catch (error) {
+    const HOST = process.env.HOST || '0.0.0.0';
+    server.listen(PORT, HOST, () => {
+      console.log(`🚀 Server is listening on port ${PORT}`); 
+      console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌍 Host: ${HOST}`);
+      if (process.env.RENDER) {
+        console.log('✅ Running on Render.com');
+      }
+    });  } catch (error) {
     console.error("❌ Failed to connect to the database or start server.", error);
     process.exit(1);
   }

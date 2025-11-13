@@ -13,16 +13,16 @@ import {
 const defaultNodeStyle = {
   backgroundColor: '#fff',
   color: '#000',
-  fontFamily: 'Arial',
-  fontSize: 14,
+  fontFamily: 'Arial, sans-serif',
+  fontSize: 20, // ✅ Tăng từ 16px lên 20px để CHỮ TO RÕ RÀNG
   borderRadius: '8px',
   fontWeight: 'normal',
   fontStyle: 'normal',
   border: '3px solid #555',
-  width: 180,
+  width: 280, // ✅ Tăng từ 220px lên 280px
   height: 'auto',
   opacity: 1,
-  lineHeight: '1.2',
+  lineHeight: '1.4', // ✅ Tăng line-height
   backgroundOpacity: 1,
 }
 
@@ -72,13 +72,13 @@ const validateAndFixNodes = (nodes) => {
     };
 
     return {
+      ...node, // ✅ Spread TRƯỚC để giữ sourcePosition/targetPosition
       id: validId,
       type: node.type || 'custom',
       position: validPosition,
       draggable: node.draggable !== undefined ? node.draggable : true,
       selectable: node.selectable !== undefined ? node.selectable : true,
       data: validData,
-      ...node
     };
   });
 };
@@ -104,11 +104,12 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
   const isHorizontal = direction === 'LR'
-  dagreGraph.setGraph({ rankdir: direction, nodesep: 100, ranksep: 150 })
+  // ✅ Tăng khoảng cách giữa các node để dễ nhìn hơn
+  dagreGraph.setGraph({ rankdir: direction, nodesep: 120, ranksep: 200 })
 
   nodes.forEach((node) => {
-    const w = node.data.style?.width || node.data.width || 180;
-    const h = node.data.style?.height || node.data.height || 50;
+    const w = node.data.style?.width || node.data.width || 280; // ✅ Cập nhật từ 220 lên 280
+    const h = node.data.style?.height || node.data.height || 60;
     const nodeWidth = parseInt(w, 10);
     const nodeHeight = parseInt(h, 10);
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight })
@@ -122,8 +123,8 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 
   const layoutedNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id)
-    const w = node.data.style?.width || node.data.width || 180;
-    const h = node.data.style?.height || node.data.height || 50;
+    const w = node.data.style?.width || node.data.width || 280; // ✅ Cập nhật từ 220 lên 280
+    const h = node.data.style?.height || node.data.height || 60;
     const nodeWidth = parseInt(w, 10);
     const nodeHeight = parseInt(h, 10);
 

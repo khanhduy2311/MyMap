@@ -1,0 +1,40 @@
+services:
+  # Web Service - Node.js Backend + React Frontend
+  - type: web
+    name: mymap-app
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install && cd MindMapBoDoi/project-d10 && npm install && npm run build && cd ../..
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEYS
+        sync: false
+      - key: OCRSPACE_API_KEY
+        sync: false
+      - key: HUGGINGFACE_TOKEN
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mymap-redis
+          property: connectionString
+    healthCheckPath: /
+    autoDeploy: true
+
+  # Redis Service
+  - type: redis
+    name: mymap-redis
+    region: singapore
+    plan: free
+    maxmemoryPolicy: allkeys-lru

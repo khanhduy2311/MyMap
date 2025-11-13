@@ -21,7 +21,7 @@ const isImageUrl = (text) => {
 // --- Hết Helper ---
 
 
-function CustomNode({ id, data, selected }) {
+function CustomNode({ id, data, selected, sourcePosition, targetPosition }) {
   // --- (Lấy state và actions từ store) ---
   const selectedNodeIds = useStore(s => s.selectedNodeIds);
   const { updateNodeData, updateNodeSize, addMindMapNode, setNodeDraggable } = useStore();
@@ -265,8 +265,8 @@ function CustomNode({ id, data, selected }) {
         <div ref={textSizerRef} className="text-sizer" aria-hidden="true" />
       </div>
 
-      <Handle type="target" position={Position.Left} />
-      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={targetPosition || Position.Left} />
+      <Handle type="source" position={sourcePosition || Position.Right} />
 
       {(isHovered || selected) && !isTexting && (
         <>
