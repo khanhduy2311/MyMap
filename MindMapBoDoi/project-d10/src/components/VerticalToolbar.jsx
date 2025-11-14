@@ -14,6 +14,7 @@ import {
   AimOutlined,
   HighlightOutlined,
   ClearOutlined,
+  HomeOutlined,
 } from '@ant-design/icons';
 import { toPng } from 'html-to-image';
 import { AutoComplete, message } from 'antd';
@@ -257,6 +258,15 @@ const VerticalToolbar = ({ onManualSave }) => {
           title="Lưu Sơ Đồ (vào Database)"
         > 
           <SaveOutlined /> 
+        </button>
+        
+        <button 
+          onClick={() => {
+            window.location.href = '/dashboard';
+          }}
+          title="Về Dashboard"
+        > 
+          <HomeOutlined /> 
         </button>
         
         <button onClick={handleLoadClick} title="Tải Sơ Đồ (JSON)"> <FolderOpenOutlined /> </button>
