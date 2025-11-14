@@ -7,10 +7,11 @@ html(lang="en")
     link(rel="stylesheet", href="/css/style-register.css")
   body.register-page
     .video-bg
-      video#bg-video(autoplay muted loop playsinline)
+      video#bg-video(autoplay muted loop playsinline poster="/images/poster-galaxy.svg")
+        source(src="https://res.cloudinary.com/df6jrfhk2/video/upload/v1/mindmap_videos/galaxy.mp4", type="video/mp4")
         source(src="/videos/galaxy.webm", type="video/webm")
         source(src="/videos/galaxy.mp4", type="video/mp4")
-        img(src="/images/poster-galaxy.jpg", alt="background")
+        img(src="/images/poster-galaxy.svg", alt="background")
 
       .video-overlay
     .register-wrapper

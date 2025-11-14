@@ -1,3 +1,5 @@
+const { fail } = require('../utils/apiResponse');
+
 // Chỉ cho phép người dùng đã đăng nhập đi tiếp
 exports.checkLoggedIn = (req, res, next) => {
     if (req.session.user) {
@@ -10,7 +12,7 @@ exports.checkLoggedIn = (req, res, next) => {
                   req.path.startsWith('/mindmaps');
 
     if (isApi) {
-        return res.status(401).json({ success: false, error: 'Unauthorized' });
+        return fail(res, 401, 'UNAUTHORIZED', 'Bạn cần đăng nhập để truy cập API này.');
     }
 
     // Mặc định: chuyển hướng về trang login

@@ -46,7 +46,7 @@ async function uploadVideo(filename) {
     const result = await cloudinary.uploader.upload(filePath, {
       resource_type: 'video',
       public_id: filename.replace('.mp4', ''),
-      folder: 'mymap-videos',
+      folder: 'mindmap_videos', // Match folder name used in views
       overwrite: true,
       // Optimize for web
       eager: [

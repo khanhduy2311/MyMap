@@ -1,4 +1,6 @@
 const { ObjectId } = require('mongodb');
+const { ok, fail } = require('../utils/apiResponse');
+const logger = require('../utils/logger');
 
 // Tạo Mindmap (Đã sửa)
 exports.createMindmap = async (req, res) => {
@@ -9,11 +11,8 @@ exports.createMindmap = async (req, res) => {
 
         // Kiểm tra xem content (markdown string) có tồn tại không
         if (!content || typeof content !== 'string' || content.trim() === '') {
-            console.warn("Attempted to save mindmap with empty content.");
-            // Không nên redirect từ API, trả lỗi JSON
-            // req.flash('error_msg', 'Không có nội dung mindmap để lưu.');
-            // return res.redirect('/upload/page');
-             return res.status(400).json({ error: 'Nội dung mindmap không được để trống.' });
+            logger.warn('Attempted to save mindmap with empty content', { userId: req.session.user._id });
+            return fail(res, 400, 'EMPTY_CONTENT', 'Nội dung mindmap không được để trống.');
         }
 
         // Collection name dựa trên user ID
@@ -29,35 +28,44 @@ exports.createMindmap = async (req, res) => {
         };
 
         const insertResult = await db.collection(collectionName).insertOne(newMindmapDocument);
-        console.log(`Mindmap saved successfully for user ${collectionName}, ID: ${insertResult.insertedId}`);
+        logger.info('Mindmap saved successfully', { 
+            userId: collectionName, 
+            mindmapId: insertResult.insertedId 
+        });
 
-        // === SỬA Ở ĐÂY: Trả về JSON báo thành công KÈM THEO redirectUrl ===
-        // req.flash('success_msg', 'Mindmap đã được lưu thành công!'); // Flash message không hoạt động với fetch API
-        // res.redirect('/dashboard'); // Không redirect trực tiếp từ API
         res.status(201).json({
-            message: 'Mindmap đã được lưu thành công!',
-            redirectUrl: '/dashboard' // Frontend sẽ dùng URL này để chuyển trang
+            success: true,
+            data: {
+                mindmapId: insertResult.insertedId,
+                redirectUrl: '/dashboard'
+            },
+            message: 'Mindmap đã được lưu thành công!'
         });
 
     } catch (error) {
-        console.error("Lỗi khi lưu mindmap:", error);
-        // req.flash('error_msg', 'Có lỗi xảy ra khi lưu mindmap.'); // Không dùng flash
-        // res.redirect('/upload/page'); // Không redirect
-        res.status(500).json({ error: 'Lỗi server khi lưu mindmap: ' + error.message });
+        logger.error('Lỗi khi lưu mindmap', { error, userId: req.session.user._id });
+        return fail(res, 500, 'INTERNAL_ERROR', 'Lỗi server khi lưu mindmap.');
     }
 };
 
-// Xem chi tiết Mindmap (Giữ nguyên)
+// Xem chi tiết Mindmap với authorization check
 exports.getMindmapPage = async (req, res) => {
     try {
         const db = req.app.locals.mindmapsDb;
         const mindmapId = new ObjectId(req.params.id);
         const collectionName = req.session.user._id.toString();
-        // === THÊM ĐIỀU KIỆN: Chỉ tìm mindmap chưa bị xóa mềm ===
-        const mindmap = await db.collection(collectionName).findOne({ _id: mindmapId, deleted: { $ne: true } });
+        
+        // Authorization: mindmap phải thuộc collection của user hiện tại
+        const mindmap = await db.collection(collectionName).findOne({ 
+            _id: mindmapId, 
+            deleted: { $ne: true } 
+        });
 
         if (!mindmap) {
-             console.log(`Mindmap not found or deleted: ID ${req.params.id} for user ${collectionName}`);
+            logger.warn('Mindmap access denied or not found', { 
+                mindmapId: req.params.id, 
+                userId: collectionName 
+            });
             return res.status(404).render('404', { pageTitle: 'Không tìm thấy Mindmap' });
         }
 
@@ -67,17 +75,18 @@ exports.getMindmapPage = async (req, res) => {
         });
 
     } catch (error) {
-         console.error(`Lỗi khi xem chi tiết mindmap ID ${req.params.id}:`, error);
-         // Tránh render lỗi nếu header đã gửi
-         if (!res.headersSent) {
-             try {
-                // Thử render trang lỗi 500 nếu có
+        logger.error('Lỗi khi xem chi tiết mindmap', { 
+            error, 
+            mindmapId: req.params.id, 
+            userId: req.session.user._id 
+        });
+        if (!res.headersSent) {
+            try {
                 res.status(500).render('500', { pageTitle: 'Lỗi Server' });
-             } catch (renderError) {
-                 // Nếu render cũng lỗi, gửi text đơn giản
-                 res.status(500).send("Lỗi server khi truy cập chi tiết mindmap.");
-             }
-         }
+            } catch (renderError) {
+                res.status(500).send("Lỗi server khi truy cập chi tiết mindmap.");
+            }
+        }
     }
 };
 
@@ -92,8 +101,8 @@ exports.deleteMindmap = async (req, res) => {
         try {
             mindmapObjectId = new ObjectId(mindmapId);
         } catch (error) {
-             console.warn(`Invalid ObjectId for deletion: ${mindmapId}`);
-            return res.status(400).json({ success: false, message: 'ID không hợp lệ' });
+            logger.warn('Invalid ObjectId for deletion', { mindmapId });
+            return fail(res, 400, 'INVALID_ID', 'ID không hợp lệ');
         }
 
         const result = await db.collection(collectionName).updateOne(
@@ -107,17 +116,15 @@ exports.deleteMindmap = async (req, res) => {
         );
 
         if (result.modifiedCount === 0) {
-             console.log(`Mindmap not found or already deleted for soft delete: ID ${mindmapId}`);
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy mindmap để chuyển vào thùng rác.'
-            });
+            logger.warn('Mindmap not found for soft delete', { mindmapId, userId: collectionName });
+            return fail(res, 404, 'NOT_FOUND', 'Không tìm thấy mindmap để chuyển vào thùng rác.');
         }
-         console.log(`Mindmap soft deleted: ID ${mindmapId}`);
-        res.json({ success: true, message: 'Đã chuyển mindmap vào thùng rác' });
+        
+        logger.info('Mindmap soft deleted', { mindmapId, userId: collectionName });
+        return ok(res, { message: 'Đã chuyển mindmap vào thùng rác' });
     } catch (error) {
-        console.error('Lỗi khi xóa mềm mindmap:', error);
-        res.status(500).json({ success: false, message: 'Lỗi server khi xóa mindmap.' });
+        logger.error('Lỗi khi xóa mềm mindmap', { error, mindmapId, userId: collectionName });
+        return fail(res, 500, 'INTERNAL_ERROR', 'Lỗi server khi xóa mindmap.');
     }
 };
 
@@ -127,17 +134,17 @@ exports.updateMindmapTitleAPI = async (req, res) => {
     try {
         const db = req.app.locals.mindmapsDb;
         let mindmapObjectId;
-         try {
-             mindmapObjectId = new ObjectId(req.params.id);
-         } catch (error) {
-             console.warn(`Invalid ObjectId for title update: ${req.params.id}`);
-             return res.status(400).json({ success: false, message: 'ID không hợp lệ.' });
-         }
+        try {
+            mindmapObjectId = new ObjectId(req.params.id);
+        } catch (error) {
+            logger.warn('Invalid ObjectId for title update', { mindmapId: req.params.id });
+            return fail(res, 400, 'INVALID_ID', 'ID không hợp lệ.');
+        }
         const collectionName = req.session.user._id.toString();
         const { title } = req.body;
 
         if (!title || typeof title !== 'string' || title.trim() === '') {
-            return res.status(400).json({ success: false, message: 'Tên mindmap không được để trống.' });
+            return fail(res, 400, 'INVALID_TITLE', 'Tên mindmap không được để trống.');
         }
          const trimmedTitle = title.trim(); // Trim whitespace
 
@@ -147,21 +154,20 @@ exports.updateMindmapTitleAPI = async (req, res) => {
             { $set: { title: trimmedTitle } } // Lưu tên đã trim
         );
 
-        if (result.matchedCount === 0) { // Kiểm tra matchedCount thay vì modifiedCount để biết nó có tồn tại không
-             console.log(`Mindmap not found or deleted for title update: ID ${req.params.id}`);
-             return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap hoặc mindmap đã ở trong thùng rác.' });
-         }
-         if (result.modifiedCount === 0) {
-            // Tìm thấy nhưng không có gì thay đổi (tên giống hệt)
-            return res.json({ success: true, message: 'Tên không có gì thay đổi.', newTitle: trimmedTitle });
-         }
+        if (result.matchedCount === 0) {
+            logger.warn('Mindmap not found for title update', { mindmapId: req.params.id, userId: collectionName });
+            return fail(res, 404, 'NOT_FOUND', 'Không tìm thấy mindmap hoặc mindmap đã ở trong thùng rác.');
+        }
+        if (result.modifiedCount === 0) {
+            return ok(res, { message: 'Tên không có gì thay đổi.', newTitle: trimmedTitle });
+        }
 
-         console.log(`Mindmap title updated: ID ${req.params.id} to "${trimmedTitle}"`);
-        res.json({ success: true, message: 'Cập nhật tên thành công!', newTitle: trimmedTitle });
+        logger.info('Mindmap title updated', { mindmapId: req.params.id, newTitle: trimmedTitle, userId: collectionName });
+        return ok(res, { message: 'Cập nhật tên thành công!', newTitle: trimmedTitle });
 
     } catch (error) {
-        console.error("Lỗi khi cập nhật tên mindmap qua API:", error);
-        res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật tên.' });
+        logger.error('Lỗi khi cập nhật tên mindmap', { error, mindmapId: req.params.id, userId: collectionName });
+        return fail(res, 500, 'INTERNAL_ERROR', 'Lỗi server khi cập nhật tên.');
     }
 };
 
@@ -181,8 +187,8 @@ exports.getTrashPage = async (req, res) => {
             moment: require('moment') // Truyền moment để format ngày tháng
         });
     } catch (error) {
-        console.error("Lỗi khi lấy danh sách thùng rác:", error);
-        res.status(500).render('500', { pageTitle: 'Lỗi Server' }); // Hoặc gửi lỗi
+        logger.error('Lỗi khi lấy danh sách thùng rác', { error, userId: collectionName });
+        res.status(500).render('500', { pageTitle: 'Lỗi Server' });
     }
 };
 
@@ -194,20 +200,26 @@ exports.restoreMindmap = async (req, res) => {
         const collectionName = req.session.user._id.toString();
         let mindmapObjectId;
         try { mindmapObjectId = new ObjectId(mindmapId); }
-        catch (error) { return res.status(400).json({ success: false, message: 'ID không hợp lệ' }); }
+        catch (error) { 
+            logger.warn('Invalid ObjectId for restore', { mindmapId });
+            return fail(res, 400, 'INVALID_ID', 'ID không hợp lệ'); 
+        }
 
         const result = await db.collection(collectionName).updateOne(
-            { _id: mindmapObjectId, deleted: true }, // Chỉ khôi phục cái đã xóa
+            { _id: mindmapObjectId, deleted: true },
             { $set: { deleted: false, deletedAt: null } }
         );
 
         if (result.modifiedCount === 0) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap trong thùng rác hoặc đã được khôi phục.' });
+            logger.warn('Mindmap not found in trash for restore', { mindmapId, userId: collectionName });
+            return fail(res, 404, 'NOT_FOUND', 'Không tìm thấy mindmap trong thùng rác hoặc đã được khôi phục.');
         }
-        res.json({ success: true, message: 'Khôi phục mindmap thành công!' });
+        
+        logger.info('Mindmap restored', { mindmapId, userId: collectionName });
+        return ok(res, { message: 'Khôi phục mindmap thành công!' });
     } catch (error) {
-        console.error('Lỗi khi khôi phục mindmap:', error);
-        res.status(500).json({ success: false, message: 'Lỗi server khi khôi phục.' });
+        logger.error('Lỗi khi khôi phục mindmap', { error, mindmapId, userId: collectionName });
+        return fail(res, 500, 'INTERNAL_ERROR', 'Lỗi server khi khôi phục.');
     }
 };
 
@@ -219,19 +231,25 @@ exports.deleteMindmapPermanently = async (req, res) => {
         const collectionName = req.session.user._id.toString();
         let mindmapObjectId;
         try { mindmapObjectId = new ObjectId(mindmapId); }
-        catch (error) { return res.status(400).json({ success: false, message: 'ID không hợp lệ' }); }
+        catch (error) { 
+            logger.warn('Invalid ObjectId for permanent deletion', { mindmapId });
+            return fail(res, 400, 'INVALID_ID', 'ID không hợp lệ'); 
+        }
 
         const result = await db.collection(collectionName).deleteOne(
-            { _id: mindmapObjectId, deleted: true } // Chỉ xóa vĩnh viễn cái đã ở thùng rác
+            { _id: mindmapObjectId, deleted: true }
         );
 
         if (result.deletedCount === 0) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap trong thùng rác.' });
+            logger.warn('Mindmap not found in trash for permanent deletion', { mindmapId, userId: collectionName });
+            return fail(res, 404, 'NOT_FOUND', 'Không tìm thấy mindmap trong thùng rác.');
         }
-        res.json({ success: true, message: 'Đã xóa vĩnh viễn mindmap.' });
+        
+        logger.info('Mindmap permanently deleted', { mindmapId, userId: collectionName });
+        return ok(res, { message: 'Đã xóa vĩnh viễn mindmap.' });
     } catch (error) {
-        console.error('Lỗi khi xóa vĩnh viễn mindmap:', error);
-        res.status(500).json({ success: false, message: 'Lỗi server khi xóa vĩnh viễn.' });
+        logger.error('Lỗi khi xóa vĩnh viễn mindmap', { error, mindmapId, userId: collectionName });
+        return fail(res, 500, 'INTERNAL_ERROR', 'Lỗi server khi xóa vĩnh viễn.');
     }
 };
 
@@ -245,8 +263,8 @@ exports.updateMindmapData = async (req, res) => {
     try {
         mindmapObjectId = new ObjectId(req.params.id);
     } catch (error) {
-        console.warn(`Invalid ObjectId for data update: ${req.params.id}`);
-        return res.status(400).json({ success: false, message: 'ID mindmap không hợp lệ.' });
+        logger.warn('Invalid ObjectId for data update', { mindmapId: req.params.id });
+        return fail(res, 400, 'INVALID_ID', 'ID mindmap không hợp lệ.');
     }
 
     // Lấy dữ liệu nodes và edges từ body của request (React gửi lên)
@@ -255,8 +273,8 @@ exports.updateMindmapData = async (req, res) => {
     // --- 2. Validate Dữ liệu (Cơ bản) ---
     // Kiểm tra xem nodes và edges có phải là mảng không (có thể thêm kiểm tra kỹ hơn)
     if (!Array.isArray(nodes) || !Array.isArray(edges)) {
-        console.warn(`Invalid data format received for mindmap ${req.params.id}: nodes or edges are not arrays.`);
-        return res.status(400).json({ success: false, message: 'Dữ liệu gửi lên không đúng định dạng (nodes và edges phải là mảng).' });
+        logger.warn('Invalid data format for mindmap update', { mindmapId: req.params.id, userId: collectionName });
+        return fail(res, 400, 'INVALID_FORMAT', 'Dữ liệu gửi lên không đúng định dạng (nodes và edges phải là mảng).');
     }
 
     if (thumbnailUrl && typeof thumbnailUrl !== 'string') {
@@ -289,23 +307,25 @@ exports.updateMindmapData = async (req, res) => {
             }
         );
 
-        // --- 4. Gửi Phản hồi ---
         if (result.matchedCount === 0) {
-            console.log(`Mindmap not found or deleted for data update: ID ${req.params.id}`);
-            return res.status(404).json({ success: false, message: 'Không tìm thấy mindmap hoặc mindmap đã ở trong thùng rác.' });
+            logger.warn('Mindmap not found for data update', { mindmapId: req.params.id, userId: collectionName });
+            return fail(res, 404, 'NOT_FOUND', 'Không tìm thấy mindmap hoặc mindmap đã ở trong thùng rác.');
         }
 
-        // Kiểm tra xem có thực sự cập nhật gì không (bao gồm cả thumbnailUrl)
         if (result.modifiedCount === 0 && result.upsertedCount === 0) {
-            console.log(`Mindmap data unchanged: ID ${req.params.id}`);
-            return res.json({ success: true, message: 'Dữ liệu mindmap không thay đổi.', updated: false });
+            logger.info('Mindmap data unchanged', { mindmapId: req.params.id, userId: collectionName });
+            return ok(res, { message: 'Dữ liệu mindmap không thay đổi.', updated: false });
         }
 
-        console.log(`Mindmap data updated successfully (incl. thumbnail? ${!!updateFields.thumbnailUrl}): ID ${req.params.id}`);
-        res.json({ success: true, message: 'Đã lưu sơ đồ thành công!', updated: true });
+        logger.info('Mindmap data updated successfully', { 
+            mindmapId: req.params.id, 
+            userId: collectionName,
+            hasThumbnail: !!updateFields.thumbnailUrl 
+        });
+        return ok(res, { message: 'Đã lưu sơ đồ thành công!', updated: true });
 
     } catch (error) {
-        console.error("Lỗi khi cập nhật dữ liệu mindmap:", error);
-        res.status(500).json({ success: false, message: 'Lỗi server khi lưu sơ đồ.' });
+        logger.error('Lỗi khi cập nhật dữ liệu mindmap', { error, mindmapId: req.params.id, userId: collectionName });
+        return fail(res, 500, 'INTERNAL_ERROR', 'Lỗi server khi lưu sơ đồ.');
     }
 };

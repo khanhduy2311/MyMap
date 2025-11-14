@@ -1,13 +1,18 @@
 const multer = require('multer');
 const path = require('path');
+const crypto = require('crypto');
 
 // Cấu hình lưu trữ file upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/'); // Thư mục lưu file upload
+      // TODO: Có thể tách theo userId trong tương lai, ví dụ: `uploads/documents/<userId>`
+      cb(null, 'uploads/'); // Thư mục lưu file upload
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
+      // Đặt tên file ngẫu nhiên + giữ lại phần mở rộng để tránh đoán tên file
+      const randomName = crypto.randomBytes(16).toString('hex');
+      const ext = path.extname(file.originalname) || '';
+      cb(null, `${Date.now()}-${randomName}${ext}`);
     }
 });
 const fileFilter = (req, file, cb) => {
@@ -26,8 +31,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 const upload = multer({ 
-    storage: storage, 
-    fileFilter: fileFilter
+  storage: storage, 
+  fileFilter: fileFilter,
+  // Giới hạn kích thước file để tránh upload quá lớn (ví dụ: 20MB)
+  limits: {
+    fileSize: 20 * 1024 * 1024
+  }
 });
 
 module.exports = upload;

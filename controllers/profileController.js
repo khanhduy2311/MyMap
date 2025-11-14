@@ -1,8 +1,9 @@
 // File: controllers/profileController.js
-const {
-    ObjectId
-} = require('mongodb');
-const userModel = require('../models/userModel.js'); //
+const { ObjectId } = require('mongodb');
+const userModel = require('../models/userModel.js');
+const { sanitizeUser } = require('../utils/sanitizeUser');
+const { ok, fail } = require('../utils/apiResponse');
+const logger = require('../utils/logger');
 
 // Hiển thị trang profile chính
 exports.getProfilePage = async (req, res) => {
@@ -32,7 +33,7 @@ exports.getProfilePage = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('❌ Lỗi tải trang profile:', err);
+        logger.error('Lỗi tải trang profile', { error: err, userId: req.session.user._id });
         req.flash('error_msg', 'Không thể tải trang hồ sơ.');
         res.redirect('/dashboard');
     }
@@ -50,7 +51,7 @@ exports.getProfileEditPage = async (req, res) => {
             user: user
         });
     } catch (err) {
-        console.error('❌ Lỗi tải trang chỉnh sửa profile:', err);
+        logger.error('Lỗi tải trang chỉnh sửa profile', { error: err, userId: req.session.user._id });
         req.flash('error_msg', 'Không thể tải trang chỉnh sửa.');
         res.redirect('/profile');
     }
@@ -68,10 +69,7 @@ exports.updateUserProfile = async (req, res) => {
     // =============================
 
     if (!userId || !req.session.user || userId !== req.session.user._id.toString()) {
-        return res.status(403).json({
-            success: false,
-            message: 'Không được phép.'
-        });
+        return fail(res, 403, 'FORBIDDEN', 'Không được phép.');
     }
 
     try {
@@ -92,17 +90,12 @@ exports.updateUserProfile = async (req, res) => {
 
         req.flash('success_msg', 'Cập nhật thông tin thành công!');
         req.session.save(() => {
-            res.json({
-                success: true
-            });
+            return ok(res);
         });
 
     } catch (err) {
-        console.error('❌ Lỗi khi cập nhật thông tin:', err);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi máy chủ khi cập nhật.'
-        });
+        logger.error('Lỗi khi cập nhật thông tin', { error: err, userId });
+        return fail(res, 500, 'INTERNAL_ERROR', 'Lỗi máy chủ khi cập nhật.');
     }
 };
 
@@ -131,59 +124,50 @@ exports.postAvatarUpload = async (req, res) => {
         req.flash('success_msg', 'Cập nhật ảnh đại diện thành công!');
         res.redirect('/profile');
     } catch (err) {
-        console.error('❌ Lỗi upload avatar:', err);
+        logger.error('Lỗi upload avatar', { error: err, userId: req.session.user._id });
         req.flash('error_msg', 'Đã xảy ra lỗi khi tải ảnh lên.');
         res.redirect('/profile');
     }
 };
 
 exports.changePassword = async (req, res) => {
-    console.log('🚨 🚨 🚨 CONTROLLER CHANGE PASSWORD ĐƯỢC GỌI 🚨 🚨 🚨');
-    console.log('📝 Session User ID:', req.session.user?._id);
-    console.log('📦 Request Body:', req.body);
-    console.log('⏰ Thời gian:', new Date().toISOString());
     const { password, confirmPassword } = req.body;
     const usersDb = req.app.locals.usersDb;
     const userId = new ObjectId(req.session.user._id);
     try {
         if (!password || !confirmPassword) {
-            console.log("❌ Lỗi: Thiếu mật khẩu");
+            logger.warn('Change password: missing fields', { userId: req.session.user._id });
             req.flash('error_msg', 'Vui lòng nhập đầy đủ mật khẩu mới và xác nhận.');
             return res.redirect('/profile/edit');
         }
         
         if (password !== confirmPassword) {
-            console.log("❌ Lỗi: Mật khẩu không khớp");
+            logger.warn('Change password: passwords do not match', { userId: req.session.user._id });
             req.flash('error_msg', 'Mật khẩu xác nhận không khớp.');
             return res.redirect('/profile/edit');
         }
-
-        console.log("✅ Đang cập nhật mật khẩu mới...");
-        
         const result = await usersDb.collection('users').updateOne(
             { _id: userId },
             {
                 $set: {
-                    password: password, // Lưu mật khẩu plain text
+                    password: password, // TODO: Cần hash password bằng bcrypt
                     updatedAt: new Date()
                 }
             }
         );
 
-        console.log("📊 Kết quả cập nhật DB:", result);
-
         if (result.modifiedCount === 1) {
-            console.log("✅ Cập nhật mật khẩu thành công!");
+            logger.info('Password updated successfully', { userId: req.session.user._id });
             req.flash('success_msg', 'Cập nhật mật khẩu thành công!');
             res.redirect('/profile');
         } else {
-            console.log("❌ Không có bản ghi nào được cập nhật");
+            logger.warn('Password update: no record modified', { userId: req.session.user._id });
             req.flash('error_msg', 'Không thể cập nhật mật khẩu!');
             res.redirect('/profile/edit');
         }
 
     } catch (err) {
-        console.error('❌ Lỗi đổi mật khẩu:', err);
+        logger.error('Lỗi đổi mật khẩu', { error: err, userId: req.session.user._id });
         req.flash('error_msg', 'Đã xảy ra lỗi khi đổi mật khẩu.');
         res.redirect('/profile/edit');
     }

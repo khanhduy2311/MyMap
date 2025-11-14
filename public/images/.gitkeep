@@ -1,0 +1,10 @@
+# Placeholder for poster images
+# These images serve as fallbacks when videos can't load
+
+# Required poster images:
+# - poster-typing.jpg (for login page)
+# - poster-galaxy.jpg (for register page)
+# - poster-forgot.jpg (for forgot password page)
+# - poster-reset.jpg (for reset password page)
+
+# You can generate these from video frames or use solid color backgrounds

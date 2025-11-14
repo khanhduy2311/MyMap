@@ -6,6 +6,7 @@ const { ObjectId } = require('mongodb');
 
 router.patch('/:id', authMiddleware.checkLoggedIn, mindmapController.updateMindmapTitleAPI);
 router.post('/create', authMiddleware.checkLoggedIn, mindmapController.createMindmap);
+router.post('/', authMiddleware.checkLoggedIn, mindmapController.createMindmap); // Alias cho /create
 router.delete('/:id', authMiddleware.checkLoggedIn, mindmapController.deleteMindmap);
 
 

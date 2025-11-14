@@ -47,6 +47,31 @@ async function startServer() {
     const mindmapsDb = client.db('mindmaps');
     const chatDb = client.db('chat_storage');
 
+    // === TẠO MONGODB INDEXES ===
+    logger.info('Creating MongoDB indexes...');
+    try {
+      // Users collection indexes
+      await usersDb.collection('users').createIndex({ email: 1 }, { unique: true });
+      await usersDb.collection('users').createIndex({ username: 1 });
+      
+      // Friends collection indexes
+      await usersDb.collection('friends').createIndex({ senderId: 1 });
+      await usersDb.collection('friends').createIndex({ receiverId: 1 });
+      await usersDb.collection('friends').createIndex({ status: 1 });
+      await usersDb.collection('friends').createIndex({ senderId: 1, receiverId: 1 });
+      
+      // Messages collection indexes
+      await chatDb.collection('messages').createIndex({ senderId: 1 });
+      await chatDb.collection('messages').createIndex({ receiverId: 1 });
+      await chatDb.collection('messages').createIndex({ createdAt: -1 });
+      await chatDb.collection('messages').createIndex({ senderId: 1, receiverId: 1 });
+      
+      logger.info('✅ MongoDB indexes created successfully');
+    } catch (indexError) {
+      // Index đã tồn tại hoặc lỗi khác
+      logger.warn('Index creation warning (may already exist):', indexError.message);
+    }
+
     const app = express();
     app.set('trust proxy', 1);
     // === BỎ HOẶC SỬA CORS CHO PHÙ HỢP KHI CHẠY 1 CỔNG ===

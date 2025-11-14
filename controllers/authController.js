@@ -3,6 +3,7 @@ const userModel = require('../models/userModel.js');
 const { ObjectId } = require('mongodb');
 const crypto = require('crypto'); 
 const sendEmail = require('../utils/sendEmail.js');
+const { incrementFail, resetAttempts } = require('../middlewares/loginRateLimiter');
 // Hiển thị trang đăng ký
 exports.getRegisterPage = (req, res) => {
     res.render('register', { pageTitle: 'Đăng ký' });
@@ -77,39 +78,48 @@ exports.postRegister = async (req, res) => {
 };
 // Xử lý đăng nhập
 exports.postLogin = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        // === THAY ĐỔI: Chỉ dùng usersDb ===
-        const usersDb = req.app.locals.usersDb;
-        // =================================
+  const { email, password } = req.body;
+  try {
+    const usersDb = req.app.locals.usersDb;
 
-        if (!email || !password) {
-            req.flash('error_msg', 'Vui lòng điền đầy đủ email và mật khẩu!');
-            return res.redirect('/login');
-        }
-
-        // Tìm user trong usersDb
-        const user = await userModel.findUserByEmail(usersDb, email);
-        if (!user || user.password !== password) {
-            req.flash('error_msg', 'Email hoặc mật khẩu không chính xác!');
-            return res.redirect('/login');
-        }
-        
-        req.session.user = {
-            _id: user._id,
-            email: user.email,
-            username: user.username,
-            name: user.name || user.username,
-            avatar: user.avatar || null
-        };
-
-        res.redirect('/dashboard');
-
-    } catch (err) {
-        console.error('❌ Lỗi đăng nhập:', err);
-        req.flash('error_msg', 'Đã xảy ra lỗi khi đăng nhập!');
-        res.redirect('/login');
+    if (!email || !password) {
+      req.flash('error_msg', 'Vui lòng điền đầy đủ email và mật khẩu!');
+      return res.redirect('/login');
     }
+
+    const user = await userModel.findUserByEmail(usersDb, email);
+
+    if (!user || user.password !== password) {
+      try {
+        await incrementFail(email);
+      } catch (e) {
+        console.error('❌ Lỗi tăng bộ đếm login sai:', e);
+      }
+      req.flash('error_msg', 'Email hoặc mật khẩu không chính xác!');
+      return res.redirect('/login');
+    }
+        
+    try {
+      await resetAttempts(email);
+    } catch (e) {
+      console.error('❌ Lỗi reset bộ đếm login sai:', e);
+    }
+
+    req.session.user = {
+      _id: user._id,
+      email: user.email,
+      username: user.username,
+      name: user.name || user.username,
+      avatar: user.avatar || null
+    };
+
+    res.redirect('/dashboard');
+
+  } catch (err) {
+    console.error('❌ Lỗi đăng nhập:', err);
+    req.flash('error_msg', 'Đã xảy ra lỗi khi đăng nhập!');
+    res.redirect('/login');
+  }
 };
 
 // Đăng xuất

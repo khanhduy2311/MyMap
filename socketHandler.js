@@ -1,5 +1,6 @@
 // File: socketHandler.js
 const { ObjectId } = require('mongodb');
+const logger = require('./utils/logger');
 
 // Map để lưu trạng thái online: userId (string) -> socketId
 const onlineUsers = new Map();
@@ -23,8 +24,8 @@ module.exports = (io, usersDb, chatDb) => {
                 return f.senderId.equals(userId) ? f.receiverId : f.senderId;
             });
         } catch (error) {
-            console.error(`❌ Error fetching friends list for user ${userId}:`, error);
-            return []; // Trả về mảng rỗng nếu có lỗi
+            logger.error('Error fetching friends list', { userId: userId.toString(), error });
+            return [];
         }
     }
 
@@ -43,13 +44,13 @@ module.exports = (io, usersDb, chatDb) => {
                 console.log(`🙋 User authenticated via session: ${currentUserIdString}`);
                 socket.emit('authenticated', { userId: currentUserIdString }); // Gửi ID về client
             } else {
-                throw new Error('Session or user ID missing.'); // Ném lỗi nếu thiếu session
+                throw new Error('Session or user ID missing.');
             }
         } catch (error) {
-            console.warn(`🔒 Authentication error for socket ${socket.id}: ${error.message}. Disconnecting.`);
+            logger.warn('Socket authentication error', { socketId: socket.id, error: error.message });
             socket.emit('chatError', 'Lỗi xác thực. Vui lòng đăng nhập lại.');
-            socket.disconnect(true); // Ngắt kết nối nếu xác thực lỗi
-            return; // Dừng xử lý thêm cho socket này
+            socket.disconnect(true);
+            return;
         }
 
         // --- 2. Xử lý trạng thái Online ---
@@ -80,23 +81,45 @@ module.exports = (io, usersDb, chatDb) => {
         // Lấy lịch sử chat
         socket.on('getChatHistory', async (data) => {
             if (!currentUserId || !data || !data.receiverId) return;
-            console.log(`📜 Request chat history between ${currentUserIdString} and ${data.receiverId}`);
             try {
                 const receiverId = new ObjectId(data.receiverId);
+                
+                // CRITICAL: Kiểm tra xem hai người có phải bạn bè không
+                const isFriend = await friendsCollection.findOne({
+                    status: 'accepted',
+                    $or: [
+                        { senderId: currentUserId, receiverId: receiverId },
+                        { senderId: receiverId, receiverId: currentUserId }
+                    ]
+                });
+
+                if (!isFriend) {
+                    logger.warn('Unauthorized chat history access', { 
+                        requesterId: currentUserIdString, 
+                        targetId: data.receiverId 
+                    });
+                    socket.emit('chatError', 'Bạn chỉ có thể xem tin nhắn với bạn bè.');
+                    return;
+                }
+
                 const messages = await messagesCollection.find({
                     $or: [
                         { senderId: currentUserId, receiverId: receiverId },
                         { senderId: receiverId, receiverId: currentUserId }
                     ]
-                }).sort({ createdAt: 1 }).toArray(); // Sắp xếp từ cũ đến mới
+                }).sort({ createdAt: 1 }).toArray();
 
                 socket.emit('chatHistory', {
                     receiverId: data.receiverId,
                     messages: messages,
-                    currentUserId: currentUserIdString // Gửi lại ID để client biết tin nhắn nào là của mình
+                    currentUserId: currentUserIdString
                 });
             } catch (error) {
-                console.error(`❌ Error fetching chat history for ${currentUserIdString} and ${data.receiverId}:`, error);
+                logger.error('Error fetching chat history', { 
+                    userId: currentUserIdString, 
+                    receiverId: data.receiverId, 
+                    error 
+                });
                 socket.emit('chatError', 'Không thể tải lịch sử tin nhắn.');
             }
         });
@@ -104,10 +127,9 @@ module.exports = (io, usersDb, chatDb) => {
         // Nhận và gửi tin nhắn
         socket.on('sendMessage', async (data) => {
             if (!currentUserId || !data || !data.receiverId || !data.content) {
-                console.warn("Invalid sendMessage data:", data);
+                logger.warn('Invalid sendMessage data', { userId: currentUserIdString, data });
                 return;
             }
-            console.log(`💬 Message from ${currentUserIdString} to ${data.receiverId}: ${data.content}`);
             try {
                 const receiverId = new ObjectId(data.receiverId);
                 const message = {
@@ -124,14 +146,14 @@ module.exports = (io, usersDb, chatDb) => {
                 // Gửi tin nhắn cho người nhận nếu họ online
                 const receiverSocketId = onlineUsers.get(data.receiverId);
                 if (receiverSocketId) {
-                    io.to(receiverSocketId).emit('receiveMessage', { ...message, senderId: currentUserIdString, receiverId: data.receiverId }); // Gửi ID dạng string
-                    console.log(`   📨 Sent message to receiver ${data.receiverId} (socket ${receiverSocketId})`);
-                } else {
-                    console.log(`   📪 Receiver ${data.receiverId} is offline. Message saved.`);
-                    // (Tùy chọn: Xử lý thông báo offline)
+                    io.to(receiverSocketId).emit('receiveMessage', { ...message, senderId: currentUserIdString, receiverId: data.receiverId });
                 }
             } catch (error) {
-                console.error(`❌ Error sending message from ${currentUserIdString} to ${data.receiverId}:`, error);
+                logger.error('Error sending message', { 
+                    senderId: currentUserIdString, 
+                    receiverId: data.receiverId, 
+                    error 
+                });
                 socket.emit('chatError', 'Gửi tin nhắn thất bại.');
             }
         });

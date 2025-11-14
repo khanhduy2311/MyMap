@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController.js');
 const authMiddleware = require('../middlewares/middlewares.js');
+const { loginBruteForceGuard } = require('../middlewares/loginRateLimiter');
 const profileController = require('../controllers/profileController.js');
 const { validate, validationRules } = require('../middlewares/validation.js');
 const { loginLimiter, registerLimiter } = require('../middlewares/rateLimiter.js');
@@ -29,6 +30,7 @@ router.post('/register',
 router.get('/login', authMiddleware.bypassLogin, authController.getLoginPage);
 router.post('/login', 
   loginLimiter,
+  loginBruteForceGuard,
   validationRules.login, 
   validate, 
   authController.postLogin
