@@ -49,13 +49,7 @@ block main
               i.fas.fa-exclamation-triangle.me-2
               span#errorMessage
 
-        .card.mt-4.demo-card
-          .card-body
-            h5.card-title.text-center.text-muted.mb-3
-              i.fas.fa-project-diagram.me-2
-              | Sơ đồ mindmap mẫu
-            svg#demoMindmap(style="width: 100%; height: 350px; border: 1px solid #eee; border-radius: 8px;")
-            p.text-center.text-muted.small.mt-2 Đây là ví dụ về kết quả bạn sẽ nhận được.
+
 
         .card.mt-4.upload-card#resultArea(style="display:none;")
           .card-header.bg-success.text-white.d-flex.align-items-center
@@ -71,14 +65,11 @@ block main
               p.card-text.fs-5
                 | Tài liệu đã được phân tích thành công!
                 br
-                | Bạn có muốn lưu hay xem sơ đồ trực quan?
+                | Bạn có muốn lưu hay xem dữ liệu?
               .d-grid.gap-3.d-md-flex.justify-content-md-center.mb-4
                 button.btn.btn-success.btn-lg.px-4.py-3#createMindmapBtn(disabled)
                   i.fas.fa-save.me-2
                   | Lưu và Tạo Mindmap
-                button.btn.btn-info.btn-lg.px-4.py-3#viewVisualizationBtn(type="button" style="display: none;")
-                  i.fas.fa-eye.me-2
-                  | Xem Sơ đồ trực quan
                 button.btn.btn-outline-primary.btn-lg.px-4.py-3#viewJsonBtn(type="button")
                   i.fas.fa-code.me-2
                   | Xem dữ liệu Markdown
@@ -110,9 +101,6 @@ block main
           pre#rawTextArea.bg-dark.text-success.p-3.rounded(style="max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-size: 0.85rem;")
 
 block scripts
-  script(src="https://cdn.jsdelivr.net/npm/markmap-view@0.2.7")
-  script(src="https://cdn.jsdelivr.net/npm/markmap-lib@0.11.6")
-
   script.
     // Biến toàn cục để theo dõi trạng thái
     let isSaving = false;
@@ -122,31 +110,6 @@ block scripts
     let isProcessing = false;
     let currentFile = null;
     let startTime = null;
-
-    function renderDemoMindmap() {
-      try {
-        if (typeof window.markmap === 'undefined' || typeof window.markmap.Transformer === 'undefined') {
-          setTimeout(renderDemoMindmap, 100);
-          return;
-        }
-
-        const { Transformer, Markmap } = window.markmap;
-
-        const sampleMarkdown = `# Demo Mindmap\n## 1. Tải lên\n  - PDF\n  - DOCX\n  - TXT\n## 2. Phân tích\n  - Trích xuất nội dung\n  - AI tóm tắt\n  - Tạo các nhánh\n## 3. Kết quả\n  - Sơ đồ tương tác\n  - Nội dung Markdown`;
-        const transformer = new Transformer();
-        const { root, features } = transformer.transform(sampleMarkdown.trim());
-
-        const svg = document.getElementById('demoMindmap');
-        if (svg) {
-          Markmap.create(svg, {}, root);
-        }
-      } catch (e) {
-        console.error("Lỗi render demo mindmap:", e);
-        const svg = document.getElementById('demoMindmap');
-        if(svg) svg.innerHTML = '<p class="text-center text-danger p-4">Không thể tải sơ đồ mẫu.</p>';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', renderDemoMindmap);
 
     // DOM Elements
     const uploadForm = document.getElementById('uploadForm');
@@ -161,7 +124,6 @@ block scripts
     const errorArea = document.getElementById('errorArea');
     const errorMessage = document.getElementById('errorMessage');
     const createMindmapBtn = document.getElementById('createMindmapBtn');
-    const viewVisualizationBtn = document.getElementById('viewVisualizationBtn');
     const viewJsonBtn = document.getElementById('viewJsonBtn');
     const newUploadBtn = document.getElementById('newUploadBtn');
     const jsonPreview = document.getElementById('jsonPreview');
@@ -332,12 +294,6 @@ block scripts
               resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
               createMindmapBtn.disabled = !mindmapData;
-              if (visualizationUrl) {
-                viewVisualizationBtn.style.display = 'inline-flex';
-                viewVisualizationBtn.onclick = () => { window.open(visualizationUrl, '_blank'); };
-              } else {
-                viewVisualizationBtn.style.display = 'none';
-              }
             }, 500);
           } catch (e) {
             console.error("Lỗi parse JSON 'complete':", e, event.data);
@@ -531,8 +487,6 @@ block scripts
     function resetResultButtons() {
       createMindmapBtn.disabled = true;
       createMindmapBtn.innerHTML = '<i class="fas fa-save me-2"></i>Lưu và Tạo Mindmap';
-      viewVisualizationBtn.style.display = 'none';
-      viewVisualizationBtn.onclick = null;
     }
 
     function showError(message) {

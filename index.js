@@ -180,9 +180,14 @@ async function startServer() {
     });
 
     // === ƯU TIÊN 3: Route đặc biệt để phục vụ React App ===
-    // Chỉ xử lý khi truy cập đúng đường dẫn /import/:id
+    // Chỉ xử lý khi truy cập đúng đường dẫn /import/:id hoặc /editor/:id
     app.get('/import/:id', (req, res) => {
       console.log(`➡️ Serving React App for /import/${req.params.id}`);
+      res.sendFile(path.join(__dirname, 'MindMapBoDoi', 'project-d10', 'build', 'index.html'));
+    });
+    
+    app.get('/editor/:id', (req, res) => {
+      console.log(`➡️ Serving React App for /editor/${req.params.id}`);
       res.sendFile(path.join(__dirname, 'MindMapBoDoi', 'project-d10', 'build', 'index.html'));
     });
     console.log("✅ React Specific Route Set!"); // Log 7a

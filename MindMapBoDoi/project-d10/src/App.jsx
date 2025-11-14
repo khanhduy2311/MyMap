@@ -45,8 +45,8 @@ function debounce(func, wait) {
 
 
 /* --------------------------- FLOW CONTENT --------------------------- */
-// SỬA: Thêm props 'currentMindmapId' và 'onManualSave'
-function FlowContent({ onManualSave }) { // ✅ BỎ currentMindmapId từ props
+// SỬA: Thêm props 'isReadOnly' để disable tương tác
+function FlowContent({ onManualSave, isReadOnly = false }) {
   const {
     nodes,
     edges,
@@ -149,9 +149,19 @@ function FlowContent({ onManualSave }) { // ✅ BỎ currentMindmapId từ props
     }
   }, 1500), [currentMindmapId, isLoaded, API_BASE, setSaveStatus]); // Delay 1.5s
 
-  // Kích hoạt Auto-save
+  // Kích hoạt Auto-save - CHỈ khi user thay đổi, KHÔNG auto-save ngay sau load
+  const isInitialMount = useRef(true);
   useEffect(() => {
+    // Skip auto-save lần đầu tiên (khi vừa load xong)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      console.log('⏭️ Skip first auto-save after loading');
+      return;
+    }
+    
+    // Auto-save khi có thay đổi thực sự
     if (isLoaded && nodes.length > 0) {
+      console.log('🔄 Auto-saving changes...');
       handleSaveToDB(nodes, edges);
     }
   }, [nodes, edges, isLoaded, handleSaveToDB]);
@@ -160,13 +170,92 @@ function FlowContent({ onManualSave }) { // ✅ BỎ currentMindmapId từ props
   useEffect(() => {
     if (onManualSave) {
       onManualSave.current = async () => {
-        handleSaveToDB.flush(nodes, edges); // Gọi .flush() để lưu ngay
-        message.success('Đã lưu sơ đồ!');
-        
-        // Quay về dashboard sau khi lưu
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 500);
+        console.log('🔵 Manual save triggered');
+        try {
+          await handleSaveToDB.flush(nodes, edges); // Gọi .flush() để lưu ngay
+          console.log('🟢 Save completed, showing notification');
+          
+          // Tạo toast notification tùy chỉnh
+          const toast = document.createElement('div');
+          toast.style.cssText = `
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #52c41a;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideDown 0.3s ease;
+          `;
+          toast.innerHTML = `
+            <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor" style="font-size: 20px;">
+              <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm193.5 301.7l-210.6 292a31.8 31.8 0 01-51.7 0L318.5 484.9c-3.8-5.3 0-12.7 6.5-12.7h46.9c10.2 0 19.9 4.9 25.9 13.3l71.2 98.8 157.2-218c6-8.3 15.6-13.3 25.9-13.3H699c6.5 0 10.3 7.4 6.5 12.7z"></path>
+            </svg>
+            Đã lưu thành công!
+          `;
+          
+          // Thêm animation CSS
+          if (!document.getElementById('toast-animation-style')) {
+            const style = document.createElement('style');
+            style.id = 'toast-animation-style';
+            style.textContent = `
+              @keyframes slideDown {
+                from {
+                  opacity: 0;
+                  transform: translate(-50%, -20px);
+                }
+                to {
+                  opacity: 1;
+                  transform: translate(-50%, 0);
+                }
+              }
+            `;
+            document.head.appendChild(style);
+          }
+          
+          document.body.appendChild(toast);
+          
+          // Tự động xóa sau 3 giây
+          setTimeout(() => {
+            toast.style.animation = 'slideDown 0.3s ease reverse';
+            setTimeout(() => toast.remove(), 300);
+          }, 3000);
+          
+          console.log('✅ Toast notification displayed');
+        } catch (error) {
+          console.error('❌ Manual save error:', error);
+          
+          // Toast lỗi
+          const toast = document.createElement('div');
+          toast.style.cssText = `
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4d4f;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          `;
+          toast.innerHTML = '❌ Lưu thất bại! Vui lòng thử lại.';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+        }
       };
     }
   }, [handleSaveToDB, nodes, edges, onManualSave]);
@@ -303,21 +392,22 @@ function FlowContent({ onManualSave }) { // ✅ BỎ currentMindmapId từ props
           fitViewOptions={{ padding: 0.05, minZoom: 0.5, maxZoom: 1.5 }} // ✅ ZOOM GẦN HƠN NỮA
           onlyRenderVisibleElements
           panOnDrag={[2]}
-          selectionOnDrag={true}
+          selectionOnDrag={!isReadOnly}
           zoomOnScroll
           zoomOnDoubleClick={false}
-          nodesDraggable
-          nodesConnectable
-          selectionMode={SelectionMode.Partial}
+          nodesDraggable={!isReadOnly}
+          nodesConnectable={!isReadOnly}
+          elementsSelectable={!isReadOnly}
+          selectionMode={isReadOnly ? null : SelectionMode.Partial}
           minZoom={0.3}
           maxZoom={3}
-          onEdgeClick={handleEdgeClick}
-          onPaneClick={handlePaneClick}
-          onNodeClick={handleNodeClick}
+          onEdgeClick={isReadOnly ? undefined : handleEdgeClick}
+          onPaneClick={isReadOnly ? undefined : handlePaneClick}
+          onNodeClick={isReadOnly ? undefined : handleNodeClick}
         >
           <Background variant={backgroundVariant} color={patternColor} />
           {isMiniMapVisible && <MiniMap />}
-          {previewRect && (
+          {previewRect && !isReadOnly && (
             <svg
               style={{
                 position: 'absolute',
@@ -340,8 +430,8 @@ function FlowContent({ onManualSave }) { // ✅ BỎ currentMindmapId từ props
           )}
         </ReactFlow>
       </div>
-      <ZoomToolbar />
-      {selectedEdgeId && edgeToolbarPosition && (
+      {!isReadOnly && <ZoomToolbar />}
+      {!isReadOnly && selectedEdgeId && edgeToolbarPosition && (
         <CustomEdgeToolbar
           edgeId={selectedEdgeId}
           style={{ left: edgeToolbarPosition.x, top: edgeToolbarPosition.y }}
@@ -383,9 +473,23 @@ function MindmapEditor() {
             const data = await res.json();
             if (!data.success || !data.data) throw new Error('Dữ liệu không hợp lệ');
 
-            // ✅ LUÔN convert từ markdown để có layout NGANG mới nhất
-            console.log('🔄 Converting markdown to mindmap with HORIZONTAL layout...');
-            const { nodes, edges } = markdownToMindmap(data.data.content);
+            // ✅ ƯU TIÊN load nodes/edges đã save, chỉ convert markdown khi chưa có
+            let nodes, edges;
+            if (data.data.nodes && data.data.nodes.length > 0) {
+              // Có nodes/edges đã save → load trực tiếp
+              console.log('✅ Loading saved nodes/edges from database');
+              nodes = data.data.nodes;
+              edges = data.data.edges || [];
+              console.log('📊 Loaded', nodes.length, 'nodes and', edges.length, 'edges');
+            } else {
+              // Chưa có nodes/edges → convert từ markdown
+              console.log('🔄 Converting markdown to mindmap with HORIZONTAL layout...');
+              const converted = markdownToMindmap(data.data.content);
+              nodes = converted.nodes;
+              edges = converted.edges;
+              console.log('✅ Converted', nodes.length, 'nodes from markdown');
+            }
+            
             loadState({ nodes, edges });
             console.log('✅ Loaded', nodes.length, 'nodes with HORIZONTAL layout');
             
@@ -401,18 +505,26 @@ function MindmapEditor() {
     }
   }, [id, isLoaded, loadState, setLoaded, setCurrentMindmapId]);
 
+  // Check if readonly mode
+  const searchParams = new URLSearchParams(window.location.search);
+  const isReadOnly = searchParams.get('readonly') === 'true';
 
   return (
     <div className={`app-container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
       <ReactFlowProvider>
-        {/* SỬA: Truyền hàm lưu thủ công vào VerticalToolbar */}
-        <VerticalToolbar 
-          onManualSave={() => manualSaveRef.current && manualSaveRef.current()}
-        />
-        <DarkModeToggle />
+        {/* Ẩn toolbar khi ở chế độ readonly */}
+        {!isReadOnly && (
+          <>
+            <VerticalToolbar 
+              onManualSave={() => manualSaveRef.current && manualSaveRef.current()}
+            />
+            <DarkModeToggle />
+          </>
+        )}
         {/* ✅ BỎ prop currentMindmapId vì giờ lấy từ store */}
         <FlowContent 
-          onManualSave={manualSaveRef} 
+          onManualSave={manualSaveRef}
+          isReadOnly={isReadOnly}
         />
       </ReactFlowProvider>
     </div>
@@ -423,10 +535,14 @@ function MindmapEditor() {
 function ImportMindmap() {
   const { id } = useParams();
   const navigate = useNavigate();
-  // SỬA: Lấy thêm 'setLoaded' và 'setCurrentMindmapId' từ store
-  const { loadState, setLoaded, setCurrentMindmapId } = useStore(); 
+  // ✅ Gọi TẤT CẢ hooks ở đầu component
+  const { loadState, setLoaded, setCurrentMindmapId, darkMode } = useStore(); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Check if readonly mode
+  const searchParams = new URLSearchParams(window.location.search);
+  const isReadOnly = searchParams.get('readonly') === 'true';
 
   // SỬA: Đổi tên hàm và logic bên trong
   const fetchAndLoadMindmap = useCallback(async () => {
@@ -466,15 +582,17 @@ function ImportMindmap() {
 
       setLoading(false);
       
-      // SỬA: Chuyển hướng đến /editor/:id
-      setTimeout(() => navigate(`/editor/${id}`), 300);
+      // SỬA: Chỉ chuyển hướng nếu KHÔNG phải readonly mode
+      if (!isReadOnly) {
+        setTimeout(() => navigate(`/editor/${id}`), 300);
+      }
 
     } catch (err) {
       console.error('Error loading mindmap:', err);
       setError(err.message);
       setLoading(false);
     }
-  }, [id, loadState, navigate, setLoaded, setCurrentMindmapId]);
+  }, [id, loadState, navigate, setLoaded, setCurrentMindmapId, isReadOnly]);
 
   useEffect(() => {
     fetchAndLoadMindmap();
@@ -510,6 +628,17 @@ function ImportMindmap() {
     );
   }
 
+  // Nếu là readonly mode, hiển thị FlowContent trực tiếp
+  if (isReadOnly) {
+    return (
+      <div className={`app-container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
+        <ReactFlowProvider>
+          <FlowContent isReadOnly={true} />
+        </ReactFlowProvider>
+      </div>
+    );
+  }
+
   return null;
 }
 
@@ -536,6 +665,17 @@ function CytoscapeViewer() {
 
 /* --------------------------- APP MAIN --------------------------- */
 function App() {
+  // ✅ Cấu hình message container ngay khi app mount
+  useEffect(() => {
+    message.config({
+      top: 100,
+      duration: 3,
+      maxCount: 3,
+      rtl: false,
+      prefixCls: 'ant-message',
+    });
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

@@ -13,13 +13,13 @@ function previewMindmap(mindmapId) {
         </button>
       </div>
       <div class="preview-modal-body">
-        <iframe src="/import/${mindmapId}" frameborder="0"></iframe>
+        <iframe src="/import/${mindmapId}?readonly=true" frameborder="0"></iframe>
       </div>
       <div class="preview-modal-footer">
         <button class="btn btn-secondary" onclick="this.closest('.preview-modal').remove()">
           <i class="fas fa-times me-1"></i>Đóng
         </button>
-        <a href="/import/${mindmapId}" target="_blank" class="btn btn-primary">
+        <a href="/editor/${mindmapId}" target="_blank" class="btn btn-primary">
           <i class="fas fa-external-link-alt me-1"></i>Mở toàn màn hình
         </a>
       </div>

@@ -244,7 +244,16 @@ const VerticalToolbar = ({ onManualSave }) => {
         
         {/* SỬA 3: Thay đổi onClick và title của nút lưu */}
         <button 
-          onClick={onManualSave} 
+          onClick={() => {
+            console.log('🔘 Save button clicked in VerticalToolbar');
+            console.log('🔘 onManualSave exists?', !!onManualSave);
+            if (onManualSave) {
+              console.log('🔘 Calling onManualSave...');
+              onManualSave();
+            } else {
+              console.error('❌ onManualSave is undefined!');
+            }
+          }}
           title="Lưu Sơ Đồ (vào Database)"
         > 
           <SaveOutlined /> 
