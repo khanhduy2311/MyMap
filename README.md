@@ -1,14 +1,14 @@
-# MyMap - Collaborative Mind Mapping Application
+# MyMap - Ứng dụng Tạo Sơ Đồ Tư Duy Cộng Tác
 
 Ứng dụng tạo sơ đồ tư duy với xử lý tài liệu AI và chat real-time.
 
 ## 🚀 Tính năng
 
 - **Xử lý tài liệu thông minh**: Upload PDF, DOCX, ảnh và tự động tạo mind map bằng AI
-- **Mind Map Editor**: Trình soạn thảo trực quan với React Flow
-- **Real-time Chat**: Trò chuyện với bạn bè qua Socket.IO
+- **Trình soạn thảo Mind Map**: Trình soạn thảo trực quan với React Flow
+- **Chat thời gian thực**: Trò chuyện với bạn bè qua Socket.IO
 - **Quản lý thư mục**: Tổ chức mind maps theo thư mục
-- **Soft Delete**: Khôi phục mind maps đã xóa từ thùng rác
+- **Xóa mềm**: Khôi phục mind maps đã xóa từ thùng rác
 
 ## 📋 Yêu cầu hệ thống
 
@@ -19,20 +19,20 @@
 
 ## ⚙️ Cài đặt
 
-### 1. Clone repository
+### 1. Sao chép dự án
 
 ```bash
 git clone https://github.com/khanhduy2311/MyMap.git
 cd MyMap
 ```
 
-### 2. Cài đặt dependencies
+### 2. Cài đặt thư viện phụ thuộc
 
 ```bash
-# Backend dependencies
+# Thư viện backend
 npm install
 
-# React app dependencies
+# Thư viện React app
 cd MindMapBoDoi/project-d10
 npm install
 cd ../..
@@ -55,12 +55,12 @@ MONGO_URI=mongodb+srv://your_connection_string
 # Session (QUAN TRỌNG: Đổi trong production!)
 SESSION_SECRET=your_secure_random_secret_min_32_chars
 
-# Redis (quan trọng cho job storage)
+# Redis (quan trọng cho lưu trữ job)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=
 
-# AI API Keys
+# Khóa AI API
 GEMINI_API_KEYS=key1,key2,key3
 OCRSPACE_API_KEY=your_key
 HUGGINGFACE_TOKEN=your_token
@@ -95,7 +95,7 @@ sudo systemctl start redis
 - Đăng ký tại https://redis.com/try-free/
 - Lấy connection string và cập nhật `.env`
 
-### 5. Build React app
+### 5. Biên dịch ứng dụng React
 
 ```bash
 cd MindMapBoDoi/project-d10
@@ -105,21 +105,21 @@ cd ../..
 
 ## 🏃 Chạy ứng dụng
 
-### Development mode
+### Chế độ phát triển
 
 ```bash
 # Terminal 1: Chạy backend với hot-reload
 npm run dev
 
-# Terminal 2: Chạy React app (optional - cho development)
+# Terminal 2: Chạy React app (tùy chọn - cho phát triển)
 cd MindMapBoDoi/project-d10
 npm start
 ```
 
-### Production mode
+### Chế độ production
 
 ```bash
-# Build React app trước
+# Biên dịch React app trước
 cd MindMapBoDoi/project-d10
 npm run build
 cd ../..
@@ -134,52 +134,52 @@ Server sẽ chạy tại `http://localhost:3000`
 
 ```
 MyMap/
-├── controllers/           # Business logic
-├── routes/               # API endpoints
-├── middlewares/          # Auth, validation, rate limiting
-├── models/               # Database schemas (reference)
+├── controllers/           # Logic nghiệp vụ
+├── routes/               # Điểm cuối API
+├── middlewares/          # Xác thực, kiểm tra, giới hạn tốc độ
+├── models/               # Schemas cơ sở dữ liệu (tham khảo)
 ├── utils/                # Logger, Redis client, email
-├── views/                # Pug templates
-├── public/               # Static assets
-├── logs/                 # Application logs
+├── views/                # Templates Pug
+├── public/               # Tài nguyên tĩnh
+├── logs/                 # Nhật ký ứng dụng
 ├── MindMapBoDoi/
-│   └── project-d10/      # React mind map editor
+│   └── project-d10/      # Trình soạn thảo React mind map
 └── .github/
-    └── copilot-instructions.md  # AI agent guidelines
+    └── copilot-instructions.md  # Hướng dẫn AI agent
 ```
 
 ## 🔐 Bảo mật
 
 ### Đã triển khai:
-- ✅ Input validation với express-validator
-- ✅ Rate limiting cho login, register, upload
-- ✅ Session secret validation trong production
-- ✅ Redis-based job storage (thay thế in-memory Map)
-- ✅ Structured logging với Winston
-- ✅ CORS configuration
-- ✅ File upload restrictions
+- ✅ Kiểm tra dữ liệu đầu vào với express-validator
+- ✅ Giới hạn tốc độ cho đăng nhập, đăng ký, upload
+- ✅ Kiểm tra session secret trong môi trường production
+- ✅ Lưu trữ job trên Redis (thay thế Map trong bộ nhớ)
+- ✅ Ghi nhật ký có cấu trúc với Winston
+- ✅ Cấu hình CORS
+- ✅ Giới hạn upload file
 
 ### Cần làm thêm (tùy chọn):
-- [ ] Password hashing với bcrypt
+- [ ] Mã hóa mật khẩu với bcrypt
 - [ ] HTTPS trong production
-- [ ] Database indexes cho performance
-- [ ] Unit tests
-- [ ] Docker containerization
+- [ ] Indexes cơ sở dữ liệu để tăng hiệu suất
+- [ ] Kiểm thử đơn vị
+- [ ] Đóng gói Docker
 
-## 📊 Monitoring & Logs
+## 📊 Giám sát & Nhật ký
 
-Logs được lưu trong thư mục `logs/`:
-- `error.log`: Chỉ errors
-- `combined.log`: Tất cả logs
+Nhật ký được lưu trong thư mục `logs/`:
+- `error.log`: Chỉ lỗi
+- `combined.log`: Tất cả nhật ký
 
-Xem logs real-time:
+Xem nhật ký theo thời gian thực:
 ```bash
 tail -f logs/combined.log
 ```
 
-## 🐛 Debugging
+## 🐛 Gỡ lỗi
 
-Backend chạy với flag `--inspect` trong dev mode:
+Backend chạy với flag `--inspect` trong chế độ phát triển:
 
 ```bash
 npm run dev
@@ -187,62 +187,62 @@ npm run dev
 
 Sau đó mở Chrome và truy cập `chrome://inspect`
 
-## 🧪 Testing
+## 🧪 Kiểm thử
 
-Hiện tại chưa có test suite. Test thủ công:
+Hiện tại chưa có bộ kiểm thử tự động. Kiểm thử thủ công:
 
 ```bash
-# Test Gemini API connection
+# Kiểm tra kết nối Gemini API
 node test-gemini.js
 ```
 
-## 📝 Environment Variables
+## 📝 Biến môi trường
 
-| Variable | Required | Default | Description |
+| Biến | Bắt buộc | Mặc định | Mô tả |
 |----------|----------|---------|-------------|
-| MONGO_URI | ✅ | - | MongoDB connection string |
-| SESSION_SECRET | ✅ (prod) | random | Session encryption key |
-| REDIS_HOST | ✅ | localhost | Redis server host |
-| REDIS_PORT | ❌ | 6379 | Redis server port |
-| PORT | ❌ | 3000 | Server port |
-| NODE_ENV | ❌ | development | Environment mode |
-| LOG_LEVEL | ❌ | info | Logging level |
+| MONGO_URI | ✅ | - | Chuỗi kết nối MongoDB |
+| SESSION_SECRET | ✅ (prod) | ngẫu nhiên | Khóa mã hóa session |
+| REDIS_HOST | ✅ | localhost | Địa chỉ máy chủ Redis |
+| REDIS_PORT | ❌ | 6379 | Cổng máy chủ Redis |
+| PORT | ❌ | 3000 | Cổng server |
+| NODE_ENV | ❌ | development | Chế độ môi trường |
+| LOG_LEVEL | ❌ | info | Mức độ ghi nhật ký |
 
-## 🔑 Secrets & Environment
+## 🔑 Bí mật & Môi trường
 
-- Keep secrets out of git: `.env` is ignored. Use `.env.example` as a template.
-- Production on Render: set all variables in the service dashboard. Do not upload `.env`.
-- Rotate leaked keys immediately if exposed in commits or screenshots:
-    - MongoDB: change user password and update `MONGO_URI`.
-    - Cloudinary: regenerate `CLOUDINARY_API_SECRET` (and API key if needed).
-    - Gemini, Hugging Face, OpenRouter, OCR.Space: revoke and recreate tokens.
-    - Redis: prefer `REDIS_URL` (rotate credentials or new instance).
-    - Email: regenerate app password (`EMAIL_PASS`).
-    - Session: set a new strong `SESSION_SECRET`.
+- Giữ bí mật ngoài git: `.env` đã được bỏ qua. Sử dụng `.env.example` làm mẫu.
+- Production trên Render: đặt tất cả biến trong bảng điều khiển dịch vụ. Không upload `.env`.
+- Xoay vòng khóa bị rò rỉ ngay lập tức nếu bị lộ trong commits hoặc ảnh chụp màn hình:
+    - MongoDB: đổi mật khẩu người dùng và cập nhật `MONGO_URI`.
+    - Cloudinary: tạo lại `CLOUDINARY_API_SECRET` (và API key nếu cần).
+    - Gemini, Hugging Face, OpenRouter, OCR.Space: thu hồi và tạo lại token.
+    - Redis: ưu tiên `REDIS_URL` (xoay vòng thông tin đăng nhập hoặc instance mới).
+    - Email: tạo lại mật khẩu ứng dụng (`EMAIL_PASS`).
+    - Session: đặt `SESSION_SECRET` mạnh mới.
 
-Render build note:
-- Pin Node to LTS via `package.json` engines (`node: 18.x`) to avoid Node 25 `localStorage` build errors when building the React app.
+Lưu ý khi build trên Render:
+- Cố định Node ở LTS qua `package.json` engines (`node: 18.x`) để tránh lỗi `localStorage` của Node 25 khi build React app.
 
-## 🤝 Contributing
+## 🤝 Đóng góp
 
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
+1. Fork dự án
+2. Tạo nhánh tính năng (`git checkout -b feature/TinhNangMoi`)
+3. Commit thay đổi (`git commit -m 'Thêm TinhNangMoi'`)
+4. Push lên nhánh (`git push origin feature/TinhNangMoi`)
 5. Tạo Pull Request
 
-## 📄 License
+## 📄 Giấy phép
 
-ISC License
+Giấy phép ISC
 
-## 👥 Authors
+## 👥 Tác giả
 
 - Nguyễn Trung Dũng
 - Trương Đình Việt Dũng
 - Trần Đình Duy
 
-## 🙏 Acknowledgments
+## 🙏 Cảm ơn
 
-- @xyflow/react cho node-based UI
-- OpenRouter, Hugging Face, Google Gemini cho AI processing
-- OCR.Space cho optical character recognition
+- @xyflow/react cho giao diện dựa trên node
+- OpenRouter, Hugging Face, Google Gemini cho xử lý AI
+- OCR.Space cho nhận dạng ký tự quang học
