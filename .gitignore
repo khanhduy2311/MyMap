@@ -30,3 +30,4 @@ gcp-credentials.json
 public/videos/*.mp4
 public/videos/*.mov
 public/videos/*.avi
+node_modules
