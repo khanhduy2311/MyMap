@@ -75,25 +75,14 @@ block main
               //- === HIỂN THỊ ẢNH PREVIEW ===
               a.card-link(href=`/import/${mindmap._id}` target="_blank") 
                 //- Hiển thị ảnh thumbnail nếu có, nếu không thì dùng gradient ngẫu nhiên
-                if mindmap.thumbnailUrl
-                  img.mindmap-thumbnail(src=mindmap.thumbnailUrl, alt=mindmap.title || 'Mindmap Preview', onerror=`this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';`) 
-                  .mindmap-thumbnail-fallback(style="display:none;" data-id=mindmap._id)
-                    .thumbnail-icon
-                      i.fas.fa-project-diagram
-                    .thumbnail-title= mindmap.title || 'Mindmap'
-                else
-                  .mindmap-thumbnail-fallback(data-id=mindmap._id)
-                    .thumbnail-icon
-                      i.fas.fa-project-diagram
-                    .thumbnail-title= mindmap.title || 'Mindmap'
+                .mindmap-thumbnail-fallback(data-id=mindmap._id)
+                  .thumbnail-icon
+                    i.fas.fa-project-diagram
               .card-title.card-title-display
                 a(href=`/import/${mindmap._id}` target="_blank") #{mindmap.title} 
               .card-title.card-title-edit(style="display: none;")
                 form.inline-edit-form
                   input.inline-edit-input(type="text", value=mindmap.title)
-
-
-
               .card-actions
                 button.btn-action.btn-preview(type="button" title="Xem trước" onclick=`previewMindmap('${mindmap._id}')`)
                   i.fas.fa-eye

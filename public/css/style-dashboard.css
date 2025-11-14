@@ -211,7 +211,7 @@
     
     display: flex;
     justify-content: center;
-    gap: 15px; /* Khoảng cách giữa 2 nút */
+    gap: 10px; /* Khoảng cách giữa 2 nút */
     
     padding: 16px;
     background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); /* Lớp nền mờ */
@@ -232,8 +232,8 @@
 
 /* 4. Style cho các nút "Chỉnh sửa" và "Xóa" */
 .btn-action {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     border: none;
     
