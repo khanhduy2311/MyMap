@@ -37,7 +37,7 @@ exports.createMindmap = async (req, res) => {
             success: true,
             data: {
                 mindmapId: insertResult.insertedId,
-                redirectUrl: '/dashboard'
+                redirectUrl: `/import/${insertResult.insertedId}`
             },
             message: 'Mindmap đã được lưu thành công!'
         });
@@ -269,6 +269,14 @@ exports.updateMindmapData = async (req, res) => {
 
     // Lấy dữ liệu nodes và edges từ body của request (React gửi lên)
     const { nodes, edges, thumbnailUrl } = req.body;
+
+    // Log để debug
+    console.log('📥 Received data:', {
+        mindmapId: req.params.id,
+        nodesCount: nodes?.length,
+        edgesCount: edges?.length,
+        firstNodeSample: nodes?.[0]
+    });
 
     // --- 2. Validate Dữ liệu (Cơ bản) ---
     // Kiểm tra xem nodes và edges có phải là mảng không (có thể thêm kiểm tra kỹ hơn)

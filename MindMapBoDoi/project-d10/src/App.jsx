@@ -46,7 +46,7 @@ function debounce(func, wait) {
 
 /* --------------------------- FLOW CONTENT --------------------------- */
 // SỬA: Thêm props 'currentMindmapId' và 'onManualSave'
-function FlowContent({ currentMindmapId, onManualSave }) {
+function FlowContent({ onManualSave }) { // ✅ BỎ currentMindmapId từ props
   const {
     nodes,
     edges,
@@ -69,8 +69,9 @@ function FlowContent({ currentMindmapId, onManualSave }) {
     currentDrawTool,
     setCurrentDrawTool,
     setActiveDrawArea,
-    // THÊM: Lấy state liên quan đến việc tải/lưu
+    // ✅ Lấy từ store
     isLoaded,
+    currentMindmapId, // ✅ Lấy từ store thay vì props
     setSaveStatus // (Giả định bạn có hàm này trong store.js)
   } = useStore();
 
@@ -89,8 +90,15 @@ function FlowContent({ currentMindmapId, onManualSave }) {
   const handleSaveToDB = useCallback(debounce(async (nodesToSave, edgesToSave) => {
     // Chỉ lưu nếu có ID, không đang lưu, và đã tải xong
     if (!currentMindmapId || isAutoSaving.current || !isLoaded) {
+      console.log('⏭️ Skip save:', { currentMindmapId, isAutoSaving: isAutoSaving.current, isLoaded });
       return;
     }
+
+    console.log('💾 Saving to DB:', { 
+      mindmapId: currentMindmapId, 
+      nodesCount: nodesToSave.length, 
+      edgesCount: edgesToSave.length 
+    });
 
     isAutoSaving.current = true;
     if (setSaveStatus) setSaveStatus('saving');
@@ -103,21 +111,28 @@ function FlowContent({ currentMindmapId, onManualSave }) {
          thumbnailUrl = await toPng(viewport, { width: 300, height: 200, cacheBust: true, pixelRatio: 1 });
       }
 
+      const payload = {
+        nodes: nodesToSave,
+        edges: edgesToSave,
+        thumbnailUrl: thumbnailUrl
+      };
+
+      console.log('📤 Sending payload:', payload);
+
       const response = await fetch(`${API_BASE}/mindmaps/${currentMindmapId}/save`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          nodes: nodesToSave,
-          edges: edgesToSave,
-          thumbnailUrl: thumbnailUrl // Gửi cả thumbnail
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error('Lỗi khi lưu vào CSDL');
       
       const result = await response.json();
+      console.log('✅ Save response:', result);
+      
       if(result.success) {
          if (setSaveStatus) setSaveStatus('saved');
+         console.log('✅ Saved successfully');
       } else {
          throw new Error(result.message || 'Lỗi lưu CSDL');
       }
@@ -144,9 +159,14 @@ function FlowContent({ currentMindmapId, onManualSave }) {
   // Kết nối với nút Lưu thủ công
   useEffect(() => {
     if (onManualSave) {
-      onManualSave.current = () => {
+      onManualSave.current = async () => {
         handleSaveToDB.flush(nodes, edges); // Gọi .flush() để lưu ngay
         message.success('Đã lưu sơ đồ!');
+        
+        // Quay về dashboard sau khi lưu
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 500);
       };
     }
   }, [handleSaveToDB, nodes, edges, onManualSave]);
@@ -339,15 +359,18 @@ function MindmapEditor() {
   const { id } = useParams();
   const manualSaveRef = useRef(null);
   
-  // THÊM: Tải mindmap khi component mount (nếu chưa có trong store)
-  const { isLoaded, setLoaded, loadState, nodes, setCurrentMindmapId } = useStore();
+  // ✅ Lấy từ store
+  const { isLoaded, setLoaded, loadState, setCurrentMindmapId } = useStore();
   
   useEffect(() => {
-    // Chỉ tải nếu chưa tải (bỏ kiểm tra ID khớp vì id thay đổi qua URL)
-    if (!isLoaded) {
+    // Chỉ tải nếu chưa tải
+    if (!isLoaded && id) {
       const fetchMindmap = async () => {
          try {
-            if(setLoaded) setLoaded(false);
+            console.log('🔄 Loading mindmap:', id);
+            setLoaded(false);
+            setCurrentMindmapId(id); // ✅ Set ID ngay
+            
             const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
             if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
               message.warning('Phiên đăng nhập đã hết, vui lòng đăng nhập lại...', 1.5);
@@ -366,8 +389,8 @@ function MindmapEditor() {
             loadState({ nodes, edges });
             console.log('✅ Loaded', nodes.length, 'nodes with HORIZONTAL layout');
             
-            if(setCurrentMindmapId) setCurrentMindmapId(id);
-            if(setLoaded) setLoaded(true);
+            setLoaded(true); // ✅ Set loaded = true
+            console.log('✅ isLoaded set to true, currentMindmapId:', id);
          } catch(err) {
             console.error("Lỗi tải mindmap:", err);
             message.error("Không thể tải sơ đồ. Đang chuyển về dashboard...");
@@ -387,9 +410,8 @@ function MindmapEditor() {
           onManualSave={() => manualSaveRef.current && manualSaveRef.current()}
         />
         <DarkModeToggle />
-        {/* SỬA: Truyền ID và ref xuống FlowContent */}
+        {/* ✅ BỎ prop currentMindmapId vì giờ lấy từ store */}
         <FlowContent 
-          currentMindmapId={id} 
           onManualSave={manualSaveRef} 
         />
       </ReactFlowProvider>

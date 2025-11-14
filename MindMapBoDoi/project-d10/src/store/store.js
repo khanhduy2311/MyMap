@@ -163,7 +163,13 @@ const storeCreator = (set, get) => ({
   patternColor: '#ccc', 
   appMode: 'normal', 
   activeDrawAreaId: null,
-  currentDrawTool: { mode: 'cursor' }, 
+  currentDrawTool: { mode: 'cursor' },
+  isLoaded: false, // ✅ THÊM state để track đã load xong chưa
+  currentMindmapId: null, // ✅ THÊM state để lưu ID mindmap hiện tại
+
+  // ✅ THÊM setters
+  setLoaded: (value) => set({ isLoaded: value }),
+  setCurrentMindmapId: (id) => set({ currentMindmapId: id }),
 
   // --- QUAN TRỌNG: Sửa hàm loadState ---
   loadState: (newState) => {
@@ -175,9 +181,16 @@ const storeCreator = (set, get) => ({
       console.log('Loading validated nodes:', validatedNodes);
       console.log('Loading validated edges:', validatedEdges);
 
+      // ✅ Chạy auto-layout để áp dụng LR (Left to Right)
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        validatedNodes,
+        validatedEdges,
+        'LR'
+      );
+
       set({
-        nodes: validatedNodes,
-        edges: validatedEdges,
+        nodes: layoutedNodes,
+        edges: layoutedEdges,
         selectedNodeId: null,
         selectedEdgeId: null,
         selectedNodeIds: [], 

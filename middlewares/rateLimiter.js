@@ -16,10 +16,11 @@ const createRedisStore = (prefix) => {
 const loginLimiter = rateLimit({
   store: createRedisStore('login'),
   windowMs: 15 * 60 * 1000, // 15 phút
-  max: 5, // 5 lần thử
+  max: process.env.NODE_ENV === 'production' ? 5 : 100, // Dev: 100, Production: 5
   message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development', // Bỏ qua trong dev
   handler: (req, res) => {
     req.flash('error_msg', 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.');
     res.redirect('/login');
@@ -30,10 +31,11 @@ const loginLimiter = rateLimit({
 const registerLimiter = rateLimit({
   store: createRedisStore('register'),
   windowMs: 60 * 60 * 1000, // 1 giờ
-  max: 3, // 3 tài khoản mới / giờ / IP
+  max: process.env.NODE_ENV === 'production' ? 3 : 100, // Dev: 100, Production: 3
   message: 'Quá nhiều tài khoản được tạo từ IP này. Vui lòng thử lại sau.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development', // Bỏ qua trong dev
   handler: (req, res) => {
     req.flash('error_msg', 'Quá nhiều tài khoản được tạo. Vui lòng thử lại sau 1 giờ.');
     res.redirect('/register');

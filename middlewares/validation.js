@@ -16,9 +16,23 @@ const validate = (req, res, next) => {
       });
     }
     
-    // Nếu là page request, dùng flash
+    // Nếu là page request, dùng flash và redirect về original URL
     req.flash('error_msg', errorMessages);
-    return res.redirect('back');
+    
+    // Xác định redirect path dựa trên route hiện tại
+    let redirectPath = '/';
+    if (req.path.includes('register')) {
+      redirectPath = '/register';
+    } else if (req.path.includes('login')) {
+      redirectPath = '/login';
+    } else if (req.path.includes('forgot')) {
+      redirectPath = '/forgot-password';
+    } else if (req.headers.referer) {
+      // Fallback: dùng referer nếu có
+      redirectPath = req.headers.referer;
+    }
+    
+    return res.redirect(redirectPath);
   }
   next();
 };
@@ -39,9 +53,7 @@ const validationRules = {
       .trim(),
     body('password')
       .isLength({ min: 6 })
-      .withMessage('Mật khẩu phải có ít nhất 6 ký tự')
-      .matches(/^(?=.*[a-zA-Z])(?=.*[0-9])/)
-      .withMessage('Mật khẩu phải có cả chữ và số'),
+      .withMessage('Mật khẩu phải có ít nhất 6 ký tự'),
   ],
 
   login: [

@@ -86,6 +86,14 @@ router.get('/:id/json', authMiddleware.checkLoggedIn, async (req, res) => {
             return res.status(404).json({ success: false, error: 'Mindmap không tồn tại' });
         }
 
+        // Log để debug
+        console.log('📤 Returning mindmap data:', {
+            id: mindmap._id,
+            hasNodes: !!mindmap.nodes,
+            nodesCount: mindmap.nodes?.length || 0,
+            firstNodeSample: mindmap.nodes?.[0]
+        });
+
         // Trả về cả content (markdown) và dữ liệu nodes/edges nếu có
         res.json({
             success: true,

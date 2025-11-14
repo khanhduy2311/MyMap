@@ -8,6 +8,7 @@ html(lang="vi")
     link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css")
     link(rel="stylesheet", href="/css/style-main.css?v=1.1")
     link(rel="stylesheet", href="/css/style-global-cursor.css")
+    link(rel="stylesheet", href="/css/preview-modal.css")
     block styles
     title #{pageTitle} | MindTree
     //- Trong block head hoặc sau các link CSS
@@ -256,11 +257,13 @@ html(lang="vi")
       document.addEventListener('click', (event) => {
         // Chỉ chạy nếu searchInput và searchResults TỒN TẠI
         if (searchInput && searchResults && !searchInput.contains(event.target) && !searchResults.contains(event.target)) {
-          searchResults.style.display = 'none';
+      searchResults.style.display = 'none';
           searchInput.closest('.search-box-compact').classList.remove('active');
         }
       });
-
+    
+    // Preview mindmap script
+    script(src="/js/preview-mindmap.js")
 
 
       

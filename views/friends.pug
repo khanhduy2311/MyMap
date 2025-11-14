@@ -64,9 +64,8 @@ block main
                 .friend-item(
                   data-user-id=friend._id
                   data-username=friend.username
-                  onclick=`selectFriend('${friend._id}', '${friend.username}')`
                 )
-                  .d-flex.align-items-center.w-100
+                  .d-flex.align-items-center.w-100(onclick=`selectFriend('${friend._id}', '${friend.username}')` style="cursor: pointer;")
                     //- Avatar
                     img.rounded-circle.me-3.friend-avatar(
                       src=friend.avatar || '/images/default-avatar.png',
@@ -84,6 +83,14 @@ block main
                       else
                         small.text-muted ...
                     span.status-indicator.offline(data-user-id=friend._id)
+                  //- Nút xóa bạn bè
+                  button.btn.btn-sm.btn-danger.ms-2.btn-remove-friend(
+                    type="button"
+                    data-friend-id=friend._id
+                    data-friend-username=friend.username
+                    title="Xóa bạn bè"
+                  )
+                    i.fas.fa-user-times
 
             else
               //- Trạng thái rỗng khi chưa có bạn
@@ -245,6 +252,16 @@ block scripts
 
         if (!requestId || !actionUrl) return;
 
+        // Disable cả 2 nút ngay lập tức để tránh double-click
+        const requestItem = friendRequestsModalBody.querySelector(`li[data-request-id="${requestId}"]`);
+        if (requestItem) {
+          const allButtons = requestItem.querySelectorAll('button');
+          allButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          });
+        }
+
         try {
           const response = await fetch(actionUrl, {
             method: 'POST',
@@ -255,11 +272,12 @@ block scripts
 
           if (data.success) {
             showToast(data.message || 'Thao tác thành công!', 'Thông báo', 'success');
+            
             // Xóa item khỏi danh sách trong modal
-            const requestItem = friendRequestsModalBody.querySelector(`li[data-request-id="${requestId}"]`);
             if (requestItem) {
               requestItem.remove();
             }
+            
             // Kiểm tra xem còn lời mời nào không
             const listGroup = document.getElementById('requestListGroup');
             if (listGroup && listGroup.children.length === 0) {
@@ -277,17 +295,113 @@ block scripts
               if (badge) badge.style.display = 'none';
             }
 
-
-            // Reload lại danh sách bạn bè nếu chấp nhận
+            // Nếu chấp nhận lời mời, reload sau khi đóng modal để cập nhật danh sách bạn
             if (actionUrl.includes('accept')) {
-              setTimeout(() => window.location.reload(), 1500);
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
             }
           } else {
             showToast(data.message || 'Có lỗi xảy ra.', 'Lỗi', 'error');
+            // Re-enable buttons nếu có lỗi
+            if (requestItem) {
+              const allButtons = requestItem.querySelectorAll('button');
+              allButtons.forEach(btn => btn.disabled = false);
+              const acceptBtn = requestItem.querySelector('.btn-accept-request');
+              const rejectBtn = requestItem.querySelector('.btn-reject-request');
+              if (acceptBtn) acceptBtn.innerHTML = 'Chấp nhận';
+              if (rejectBtn) rejectBtn.innerHTML = 'Từ chối';
+            }
           }
         } catch (err) {
           console.error("Lỗi xử lý lời mời:", err);
           showToast('Lỗi kết nối. Vui lòng thử lại.', 'Lỗi', 'error');
+          // Re-enable buttons nếu có lỗi
+          if (requestItem) {
+            const allButtons = requestItem.querySelectorAll('button');
+            allButtons.forEach(btn => btn.disabled = false);
+            const acceptBtn = requestItem.querySelector('.btn-accept-request');
+            const rejectBtn = requestItem.querySelector('.btn-reject-request');
+            if (acceptBtn) acceptBtn.innerHTML = 'Chấp nhận';
+            if (rejectBtn) rejectBtn.innerHTML = 'Từ chối';
+          }
+        }
+      });
+    }
+
+    // === HÀM XÓA BẠN BÈ ===
+    window.removeFriend = async (friendId, friendUsername) => {
+      console.log('removeFriend called:', friendId, friendUsername);
+      
+      if (!confirm(`Bạn có chắc muốn xóa ${friendUsername} khỏi danh sách bạn bè?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/friends/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ friendId })
+        });
+
+        const data = await response.json();
+        console.log('Response:', data);
+
+        if (data.success) {
+          showToast(data.message || 'Đã xóa bạn bè thành công!', 'Thành công', 'success');
+          
+          // Xóa khỏi DOM
+          const friendItem = document.querySelector(`.friend-item[data-user-id="${friendId}"]`);
+          if (friendItem) {
+            friendItem.remove();
+          }
+
+          // Nếu đang chat với người này, reset chat
+          if (typeof window.currentReceiverId !== 'undefined' && window.currentReceiverId === friendId) {
+            const chatHeader = document.getElementById('chatWithHeader');
+            const messagesContainer = document.getElementById('messages');
+            const messageInput = document.getElementById('messageInput');
+            
+            if (chatHeader) chatHeader.textContent = 'Chọn bạn bè để trò chuyện';
+            if (messagesContainer) messagesContainer.innerHTML = '<div class="empty-chat-state"><i class="fas fa-comments fa-3x"></i><p>Chọn bạn bè để bắt đầu trò chuyện</p></div>';
+            if (messageInput) messageInput.disabled = true;
+            
+            window.currentReceiverId = null;
+            window.currentReceiverUsername = null;
+          }
+
+          // Kiểm tra nếu không còn bạn nào
+          const remainingFriends = document.querySelectorAll('.friend-item');
+          if (remainingFriends.length === 0) {
+            const listContainer = document.querySelector('.friends-list-scrollable');
+            if (listContainer) {
+              listContainer.innerHTML = `
+                <div class="empty-list-state">
+                  <i class="fas fa-user-friends fa-3x"></i>
+                  <p>Bạn chưa có bạn bè</p>
+                </div>
+              `;
+            }
+          }
+        } else {
+          showToast(data.message || 'Không thể xóa bạn bè. Vui lòng thử lại.', 'Lỗi', 'error');
+        }
+      } catch (error) {
+        console.error('Lỗi xóa bạn bè:', error);
+        showToast('Lỗi kết nối. Vui lòng thử lại.', 'Lỗi', 'error');
+      }
+    };
+
+    // Event delegation cho nút xóa bạn bè
+    const friendsListContainer = document.querySelector('.friends-list-scrollable');
+    if (friendsListContainer) {
+      friendsListContainer.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.btn-remove-friend');
+        if (removeBtn) {
+          e.stopPropagation(); // Ngăn click vào friend-item
+          const friendId = removeBtn.dataset.friendId;
+          const friendUsername = removeBtn.dataset.friendUsername;
+          removeFriend(friendId, friendUsername);
         }
       });
     }

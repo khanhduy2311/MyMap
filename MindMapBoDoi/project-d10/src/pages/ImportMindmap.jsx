@@ -35,19 +35,29 @@ const ImportMindmap = () => {
         throw new Error(result.error || 'Không thể tải mindmap');
       }
       
-      // Chuyển đổi Markdown → Mindmap
-      const { nodes, edges } = markdownToMindmap(result.data.content);
+      let nodes, edges;
+      
+      // ✅ ƯU TIÊN: Nếu đã có nodes/edges đã lưu trong DB, dùng luôn
+      if (result.data.nodes && result.data.nodes.length > 0) {
+        nodes = result.data.nodes;
+        edges = result.data.edges || [];
+        console.log('✅ Load từ DB:', nodes.length, 'nodes đã lưu');
+      } else {
+        // ✅ FALLBACK: Nếu chưa có nodes/edges, chuyển đổi từ Markdown
+        const converted = markdownToMindmap(result.data.content);
+        nodes = converted.nodes;
+        edges = converted.edges;
+        console.log('✅ Chuyển đổi từ Markdown:', nodes.length, 'nodes');
+      }
       
       // Load vào store với layout đã có sẵn (CHIỀU NGANG)
       loadState({ nodes, edges });
       
-      console.log('✅ Đã load', nodes.length, 'nodes với layout NGANG');
-      
       setLoading(false);
       
-      // Chuyển sang editor ngay lập tức
+      // Chuyển sang editor với ID để có thể lưu
       setTimeout(() => {
-        navigate('/mindmap-editor');
+        navigate(`/editor/${id}`);
       }, 100);
       
     } catch (err) {

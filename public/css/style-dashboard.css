@@ -990,11 +990,133 @@
 /* ------------------ phần preview ảnh ----------------------- */
 .mindmap-thumbnail {
     width: 100%;
-    height: 120px; /* Chiều cao cố định cho thumbnail */
-    object-fit: cover; /* Đảm bảo ảnh không bị méo khi co giãn */
-    border-bottom: 1px solid #eee; /* Đường kẻ dưới ảnh */
-    margin-bottom: 10px; /* Khoảng cách với tiêu đề */
-    border-radius: 8px 8px 0 0; /* Bo tròn góc trên của ảnh (nếu card có bo tròn) */
-    background-color: #f8f9fa; /* Màu nền khi ảnh chưa tải/lỗi */
+    height: 180px; /* Tăng chiều cao cho đẹp hơn */
+    object-fit: cover;
+    border-bottom: 1px solid #eee;
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: transform 0.3s ease;
 }
+
+.mindmap-card:hover .mindmap-thumbnail {
+    transform: scale(1.05);
+}
+
+/* Fallback thumbnail với gradient ngẫu nhiên */
+.mindmap-thumbnail-fallback {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.mindmap-card:hover .mindmap-thumbnail-fallback {
+    transform: scale(1.05);
+}
+
+.mindmap-thumbnail-fallback .thumbnail-icon {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.5rem;
+    z-index: 2;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mindmap-thumbnail-fallback .thumbnail-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    text-align: center;
+    padding: 0 1rem;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    z-index: 2;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Preview placeholder khi không có thumbnail */
+.preview-image {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.preview-image::before {
+    content: '🗺️';
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+.preview-image::after {
+    content: 'No Preview';
+    position: absolute;
+    bottom: 10px;
+    font-size: 0.75rem;
+    color: white;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Modal preview khi hover (optional enhancement) */
+.mindmap-card {
+    position: relative;
+}
+
+.mindmap-preview-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-width: 90vw;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    z-index: 9999;
+    padding: 20px;
+}
+
+.mindmap-card:hover .mindmap-preview-modal {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -48%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+.preview-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+}
+
+.mindmap-card:hover ~ .preview-modal-overlay,
+.mindmap-card:hover + .preview-modal-overlay {
+    display: block;
+}
+
 

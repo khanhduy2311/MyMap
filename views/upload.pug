@@ -495,15 +495,19 @@ block scripts
           throw new Error(result.error || `Lỗi server ${response.status} khi lưu`);
         }
 
-        if (result.redirectUrl) {
-          console.log("🔄 Redirect đến:", result.redirectUrl);
-          window.location.href = result.redirectUrl;
+        // Hiện thông báo trước
+        alert(result.message || 'Mindmap đã được lưu thành công!');
+        
+        // Sau khi user bấm OK alert, redirect đến trang xem mindmap
+        if (result.data && result.data.redirectUrl) {
+          console.log("🔄 Redirect đến:", result.data.redirectUrl);
+          window.location.href = result.data.redirectUrl;
+        } else if (result.data && result.data.mindmapId) {
+          // Fallback nếu không có redirectUrl
+          window.location.href = `/import/${result.data.mindmapId}`;
         } else {
-          alert(result.message || 'Lưu thành công!');
-          // Reset trạng thái sau khi lưu thành công
-          isSaving = false;
-          createMindmapBtn.disabled = false;
-          createMindmapBtn.innerHTML = '<i class="fas fa-save me-2"></i>Lưu và Tạo Mindmap';
+          // Nếu không có thông tin redirect, về dashboard
+          window.location.href = '/dashboard';
         }
 
       } catch (error) {

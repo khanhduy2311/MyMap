@@ -67,12 +67,16 @@ body.friends-page footer {
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid transparent;
-  position: relative; /* <<< THÊM DÒNG NÀY */
+  position: relative;
 }
 
 .friend-item:hover {
   background: rgba(255, 255, 255, 0.4);
   border-color: rgba(0, 0, 0, 0.1);
+}
+
+.friend-item:hover .btn-remove-friend {
+  opacity: 1 !important;
 }
 
 .friend-item.active {
@@ -83,6 +87,19 @@ body.friends-page footer {
 .friend-item.active i,
 .friend-item.active .text-muted {
   color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Nút xóa bạn bè */
+.btn-remove-friend {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  opacity: 0 !important;
+}
+
+.btn-remove-friend:hover {
+  transform: scale(1.1);
+  opacity: 1 !important;
 }
 
 .empty-list-state {

@@ -192,10 +192,11 @@ module.exports = (usersDb) => {
         { returnDocument: 'after' }
       );
 
-      if (!result || !result.value) {
+      if (!result) {
         return fail(res, 404, 'REQUEST_NOT_FOUND', 'Không tìm thấy lời mời hoặc lời mời đã được xử lý.');
       }
 
+      logger.info('Friend request accepted', { requestId, userId: userId.toString() });
       return ok(res, { message: 'Đã chấp nhận lời mời kết bạn.' });
 
     } catch (error) {
