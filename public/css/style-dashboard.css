@@ -654,7 +654,7 @@
 
 .folder-card {
     border-radius: 8px;
-    background-color: #ffffff;
+    background-color: #f2f2f2;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border: 1px solid #e9ecef;
     transition: all 0.2s ease;
