@@ -3,13 +3,25 @@ const rateLimit = require('express-rate-limit');
 const { default: RedisStore } = require('rate-limit-redis');
 const { redis } = require('../utils/redisClient');
 
-// Helper function để tạo Redis store với prefix riêng
+// Helper function để tạo Redis store với prefix riêng (hoặc fallback to memory)
 const createRedisStore = (prefix) => {
-  return new RedisStore({
-    // @ts-expect-error - Known issue: the `call` function is not present in @types/ioredis
-    sendCommand: (...args) => redis.call(...args),
-    prefix: `rl:${prefix}:`,
-  });
+  try {
+    // Chỉ dùng Redis nếu đã connected
+    if (redis.status === 'ready') {
+      console.log(`✅ Using Redis store for rate limiter: ${prefix}`);
+      return new RedisStore({
+        // @ts-expect-error - Known issue: the `call` function is not present in @types/ioredis
+        sendCommand: (...args) => redis.call(...args),
+        prefix: `rl:${prefix}:`,
+      });
+    } else {
+      console.log(`⚠️ Redis not ready, using memory store for rate limiter: ${prefix}`);
+      return undefined; // express-rate-limit sẽ dùng memory store mặc định
+    }
+  } catch (err) {
+    console.error(`⚠️ Error creating Redis store for ${prefix}, using memory store:`, err.message);
+    return undefined; // Fallback to memory store
+  }
 };
 
 // Rate limiter cho login (chống brute force)
