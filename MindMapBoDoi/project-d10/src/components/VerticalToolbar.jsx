@@ -12,7 +12,6 @@ import {
   EditOutlined,
   BorderOutlined,
   AimOutlined,
-  HighlightOutlined,
   ClearOutlined,
   HomeOutlined,
 } from '@ant-design/icons';

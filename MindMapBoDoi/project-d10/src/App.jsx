@@ -1,4 +1,4 @@
-﻿import {
+import {
   ReactFlow,
   Background,
   ReactFlowProvider,
@@ -8,7 +8,7 @@
 } from '@xyflow/react';
 import { useMemo, useEffect, useState, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
-import { message } from 'antd'; // THÊM: Để hiển thị thông báo "Đã lưu"
+import { message } from 'antd'; // TH�M: �? hi?n th? th�ng b�o "�� luu"
 import { useStore } from './store/store';
 import CustomNode from './components/CustomNode';
 import VerticalToolbar from './components/VerticalToolbar';
@@ -26,7 +26,7 @@ import CytoscapeMindmap from './components/CytoscapeMindmap';
 const nodeTypes = { custom: CustomNode, drawArea: DrawAreaNode };
 const FAKE_NODE_ID = 'multi-select-fake-node';
 
-// THÊM: Hàm Debounce để tối ưu auto-save
+// TH�M: H�m Debounce d? t?i uu auto-save
 function debounce(func, wait) {
   let timeout;
   const debounced = (...args) => {
@@ -38,7 +38,7 @@ function debounce(func, wait) {
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
-  // Thêm hàm .flush() để gọi lưu ngay lập tức (cho nút lưu thủ công)
+  // Th�m h�m .flush() d? g?i luu ngay l?p t?c (cho n�t luu th? c�ng)
   debounced.flush = (...args) => {
     clearTimeout(timeout);
     func.apply(this, args);
@@ -48,7 +48,7 @@ function debounce(func, wait) {
 
 
 /* --------------------------- FLOW CONTENT --------------------------- */
-// SỬA: Thêm props 'isReadOnly' để disable tương tác
+// S?A: Th�m props 'isReadOnly' d? disable tuong t�c
 function FlowContent({ onManualSave, isReadOnly = false }) {
   const {
     nodes,
@@ -72,10 +72,10 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     currentDrawTool,
     setCurrentDrawTool,
     setActiveDrawArea,
-    // ✅ Lấy từ store
+    // ? L?y t? store
     isLoaded,
-    currentMindmapId, // ✅ Lấy từ store thay vì props
-    setSaveStatus, // (Giả định bạn có hàm này trong store.js)
+    currentMindmapId, // ? L?y t? store thay v� props
+    setSaveStatus, // (Gi? d?nh b?n c� h�m n�y trong store.js)
     // Collaborative state
     onlineUsers,
     remoteCursors,
@@ -87,7 +87,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     updateRemoteSelection,
     applyRemoteChanges,
     setCollaborating,
-    setBroadcastCallback, // ✅ Thêm setter cho broadcast callback
+    setBroadcastCallback, // ? Th�m setter cho broadcast callback
   } = useStore();
 
   const reactFlowInstance = useReactFlow();
@@ -96,25 +96,25 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
   const startPos = useRef(null);
   const previewRectRef = useRef(null);
   const wrapperRef = useRef(null);
-  // Cờ chặn broadcast ngay sau khi áp dụng thay đổi từ xa
+  // C? ch?n broadcast ngay sau khi �p d?ng thay d?i t? xa
   const suppressBroadcastRef = useRef(false);
-  // ✅ Track đã fitView lần đầu chưa
+  // ? Track d� fitView l?n d?u chua
   const hasInitialFitViewRef = useRef(false);
 
-  // THÊM: Logic Auto-save và Manual-save
+  // TH�M: Logic Auto-save v� Manual-save
   const API_BASE = process.env.REACT_APP_API_URL || '';
   const isAutoSaving = useRef(false);
 
-  // Hàm gọi API để lưu vào CSDL - ĐỊNH NGHĨA TRƯỚC để các useEffect khác có thể dùng
+  // H�m g?i API d? luu v�o CSDL - �?NH NGHIA TRU?C d? c�c useEffect kh�c c� th? d�ng
   const handleSaveToDB = useCallback(
     debounce(async (nodesToSave, edgesToSave) => {
-      // Chỉ lưu nếu có ID, không đang lưu, và đã tải xong
+      // Ch? luu n?u c� ID, kh�ng dang luu, v� d� t?i xong
       if (!currentMindmapId || isAutoSaving.current || !isLoaded) {
-        console.log('⏭️ Skip save:', { currentMindmapId, isAutoSaving: isAutoSaving.current, isLoaded });
+        console.log('?? Skip save:', { currentMindmapId, isAutoSaving: isAutoSaving.current, isLoaded });
         return;
       }
 
-      console.log('💾 Saving to DB:', { 
+      console.log('?? Saving to DB:', { 
       mindmapId: currentMindmapId, 
       nodesCount: nodesToSave.length, 
       edgesCount: edgesToSave.length 
@@ -137,7 +137,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
         thumbnailUrl: thumbnailUrl
       };
 
-      console.log('📤 Sending payload:', payload);
+      console.log('?? Sending payload:', payload);
 
       const response = await fetch(`${API_BASE}/mindmaps/${currentMindmapId}/save`, {
         method: 'PATCH',
@@ -145,24 +145,24 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error('Lỗi khi lưu vào CSDL');
+      if (!response.ok) throw new Error('L?i khi luu v�o CSDL');
       
       const result = await response.json();
-      console.log('✅ Save response:', result);
+      console.log('? Save response:', result);
       
       if(result.success) {
          if (setSaveStatus) setSaveStatus('saved');
-         console.log('✅ Saved successfully');
+         console.log('? Saved successfully');
       } else {
-         throw new Error(result.message || 'Lỗi lưu CSDL');
+         throw new Error(result.message || 'L?i luu CSDL');
       }
 
     } catch (err) {
-      console.error("Lỗi auto-save:", err);
+      console.error("L?i auto-save:", err);
       if (setSaveStatus) setSaveStatus('error');
-      // Chỉ báo lỗi nếu không phải là lưu thủ công
+      // Ch? b�o l?i n?u kh�ng ph?i l� luu th? c�ng
       if (!onManualSave) {
-          message.error("Không thể tự động lưu sơ đồ.");
+          message.error("Kh�ng th? t? d?ng luu so d?.");
       }
     } finally {
       isAutoSaving.current = false;
@@ -176,7 +176,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
   const initializingRef = useRef(false);
   const listenersRegisteredRef = useRef(false);
 
-  // Throttle broadcast để tránh spam (mỗi 150ms broadcast 1 lần)
+  // Throttle broadcast d? tr�nh spam (m?i 150ms broadcast 1 l?n)
   const throttledBroadcast = useRef(null);
   const pendingBroadcast = useRef(false);
 
@@ -188,27 +188,27 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     if (suppressBroadcastRef.current) skipReasons.push('suppressed');
     
     if (skipReasons.length > 0) {
-      console.log('⏭️ Skip broadcast:', skipReasons.join(', '));
+      console.log('?? Skip broadcast:', skipReasons.join(', '));
       return;
     }
 
-    // Nếu đang chờ broadcast, đánh dấu có thay đổi mới
+    // N?u dang ch? broadcast, d�nh d?u c� thay d?i m?i
     if (throttledBroadcast.current) {
       pendingBroadcast.current = true;
       return;
     }
 
-    // Broadcast ngay lập tức
+    // Broadcast ngay l?p t?c
     const currentNodes = useStore.getState().nodes;
     const currentEdges = useStore.getState().edges;
-    console.log('📤 Broadcasting changes to others:', { nodesCount: currentNodes.length, edgesCount: currentEdges.length });
+    console.log('?? Broadcasting changes to others:', { nodesCount: currentNodes.length, edgesCount: currentEdges.length });
     socketService.sendMindmapChange(currentMindmapId, { nodes: currentNodes, edges: currentEdges }, 'both');
 
-    // Throttle: chặn broadcast trong 150ms tiếp theo
+    // Throttle: ch?n broadcast trong 150ms ti?p theo
     throttledBroadcast.current = setTimeout(() => {
       throttledBroadcast.current = null;
       
-      // Nếu có thay đổi pending, broadcast lại
+      // N?u c� thay d?i pending, broadcast l?i
       if (pendingBroadcast.current) {
         pendingBroadcast.current = false;
         scheduleBroadcast();
@@ -219,57 +219,57 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
   useEffect(() => {
     if (!currentMindmapId) return;
     if (initializingRef.current) {
-      console.warn('⚠️ Socket init already in progress, skipping');
+      console.warn('?? Socket init already in progress, skipping');
       return;
     }
 
-    console.log('🔌 Connecting to collaborative session:', currentMindmapId);
+    console.log('?? Connecting to collaborative session:', currentMindmapId);
     
     initializingRef.current = true;
     let mounted = true;
     const cleanupListeners = [];
 
-    // Connect socket và đợi kết nối xong
+    // Connect socket v� d?i k?t n?i xong
     const initSocket = async () => {
       try {
-        console.log('🚀 Starting socket connection...');
+        console.log('?? Starting socket connection...');
         await socketService.connect();
-        console.log('✅ Socket connected successfully');
+        console.log('? Socket connected successfully');
         
         if (!mounted) {
-          console.log('⚠️ Component unmounted during connect, aborting');
+          console.log('?? Component unmounted during connect, aborting');
           return;
         }
 
         // Register listeners AFTER socket is connected
         if (!listenersRegisteredRef.current) {
-          console.log('📝 Registering socket event listeners');
+          console.log('?? Registering socket event listeners');
           
           const usersListHandler = (data) => {
-            console.log('👥 Online users:', data.users);
+            console.log('?? Online users:', data.users);
             setOnlineUsers(data.users);
           };
           socketService.on('mindmap-users-list', usersListHandler);
           cleanupListeners.push(() => socketService.off('mindmap-users-list', usersListHandler));
 
           const userJoinedHandler = (data) => {
-            console.log('👋 User joined:', data.username);
+            console.log('?? User joined:', data.username);
             addOnlineUser({ userId: data.userId, username: data.username, avatar: data.avatar });
-            message.info(`${data.username} vừa tham gia`);
+            message.info(`${data.username} v?a tham gia`);
           };
           socketService.on('user-joined-mindmap', userJoinedHandler);
           cleanupListeners.push(() => socketService.off('user-joined-mindmap', userJoinedHandler));
 
           const userLeftHandler = (data) => {
-            console.log('🚪 User left:', data.userId);
+            console.log('?? User left:', data.userId);
             removeOnlineUser(data.userId);
           };
           socketService.on('user-left-mindmap', userLeftHandler);
           cleanupListeners.push(() => socketService.off('user-left-mindmap', userLeftHandler));
 
           const mindmapUpdateHandler = (data) => {
-            console.log('📝 Received mindmap update from:', data.userId);
-            console.log('📦 Update data:', { changeType: data.changeType, nodesCount: data.changes?.nodes?.length, edgesCount: data.changes?.edges?.length });
+            console.log('?? Received mindmap update from:', data.userId);
+            console.log('?? Update data:', { changeType: data.changeType, nodesCount: data.changes?.nodes?.length, edgesCount: data.changes?.edges?.length });
             
             suppressBroadcastRef.current = true;
             applyRemoteChanges(data.changes, data.changeType);
@@ -300,19 +300,19 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
           listenersRegisteredRef.current = true;
         }
         
-        console.log('📞 Attempting to join room:', currentMindmapId);
+        console.log('?? Attempting to join room:', currentMindmapId);
         await socketService.joinMindmap(currentMindmapId);
         
         if (!mounted) {
-          console.log('⚠️ Component unmounted during join, aborting');
+          console.log('?? Component unmounted during join, aborting');
           return;
         }
         
-        console.log('✅ Room join complete, setting ready');
+        console.log('? Room join complete, setting ready');
         setRoomReady(true);
         setCollaborating(true);
       } catch (error) {
-        console.error('❌ Failed to connect socket:', error);
+        console.error('? Failed to connect socket:', error);
       } finally {
         initializingRef.current = false;
       }
@@ -323,7 +323,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     // Cleanup on unmount
     return () => {
       mounted = false;
-      console.log('🔌 Disconnecting from collaborative session');
+      console.log('?? Disconnecting from collaborative session');
       
       // Clean up all listeners
       cleanupListeners.forEach(cleanup => cleanup());
@@ -343,7 +343,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
   // Register broadcast callback when room is ready
   useEffect(() => {
     if (roomReady && currentMindmapId) {
-      console.log('📡 Registering broadcast callback for store updates');
+      console.log('?? Registering broadcast callback for store updates');
       const broadcastFn = () => {
         scheduleBroadcast();
       };
@@ -357,38 +357,38 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     };
   }, [roomReady, currentMindmapId, scheduleBroadcast, setBroadcastCallback]);
 
-  // ✅ FitView CHỈ 1 LẦN sau khi load xong
+  // ? FitView CH? 1 L?N sau khi load xong
   useEffect(() => {
     if (isLoaded && !hasInitialFitViewRef.current && reactFlowInstance && nodes.length > 0) {
-      // Chờ 100ms để đảm bảo nodes đã render xong
+      // Ch? 100ms d? d?m b?o nodes d� render xong
       setTimeout(() => {
         reactFlowInstance.fitView({ padding: 0.1, minZoom: 0.5, maxZoom: 1.5, duration: 300 });
         hasInitialFitViewRef.current = true;
-        console.log('✅ Initial fitView completed');
+        console.log('? Initial fitView completed');
       }, 100);
     }
-  }, [isLoaded]); // ⚠️ CHỈ phụ thuộc vào isLoaded, KHÔNG phụ thuộc nodes.length
+  }, [isLoaded]); // ?? CH? ph? thu?c v�o isLoaded, KH�NG ph? thu?c nodes.length
 
-  // Wrap onNodesChange để broadcast real-time
+  // Wrap onNodesChange d? broadcast real-time
   const handleNodesChange = useCallback((changes) => {
     onNodesChange(changes);
     scheduleBroadcast();
   }, [onNodesChange, scheduleBroadcast]);
 
-  // Wrap onEdgesChange để broadcast real-time
+  // Wrap onEdgesChange d? broadcast real-time
   const handleEdgesChange = useCallback((changes) => {
     onEdgesChange(changes);
     scheduleBroadcast();
   }, [onEdgesChange, scheduleBroadcast]);
 
-  // Wrap onConnect để broadcast khi tạo edge mới
+  // Wrap onConnect d? broadcast khi t?o edge m?i
   const handleConnect = useCallback((connection) => {
     onConnect(connection);
     
-    // Broadcast sau khi tạo connection
+    // Broadcast sau khi t?o connection
     setTimeout(() => {
       scheduleBroadcast();
-    }, 50); // Delay nhỏ để đảm bảo state đã update
+    }, 50); // Delay nh? d? d?m b?o state d� update
   }, [onConnect, scheduleBroadcast]);
 
   // Track cursor movement
@@ -414,25 +414,25 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     socketService.sendNodeSelection(currentMindmapId, selectedNodeIds);
   }, [selectedNodeIds, currentMindmapId, isLoaded, roomReady]);
 
-  // Kích hoạt Auto-save - Lưu mỗi khi có thay đổi
+  // K�ch ho?t Auto-save - Luu m?i khi c� thay d?i
   useEffect(() => {
-    // ✅ Auto-save khi đã load xong (cả local và remote changes đều cần lưu)
+    // ? Auto-save khi d� load xong (c? local v� remote changes d?u c?n luu)
     if (isLoaded && nodes.length > 0) {
-      console.log('🔄 Auto-saving changes...', { nodesCount: nodes.length, edgesCount: edges.length });
+      console.log('?? Auto-saving changes...', { nodesCount: nodes.length, edgesCount: edges.length });
       handleSaveToDB(nodes, edges);
     }
   }, [nodes, edges, isLoaded, handleSaveToDB]);
 
-  // Kết nối với nút Lưu thủ công
+  // K?t n?i v?i n�t Luu th? c�ng
   useEffect(() => {
     if (onManualSave) {
       onManualSave.current = async () => {
-        console.log('🔵 Manual save triggered');
+        console.log('?? Manual save triggered');
         try {
-          await handleSaveToDB.flush(nodes, edges); // Gọi .flush() để lưu ngay
-          console.log('🟢 Save completed, showing notification');
+          await handleSaveToDB.flush(nodes, edges); // G?i .flush() d? luu ngay
+          console.log('?? Save completed, showing notification');
           
-          // Tạo toast notification tùy chỉnh
+          // T?o toast notification t�y ch?nh
           const toast = document.createElement('div');
           toast.style.cssText = `
             position: fixed;
@@ -456,10 +456,10 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
             <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor" style="font-size: 20px;">
               <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm193.5 301.7l-210.6 292a31.8 31.8 0 01-51.7 0L318.5 484.9c-3.8-5.3 0-12.7 6.5-12.7h46.9c10.2 0 19.9 4.9 25.9 13.3l71.2 98.8 157.2-218c6-8.3 15.6-13.3 25.9-13.3H699c6.5 0 10.3 7.4 6.5 12.7z"></path>
             </svg>
-            Đã lưu thành công!
+            �� luu th�nh c�ng!
           `;
           
-          // Thêm animation CSS
+          // Th�m animation CSS
           if (!document.getElementById('toast-animation-style')) {
             const style = document.createElement('style');
             style.id = 'toast-animation-style';
@@ -480,17 +480,17 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
           
           document.body.appendChild(toast);
           
-          // Tự động xóa sau 3 giây
+          // T? d?ng x�a sau 3 gi�y
           setTimeout(() => {
             toast.style.animation = 'slideDown 0.3s ease reverse';
             setTimeout(() => toast.remove(), 300);
           }, 3000);
           
-          console.log('✅ Toast notification displayed');
+          console.log('? Toast notification displayed');
         } catch (error) {
-          console.error('❌ Manual save error:', error);
+          console.error('? Manual save error:', error);
           
-          // Toast lỗi
+          // Toast l?i
           const toast = document.createElement('div');
           toast.style.cssText = `
             position: fixed;
@@ -509,7 +509,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
             align-items: center;
             gap: 8px;
           `;
-          toast.innerHTML = '❌ Lưu thất bại! Vui lòng thử lại.';
+          toast.innerHTML = '? Luu th?t b?i! Vui l�ng th? l?i.';
           document.body.appendChild(toast);
           setTimeout(() => toast.remove(), 3000);
         }
@@ -518,7 +518,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
   }, [handleSaveToDB, nodes, edges, onManualSave]);
   
 
-  /* ---- Hiển thị fake node khi multi-select (Giữ nguyên) ---- */
+  /* ---- Hi?n th? fake node khi multi-select (Gi? nguy�n) ---- */
   const nodesToRender = useMemo(() => {
     const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
     if (selectedNodes.length <= 1 || appMode !== 'normal') return nodes;
@@ -544,7 +544,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     return [...nodes, fakeNode];
   }, [nodes, selectedNodeIds, appMode]);
 
-  /* ---- Sự kiện click (Giữ nguyên) ---- */
+  /* ---- S? ki?n click (Gi? nguy�n) ---- */
   const handleEdgeClick = (e, edge) => {
     e.stopPropagation();
     setSelectedEdgeId(edge.id, { x: e.clientX, y: e.clientY });
@@ -571,7 +571,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     } else setSelectedNodeIds([node.id]);
   };
 
-  /* ---- Vẽ khung DrawArea (Giữ nguyên) ---- */
+  /* ---- V? khung DrawArea (Gi? nguy�n) ---- */
   const handlePaneMouseDown = (e) => {
     if (e.button !== 0 || appMode !== 'creatingDrawArea') return;
     const screenPos = { x: e.clientX, y: e.clientY };
@@ -618,7 +618,7 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
     setAppMode('normal');
   };
 
-  /* ---- Phím tắt (Giữ nguyên) ---- */
+  /* ---- Ph�m t?t (Gi? nguy�n) ---- */
   useEffect(() => {
     const handleKey = (e) => {
       const isTyping = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
@@ -708,59 +708,59 @@ function FlowContent({ onManualSave, isReadOnly = false }) {
 function MindmapEditor() {
   const darkMode = useStore((s) => s.darkMode);
 
-  // SỬA: Lấy ID từ URL và tạo ref cho nút lưu thủ công
+  // S?A: L?y ID t? URL v� t?o ref cho n�t luu th? c�ng
   const { id } = useParams();
   const manualSaveRef = useRef(null);
   
-  // ✅ Lấy từ store
+  // ? L?y t? store
   const { isLoaded, setLoaded, loadState, setCurrentMindmapId } = useStore();
   
   useEffect(() => {
-    // Chỉ tải nếu chưa tải
+    // Ch? t?i n?u chua t?i
     if (!isLoaded && id) {
       const fetchMindmap = async () => {
          try {
-            console.log('🔄 Loading mindmap:', id);
+            console.log('?? Loading mindmap:', id);
             setLoaded(false);
-            setCurrentMindmapId(id); // ✅ Set ID ngay
+            setCurrentMindmapId(id); // ? Set ID ngay
             
             const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
             if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
-              message.warning('Phiên đăng nhập đã hết, vui lòng đăng nhập lại...', 1.5);
+              message.warning('Phi�n dang nh?p d� h?t, vui l�ng dang nh?p l?i...', 1.5);
               setTimeout(() => {
                 window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
               }, 800);
               return;
             }
-            if (!res.ok) throw new Error('Không thể tải mindmap');
+            if (!res.ok) throw new Error('Kh�ng th? t?i mindmap');
             const data = await res.json();
-            if (!data.success || !data.data) throw new Error('Dữ liệu không hợp lệ');
+            if (!data.success || !data.data) throw new Error('D? li?u kh�ng h?p l?');
 
-            // ✅ ƯU TIÊN load nodes/edges đã save, chỉ convert markdown khi chưa có
+            // ? UU TI�N load nodes/edges d� save, ch? convert markdown khi chua c�
             let nodes, edges;
             if (data.data.nodes && data.data.nodes.length > 0) {
-              // Có nodes/edges đã save → load trực tiếp
-              console.log('✅ Loading saved nodes/edges from database');
+              // C� nodes/edges d� save ? load tr?c ti?p
+              console.log('? Loading saved nodes/edges from database');
               nodes = data.data.nodes;
               edges = data.data.edges || [];
-              console.log('📊 Loaded', nodes.length, 'nodes and', edges.length, 'edges');
+              console.log('?? Loaded', nodes.length, 'nodes and', edges.length, 'edges');
             } else {
-              // Chưa có nodes/edges → convert từ markdown
-              console.log('🔄 Converting markdown to mindmap with HORIZONTAL layout...');
+              // Chua c� nodes/edges ? convert t? markdown
+              console.log('?? Converting markdown to mindmap with HORIZONTAL layout...');
               const converted = markdownToMindmap(data.data.content);
               nodes = converted.nodes;
               edges = converted.edges;
-              console.log('✅ Converted', nodes.length, 'nodes from markdown');
+              console.log('? Converted', nodes.length, 'nodes from markdown');
             }
             
             loadState({ nodes, edges });
-            console.log('✅ Loaded', nodes.length, 'nodes with HORIZONTAL layout');
+            console.log('? Loaded', nodes.length, 'nodes with HORIZONTAL layout');
             
-            setLoaded(true); // ✅ Set loaded = true
-            console.log('✅ isLoaded set to true, currentMindmapId:', id);
+            setLoaded(true); // ? Set loaded = true
+            console.log('? isLoaded set to true, currentMindmapId:', id);
          } catch(err) {
-            console.error("Lỗi tải mindmap:", err);
-            message.error("Không thể tải sơ đồ. Đang chuyển về dashboard...");
+            console.error("L?i t?i mindmap:", err);
+            message.error("Kh�ng th? t?i so d?. �ang chuy?n v? dashboard...");
             setTimeout(() => window.location.href = '/dashboard', 2000);
          }
       };
@@ -775,7 +775,7 @@ function MindmapEditor() {
   return (
     <div className={`app-container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
       <ReactFlowProvider>
-        {/* Ẩn toolbar khi ở chế độ readonly */}
+        {/* ?n toolbar khi ? ch? d? readonly */}
         {!isReadOnly && (
           <>
             <VerticalToolbar 
@@ -784,7 +784,7 @@ function MindmapEditor() {
             <DarkModeToggle />
           </>
         )}
-        {/* ✅ BỎ prop currentMindmapId vì giờ lấy từ store */}
+        {/* ? B? prop currentMindmapId v� gi? l?y t? store */}
         <FlowContent 
           onManualSave={manualSaveRef}
           isReadOnly={isReadOnly}
@@ -798,7 +798,7 @@ function MindmapEditor() {
 function ImportMindmap() {
   const { id } = useParams();
   const navigate = useNavigate();
-  // ✅ Gọi TẤT CẢ hooks ở đầu component
+  // ? G?i T?T C? hooks ? d?u component
   const { loadState, setLoaded, setCurrentMindmapId, darkMode } = useStore(); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -807,45 +807,45 @@ function ImportMindmap() {
   const searchParams = new URLSearchParams(window.location.search);
   const isReadOnly = searchParams.get('readonly') === 'true';
 
-  // SỬA: Đổi tên hàm và logic bên trong
+  // S?A: �?i t�n h�m v� logic b�n trong
   const fetchAndLoadMindmap = useCallback(async () => {
     try {
       setLoading(true);
-      if (setLoaded) setLoaded(false); // Báo là đang tải
+      if (setLoaded) setLoaded(false); // B�o l� dang t?i
       
       const res = await fetch(`/mindmaps/${id}/json`, { credentials: 'include', headers: { Accept: 'application/json' } });
       if (res.status === 401 || (res.redirected && res.url.includes('/login'))) {
-        message.warning('Phiên đăng nhập đã hết, vui lòng đăng nhập lại...', 1.5);
+        message.warning('Phi�n dang nh?p d� h?t, vui l�ng dang nh?p l?i...', 1.5);
         setTimeout(() => {
           window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
         }, 800);
         return;
       }
-      if (!res.ok) throw new Error('Không thể tải nội dung mindmap từ server');
+      if (!res.ok) throw new Error('Kh�ng th? t?i n?i dung mindmap t? server');
       
       const data = await res.json();
-      if (!data.success || !data.data) throw new Error('Dữ liệu trả về không hợp lệ');
+      if (!data.success || !data.data) throw new Error('D? li?u tr? v? kh�ng h?p l?');
 
       let nodes, edges;
-      // KIỂM TRA: Ưu tiên dùng nodes/edges nếu đã có trong CSDL
+      // KI?M TRA: Uu ti�n d�ng nodes/edges n?u d� c� trong CSDL
       if (data.data.nodes && data.data.nodes.length > 0) {
         nodes = data.data.nodes;
         edges = data.data.edges || [];
       } else {
-        // Nếu không, chuyển đổi từ markdown
+        // N?u kh�ng, chuy?n d?i t? markdown
         const markdownText = data.data.content;
         const result = markdownToMindmap(markdownText);
         nodes = result.nodes;
         edges = result.edges;
       }
       
-      loadState({ nodes, edges }); // Tải state
+      loadState({ nodes, edges }); // T?i state
       if (setCurrentMindmapId) setCurrentMindmapId(id); // Set ID
-      if (setLoaded) setLoaded(true); // Báo đã tải xong
+      if (setLoaded) setLoaded(true); // B�o d� t?i xong
 
       setLoading(false);
       
-      // SỬA: Chỉ chuyển hướng nếu KHÔNG phải readonly mode
+      // S?A: Ch? chuy?n hu?ng n?u KH�NG ph?i readonly mode
       if (!isReadOnly) {
         setTimeout(() => navigate(`/editor/${id}`), 300);
       }
@@ -864,10 +864,10 @@ function ImportMindmap() {
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
-        <div style={styles.icon}>🗺️</div>
-        {/* SỬA: Đổi text */}
-        <h2>Đang tải Mindmap...</h2>
-        <p style={{ opacity: 0.8 }}>Vui lòng đợi trong giây lát</p>
+        <div style={styles.icon}>???</div>
+        {/* S?A: �?i text */}
+        <h2>�ang t?i Mindmap...</h2>
+        <p style={{ opacity: 0.8 }}>Vui l�ng d?i trong gi�y l�t</p>
         <div style={styles.progressOuter}>
           <div style={styles.progressInner}></div>
         </div>
@@ -878,20 +878,20 @@ function ImportMindmap() {
   if (error) {
     return (
       <div style={styles.errorContainer}>
-        <div style={{ fontSize: '64px', marginBottom: '20px' }}>❌</div>
-        <h2 style={{ color: '#d32f2f', marginBottom: '10px' }}>Lỗi</h2>
+        <div style={{ fontSize: '64px', marginBottom: '20px' }}>?</div>
+        <h2 style={{ color: '#d32f2f', marginBottom: '10px' }}>L?i</h2>
         <p style={{ color: '#666', marginBottom: '30px', maxWidth: '500px' }}>{error}</p>
         <div style={{ display: 'flex', gap: '10px' }}>
-          {/* SỬA: Bỏ nút "Tạo Mindmap Mới" vì không hợp lý */}
+          {/* S?A: B? n�t "T?o Mindmap M?i" v� kh�ng h?p l� */}
           <button onClick={() => window.location.reload()} style={styles.btnSecondary}>
-            Thử Lại
+            Th? L?i
           </button>
         </div>
       </div>
     );
   }
 
-  // Nếu là readonly mode, hiển thị FlowContent trực tiếp
+  // N?u l� readonly mode, hi?n th? FlowContent tr?c ti?p
   if (isReadOnly) {
     return (
       <div className={`app-container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
@@ -905,7 +905,7 @@ function ImportMindmap() {
   return null;
 }
 
-/* --------------------------- CYTOSCAPE VIEWER (Giữ nguyên) --------------------------- */
+/* --------------------------- CYTOSCAPE VIEWER (Gi? nguy�n) --------------------------- */
 function CytoscapeViewer() {
   const { id } = useParams();
   const [markdown, setMarkdown] = useState('');
@@ -922,13 +922,13 @@ function CytoscapeViewer() {
       .then((data) => setMarkdown(data.data?.content || ''))
       .catch(console.error);
   }, [id]);
-  if (!markdown) return <div style={{ padding: 40 }}>Đang tải...</div>;
+  if (!markdown) return <div style={{ padding: 40 }}>�ang t?i...</div>;
   return <CytoscapeMindmap markdownContent={markdown} />;
 }
 
 /* --------------------------- APP MAIN --------------------------- */
 function App() {
-  // ✅ Cấu hình message container ngay khi app mount
+  // ? C?u h�nh message container ngay khi app mount
   useEffect(() => {
     message.config({
       top: 100,
@@ -942,14 +942,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* SỬA: Route cho editor giờ phải có :id */}
+        {/* S?A: Route cho editor gi? ph?i c� :id */}
         <Route path="/editor/:id" element={<MindmapEditor />} />
         
-        {/* Các route cũ */}
+        {/* C�c route cu */}
         <Route path="/import/:id" element={<ImportMindmap />} />
         <Route path="/cyto/:id" element={<CytoscapeViewer />} />
         
-        {/* THÊM: Route dự phòng, chuyển hướng về dashboard (bên Pug) */}
+        {/* TH�M: Route d? ph�ng, chuy?n hu?ng v? dashboard (b�n Pug) */}
         <Route path="/" element={<EditorFallback />} />
         <Route path="/editor" element={<EditorFallback />} />
       </Routes>
@@ -957,24 +957,24 @@ function App() {
   );
 }
 
-// THÊM: Component Fallback để chuyển hướng
+// TH�M: Component Fallback d? chuy?n hu?ng
 function EditorFallback() {
   useEffect(() => {
-    // Chuyển hướng về trang dashboard chính (bên Pug)
+    // Chuy?n hu?ng v? trang dashboard ch�nh (b�n Pug)
     window.location.href = '/dashboard';
   }, []);
 
   return (
     <div style={styles.loadingContainer}>
-      <div style={styles.icon}>🧭</div>
-      <h2>Đang chuyển hướng...</h2>
-      <p style={{ opacity: 0.8 }}>Vui lòng chọn một mindmap từ dashboard.</p>
+      <div style={styles.icon}>??</div>
+      <h2>�ang chuy?n hu?ng...</h2>
+      <p style={{ opacity: 0.8 }}>Vui l�ng ch?n m?t mindmap t? dashboard.</p>
     </div>
   );
 }
 
 
-/* --------------------------- STYLES (Giữ nguyên) --------------------------- */
+/* --------------------------- STYLES (Gi? nguy�n) --------------------------- */
 const styles = {
   loadingContainer: {
     display: 'flex',

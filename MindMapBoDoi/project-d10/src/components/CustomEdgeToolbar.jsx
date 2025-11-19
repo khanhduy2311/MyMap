@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'; // Bỏ useRef
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/store';
 import { Input } from 'antd';
 import { CloseOutlined } from '@ant-design/icons'; // Bỏ PlusOutlined

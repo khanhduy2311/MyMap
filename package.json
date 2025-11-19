@@ -7,7 +7,7 @@
     "start": "node index.js",
     "dev": "nodemon --inspect index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cd MindMapBoDoi/project-d10 && npm install && npm run build",
+    "build": "cd MindMapBoDoi/project-d10 && npm install && CI=false npm run build",
     "postinstall": "npm run build",
     "electron": "electron .",
     "electron-dev": "set NODE_ENV=development && electron .",
